@@ -268,7 +268,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
             NoSuchMethodException,
             InstantiationException, IllegalAccessException, InvocationTargetException {
 
-        CharStream stream = new ANTLRFileStream(sourceFile.getName());
+        CharStream stream = new ANTLRFileStream(sourceFile.getPath());
         Constructor<? extends Lexer> lexerConstructor = lexerClass.getConstructor(CharStream.class);
 
         Lexer lexer = lexerConstructor.newInstance(stream);

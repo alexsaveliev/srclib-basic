@@ -1,0 +1,20 @@
+apply plugin: 'antlr'
+
+dependencies {
+    compile project(':toolchain-core')
+   	antlr "org.antlr:antlr4:4.5.1"
+}
+
+
+generateGrammarSource {
+    outputDirectory = new File("${project.buildDir}/generated-src/antlr/com/sourcegraph/toolchain/php/antlr4")
+    arguments += ["-encoding",  "UTF-8"]
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "${project.buildDir}/generated-src/antlr"
+        }
+    }
+}

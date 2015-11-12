@@ -1,0 +1,46 @@
+{
+  "Tools": [
+    {
+      "Subcmd": "scan",
+      "Op": "scan",
+      "SourceUnitTypes": [
+        "antlr-php"
+      ]
+    },
+    {
+      "Subcmd": "graph",
+      "Op": "graph",
+      "SourceUnitTypes": [
+        "antlr-php"
+      ]
+    },
+    {
+      "Subcmd": "depresolve",
+      "Op": "depresolve",
+      "SourceUnitTypes": [
+        "antlr-php"
+      ]
+    }
+  ],
+  "Bundle": {
+    "Paths": [
+      "Srclibtoolchain",
+      ".bin",
+      ".bin/srclib-antlr",
+      ".bin/srclib-antlr.bat",
+      ".bin/antlr4-4.5.1.jar",
+      ".bin/jcommander-1.30.jar",
+      ".bin/slf4j-log4j12-1.7.12.jar",
+      ".bin/commons-io-2.4.jar",
+      ".bin/log4j-1.2.17.jar",
+      ".bin/commons-lang3-3.3.2.jar",
+      ".bin/gson-2.3.jar",
+      ".bin/slf4j-api-1.7.12.jar",
+      ".bin/toolchain-core-0.0.1.jar",
+      ".bin/toolchain-php-0.0.1.jar"
+    ],
+    "Commands": [
+      "make install"
+    ]
+  }
+}

@@ -1,0 +1,6 @@
+#!/bin/bash
+
+unset CDPATH
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+java -Xmx4g -classpath "$DIR/*" com.sourcegraph.toolchain.application.Main "$@"

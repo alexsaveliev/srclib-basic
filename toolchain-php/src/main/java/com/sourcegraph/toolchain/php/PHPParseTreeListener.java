@@ -473,11 +473,16 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String varName = varNameNode.getText();
         Boolean local;
         Map<String, Boolean> localVars = support.vars.peek();
-
-        if (functionArguments.containsKey(varName)) {
+        String path = null;
+        if ("$this".equals(varName)) {
             local = true;
+            path = currentClassInfo.className + "/$this";
         } else {
-            local = localVars.get(varName);
+            if (functionArguments.containsKey(varName)) {
+                local = true;
+            } else {
+                local = localVars.get(varName);
+            }
         }
         if (local == null) {
             // new variable
@@ -496,7 +501,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             localVars.put(varName, local);
         } else {
             Ref varRef = support.ref(varNameNode.getSymbol());
-            varRef.defKey = new DefKey(null, local ? getBlockNamePrefix() + varName : varName);
+            if (path == null) {
+                path = local ? getBlockNamePrefix() + varName : varName;
+            }
+            varRef.defKey = new DefKey(null, path);
             support.emit(varRef);
         }
     }

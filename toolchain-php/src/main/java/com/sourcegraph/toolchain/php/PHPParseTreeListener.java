@@ -438,16 +438,22 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     @Override
     public void enterMemberAccess(PHPParser.MemberAccessContext ctx) {
         PHPParser.ChainContext parent = (PHPParser.ChainContext) ctx.getParent();
-        List<PHPParser.KeyedVariableContext> var = parent.chainBase().keyedVariable();
-        if (var == null || var.isEmpty()) {
-            return;
+        PHPParser.ChainBaseContext chainBaseContext = parent.chainBase();
+
+        String varName = null;
+        String varType = null;
+
+        if (chainBaseContext != null) {
+            List<PHPParser.KeyedVariableContext> var = chainBaseContext.keyedVariable();
+            if (var != null && !var.isEmpty()) {
+                TerminalNode varNameNode = var.get(0).VarName();
+                if (varNameNode != null) {
+                    varName = varNameNode.getText();
+                    varType = functionArguments.get(varName);
+                }
+            }
         }
-        TerminalNode varNameNode = var.get(0).VarName();
-        if (varNameNode == null) {
-            return;
-        }
-        String varName = varNameNode.getText();
-        String varType = functionArguments.get(varName);
+
         if (varType == null) {
             // TODO (alexsaveliev) type hint check in local vars
         }

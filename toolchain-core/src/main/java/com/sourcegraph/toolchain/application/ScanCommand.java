@@ -9,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -37,9 +36,7 @@ class ScanCommand {
             if (subdir == null) {
                 subdir = ".";
             }
-            File rootDir = new File(PathUtil.CWD.toFile(), subdir);
-            LOGGER.info("Collecting source units in {}", rootDir);
-            Collection<SourceUnit> units = LanguageRegistry.getInstance().getSourceUnits(rootDir, repoURI);
+            Collection<SourceUnit> units = LanguageRegistry.getInstance().getSourceUnits(PathUtil.CWD.toFile(), repoURI);
             normalize(units, repoURI);
             JSONUtil.writeJSON(units);
         } catch (Exception e) {

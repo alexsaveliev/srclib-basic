@@ -340,13 +340,15 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     @Override
     public void enterNewexpr(PHPParser.NewexprContext ctx) {
         ParserRuleContext typeCtx = ctx.typeRef();
-        String className = resolveFqn(typeCtx.getText());
+        String localClassName = typeCtx.getText();
+        String className = resolveFqn(localClassName);
         resolveClass(className);
         String method = "__construct";
         String defining = this.support.getDefiningClass(className, method);
         if (defining == null) {
             // backward compatibility
-            method = className;
+            // class A { function A {}}
+            method = localClassName;
             defining = this.support.getDefiningClass(className, method);
         }
         if (defining != null) {
@@ -562,7 +564,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             classConstantDef.defKey = new DefKey(null, fqn(getBlockNamePrefix() + classConstantDef.name));
             support.emit(classConstantDef);
             support.resolutions.put(MAYBE_CONSTANT + classConstantDef.name, classConstantDef);
-            currentClassInfo.definesConstants.add(fqn(classConstantDef.name));
+            currentClassInfo.definesConstants.add(classConstantDef.name);
         }
         blockStack.push(blockName);
     }
@@ -647,9 +649,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String rootClassName = null;
         if ("self".equals(parts[0])) {
             rootClassName = currentClassInfo.className;
-            // TODO (alexsaveliev) ref to self?
-        }
-        if ("parent".equals(parts[0])) {
+            Ref selfRef = support.ref(ctx.qualifiedStaticTypeRef());
+            selfRef.defKey = new DefKey(null, rootClassName);
+            support.emit(selfRef);
+        } else if ("parent".equals(parts[0])) {
             Iterator<String> i = currentClassInfo.extendsClasses.iterator();
             if (i.hasNext()) {
                 rootClassName = i.next();
@@ -661,7 +664,6 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             String fqn = resolveFqn(parts[0]);
             resolveClass(fqn);
             if (this.support.classes.containsKey(fqn)) {
-                // TypeName::CONST, we do not support $...::CONST yet
                 rootClassName = fqn;
                 Ref classRef = support.ref(ctx.qualifiedStaticTypeRef());
                 classRef.defKey = new DefKey(null, fqn);
@@ -670,6 +672,19 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
 
         if (rootClassName == null) {
+            if (isCall) {
+                // method, putting a candidate because we were unable to identify class name
+                Ref maybeClassMethodRef = support.ref(ctx.identifier());
+                maybeClassMethodRef.candidate = true;
+                maybeClassMethodRef.defKey = new DefKey(null, MAYBE_METHOD + parts[1] + "()");
+                support.emit(maybeClassMethodRef);
+            } else {
+                // constant, putting a candidate because we were unable to identify class name
+                Ref maybeClassConstantRef = support.ref(ctx.identifier());
+                maybeClassConstantRef.candidate = true;
+                maybeClassConstantRef.defKey = new DefKey(null, MAYBE_CONSTANT + parts[1]);
+                support.emit(maybeClassConstantRef);
+            }
             return;
         }
 
@@ -748,7 +763,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     private String resolveFqn(String name) {
         name = name.replace("\\", NAMESPACE_SEPARATOR);
         if (name.startsWith(NAMESPACE_SEPARATOR)) {
-            return name.substring(NAMESPACE_SEPARATOR.length());
+            return name;
         }
         String prefix = StringUtils.substringBefore(name, NAMESPACE_SEPARATOR);
         String namespace = namespaceAliases.get(prefix);

@@ -394,7 +394,14 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
         for (PHPParser.UseDeclarationContentContext declaration : declarations) {
             String ns = makeNamespaceName(declaration.namespaceNameList());
-            String alias = StringUtils.substringAfterLast(ns, NAMESPACE_SEPARATOR);
+            String alias;
+            if (declaration.As() != null) {
+                // use My\Full\Classname as Another
+                alias = declaration.identifier().getText();
+            } else {
+                // use My\Full\Classname
+                alias = StringUtils.substringAfterLast(ns, NAMESPACE_SEPARATOR);
+            }
             namespaceAliases.put(alias, ns);
         }
     }
@@ -526,9 +533,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         } else {
             StringBuilder ns = new StringBuilder();
             for (PHPParser.IdentifierContext identifier : identifiers) {
-                if (ns.length() > 0) {
-                    ns.append(NAMESPACE_SEPARATOR);
-                }
+                ns.append(NAMESPACE_SEPARATOR);
                 ns.append(identifier.getText());
             }
             return ns.toString();
@@ -754,12 +759,24 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     }
 
     private String resolveFunctionFqn(String name) {
-        String localName = fqn(name);
-        if (support.functions.contains(localName)) {
-            return localName;
+        name = name.replace("\\", NAMESPACE_SEPARATOR);
+        String fqn;
+        boolean absolute = false;
+        if (!name.startsWith(NAMESPACE_SEPARATOR)) {
+            fqn = resolveFqn(name);
+        } else {
+            fqn = name;
+            absolute = true;
         }
-        // global
-        return NAMESPACE_SEPARATOR + name;
+        // looking in the current namespace
+        if (support.functions.contains(fqn)) {
+            return fqn;
+        }
+        // must be global one
+        if (!absolute) {
+            name = NAMESPACE_SEPARATOR + name;
+        }
+        return name;
     }
 
     private void resolveClass(String fullyQualifiedClassName) {

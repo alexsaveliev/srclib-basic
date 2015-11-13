@@ -166,7 +166,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                     continue;
                 }
                 Ref globalVarRef = support.ref(varNameNode.getSymbol());
-                globalVarRef.defKey = new DefKey(null, varName);
+                globalVarRef.defKey = new DefKey(null, GLOBAL_NAMESPACE + varName);
                 support.emit(globalVarRef);
                 this.support.vars.peek().put(varName, false);
             }
@@ -503,13 +503,13 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                 varDef.exported = true;
                 local = false;
             }
-            varDef.defKey = new DefKey(null, getBlockNamePrefix() + varName);
+            varDef.defKey = new DefKey(null, fqn(getBlockNamePrefix()) + varName);
             support.emit(varDef);
             localVars.put(varName, local);
         } else {
             Ref varRef = support.ref(varNameNode.getSymbol());
             if (path == null) {
-                path = local ? getBlockNamePrefix() + varName : varName;
+                path = local ? fqn(getBlockNamePrefix()) + varName : NAMESPACE_SEPARATOR + varName;
             }
             varRef.defKey = new DefKey(null, path);
             support.emit(varRef);

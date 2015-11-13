@@ -12,10 +12,10 @@ install:
 	${GRADLEW} install
 
 test: install
-	src -v test -m program
+	srclib -v test -m program
 
 test-gen: install
-	src -v test -m program --gen
+	srclib -v test -m program --gen
 
 clean:
 	rm -f .bin/*.jar

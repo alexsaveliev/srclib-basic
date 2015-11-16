@@ -95,7 +95,6 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
         }
         // Already visited
         if (visited.contains(sourceFile)) {
-            LOGGER.debug("Requested processing of already seen {}", sourceFile);
             return;
         }
         // Not in the list

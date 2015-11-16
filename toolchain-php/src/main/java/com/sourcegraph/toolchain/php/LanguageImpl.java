@@ -1,16 +1,25 @@
 package com.sourcegraph.toolchain.php;
 
+import com.sourcegraph.toolchain.core.PathUtil;
 import com.sourcegraph.toolchain.core.objects.Def;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.php.antlr4.PHPLexer;
 import com.sourcegraph.toolchain.php.antlr4.PHPParser;
+import com.sourcegraph.toolchain.php.composer.ComposerConfiguration;
+import com.sourcegraph.toolchain.php.composer.schema.Autoload;
+import com.sourcegraph.toolchain.php.composer.schema.ComposerSchemaJson;
+import com.sourcegraph.toolchain.php.resolver.ClassFileResolver;
+import com.sourcegraph.toolchain.php.resolver.CompoundClassFileResolver;
+import com.sourcegraph.toolchain.php.resolver.PSR0ClassFileResolver;
+import com.sourcegraph.toolchain.php.resolver.PSR4ClassFileResolver;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 public class LanguageImpl extends LanguageBase {
@@ -26,13 +35,14 @@ public class LanguageImpl extends LanguageBase {
     Map<String, ClassInfo> classes = new HashMap<>();
     Set<String> functions = new HashSet<>();
 
+    private Set<String> seenClasses = new HashSet<>();
+
     /**
      * Map ident => definition. We using it to resolve reference candidates.
      */
     Map<String, Def> resolutions = new HashMap<>();
 
-    private Set<String> visited = new HashSet<>();
-    private Set<String> files;
+    private ClassFileResolver classFileResolver;
 
     public String getDefiningClass(String rootClassName, String methodName) {
         ClassInfo info = classes.get(rootClassName);
@@ -112,6 +122,21 @@ public class LanguageImpl extends LanguageBase {
     }
 
     @Override
+    public void graph() {
+        // Before graphing, let's load composer configuration if there is any
+        File composerJson = new File(PathUtil.CWD.toFile(), "composer.json");
+        if (composerJson.isFile()) {
+            try {
+                ComposerSchemaJson configuration = ComposerConfiguration.getConfiguration(composerJson);
+                initAutoLoader(configuration);
+            } catch (IOException e) {
+                LOGGER.warn("Failed to read composer configuration {}", e.getMessage());
+            }
+        }
+        super.graph();
+    }
+
+    @Override
     protected void parse(File sourceFile) throws ParseException {
         try {
             GrammarConfiguration configuration = LanguageBase.createGrammarConfiguration(sourceFile,
@@ -134,5 +159,59 @@ public class LanguageImpl extends LanguageBase {
             collector.exclude("vendor");
         }
         return collector;
+    }
+
+    /**
+     * Invoked by PHP parse tree listener to "touch" class.
+     * PHP language support tries to resolve class file using registered class resolver(s)
+     * and if file is found, we are trying to parse it before processing current class
+     * @param fullyQualifiedClassName FQCN
+     */
+    protected void resolveClass(String fullyQualifiedClassName) {
+        if (!seenClasses.add(fullyQualifiedClassName)) {
+            return;
+        }
+        File file = classFileResolver.resolve(fullyQualifiedClassName);
+        if (file != null) {
+            process(file);
+        }
+    }
+
+    /**
+     * Initializes autoloader (currently PSR-4 and PSR-0 are supported)
+     * @param composerSchemaJson configuration from composer.json
+     */
+    private void initAutoLoader(ComposerSchemaJson composerSchemaJson) {
+        CompoundClassFileResolver resolver = new CompoundClassFileResolver();
+        this.classFileResolver = resolver;
+
+        Autoload autoload = composerSchemaJson.getAutoload();
+        if (autoload == null) {
+            return;
+        }
+
+        Map<String, List<String>> psr4 = autoload.getPsr4();
+        if (psr4 != null) {
+            PSR4ClassFileResolver psr4ClassFileResolver = new PSR4ClassFileResolver();
+            for (Map.Entry<String, List<String>> entry : psr4.entrySet()) {
+                for (String directory : entry.getValue()) {
+                    psr4ClassFileResolver.addNamespace(entry.getKey(), directory);
+                }
+            }
+            resolver.addResolver(psr4ClassFileResolver);
+        }
+
+        Map<String, List<String>> psr0 = autoload.getPsr0();
+        if (psr0 != null) {
+            PSR0ClassFileResolver psr0ClassFileResolver = new PSR0ClassFileResolver();
+            for (Map.Entry<String, List<String>> entry : psr0.entrySet()) {
+                for (String directory : entry.getValue()) {
+                    psr0ClassFileResolver.addNamespace(entry.getKey(), directory);
+                }
+            }
+            resolver.addResolver(psr0ClassFileResolver);
+        }
+        // TODO: classmap?
+
     }
 }

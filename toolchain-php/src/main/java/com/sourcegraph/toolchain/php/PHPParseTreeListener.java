@@ -817,6 +817,6 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     }
 
     private void resolveClass(String fullyQualifiedClassName) {
-        // TODO (alexsaveliev) implement
+        support.resolveClass(fullyQualifiedClassName.replace(NAMESPACE_SEPARATOR, "\\"));
     }
 }

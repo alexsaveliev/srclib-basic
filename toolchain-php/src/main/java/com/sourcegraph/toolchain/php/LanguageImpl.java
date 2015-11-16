@@ -9,7 +9,6 @@ import com.sourcegraph.toolchain.php.antlr4.PHPParser;
 import com.sourcegraph.toolchain.php.composer.ComposerConfiguration;
 import com.sourcegraph.toolchain.php.composer.schema.Autoload;
 import com.sourcegraph.toolchain.php.composer.schema.ComposerSchemaJson;
-import com.sourcegraph.toolchain.php.resolver.ClassFileResolver;
 import com.sourcegraph.toolchain.php.resolver.CompoundClassFileResolver;
 import com.sourcegraph.toolchain.php.resolver.PSR0ClassFileResolver;
 import com.sourcegraph.toolchain.php.resolver.PSR4ClassFileResolver;
@@ -42,7 +41,7 @@ public class LanguageImpl extends LanguageBase {
      */
     Map<String, Def> resolutions = new HashMap<>();
 
-    private ClassFileResolver classFileResolver;
+    private CompoundClassFileResolver classFileResolver;
 
     public String getDefiningClass(String rootClassName, String methodName) {
         ClassInfo info = classes.get(rootClassName);
@@ -124,6 +123,8 @@ public class LanguageImpl extends LanguageBase {
     @Override
     public void graph() {
         // Before graphing, let's load composer configuration if there is any
+        this.classFileResolver = new CompoundClassFileResolver();
+
         File composerJson = new File(PathUtil.CWD.toFile(), "composer.json");
         if (composerJson.isFile()) {
             try {
@@ -182,9 +183,6 @@ public class LanguageImpl extends LanguageBase {
      * @param composerSchemaJson configuration from composer.json
      */
     private void initAutoLoader(ComposerSchemaJson composerSchemaJson) {
-        CompoundClassFileResolver resolver = new CompoundClassFileResolver();
-        this.classFileResolver = resolver;
-
         Autoload autoload = composerSchemaJson.getAutoload();
         if (autoload == null) {
             return;
@@ -198,7 +196,7 @@ public class LanguageImpl extends LanguageBase {
                     psr4ClassFileResolver.addNamespace(entry.getKey(), directory);
                 }
             }
-            resolver.addResolver(psr4ClassFileResolver);
+            classFileResolver.addResolver(psr4ClassFileResolver);
         }
 
         Map<String, List<String>> psr0 = autoload.getPsr0();
@@ -209,7 +207,7 @@ public class LanguageImpl extends LanguageBase {
                     psr0ClassFileResolver.addNamespace(entry.getKey(), directory);
                 }
             }
-            resolver.addResolver(psr0ClassFileResolver);
+            classFileResolver.addResolver(psr0ClassFileResolver);
         }
         // TODO: classmap?
 

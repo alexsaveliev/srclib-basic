@@ -476,6 +476,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         PHPParser.KeyedFieldNameContext keyedFieldNameContext = ctx.keyedFieldName();
         String propertyName = keyedFieldNameContext.getText();
         boolean isMethodCall = ctx.actualArguments() != null;
+        if (!isMethodCall && keyedFieldNameContext.keyedSimpleFieldName() != null) {
+            propertyName = "$" + propertyName;}
+
         Ref ref = support.ref(keyedFieldNameContext);
         if (varType == null) {
             ref.candidate = true;
@@ -483,7 +486,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             if (isMethodCall) {
                 prefix = MAYBE_METHOD;
             } else {
-                prefix = keyedFieldNameContext.keyedSimpleFieldName() != null ? MAYBE_CONSTANT : MAYBE_PROPERTY;
+                prefix = MAYBE_PROPERTY;
             }
             ref.defKey = new DefKey(null, prefix + propertyName);
         } else {

@@ -146,7 +146,6 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         if (fnCallNameCtx.classConstant() != null) {
             processClassConstantRef(fnCallNameCtx.classConstant(), true);
         }
-        // TODO (alexsaveliev): $foo->bar()
     }
 
     @Override
@@ -330,11 +329,26 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     @Override
     public void enterConstant(PHPParser.ConstantContext ctx) {
 
-        PHPParser.ClassConstantContext classConstantContext = ctx.classConstant();
-        if (classConstantContext == null) {
+        PHPParser.QualifiedNamespaceNameContext qNameContext = ctx.qualifiedNamespaceName();
+        if (qNameContext != null) {
+            Ref constRef = support.ref(qNameContext);
+            constRef.defKey = new DefKey(null, resolveFqn(qNameContext.getText()));
+            support.emit(constRef);
             return;
         }
-        processClassConstantRef(classConstantContext, false);
+
+        PHPParser.LiteralConstantContext literalConstantContext = ctx.literalConstant();
+        if (literalConstantContext != null && literalConstantContext.stringConstant() != null) {
+            Ref constRef = support.ref(literalConstantContext);
+            constRef.defKey = new DefKey(null, resolveFqn(literalConstantContext.getText()));
+            support.emit(constRef);
+            return;
+        }
+
+        PHPParser.ClassConstantContext classConstantContext = ctx.classConstant();
+        if (classConstantContext != null) {
+            processClassConstantRef(classConstantContext, false);
+        }
     }
 
     @Override
@@ -382,13 +396,6 @@ class PHPParseTreeListener extends PHPParserBaseListener {
 
     @Override
     public void enterUseDeclaration(PHPParser.UseDeclarationContext ctx) {
-        // TODO (alexsaveliev) use const / use function
-        if (ctx.Const() != null) {
-            return;
-        }
-        if (ctx.Function() != null) {
-            return;
-        }
         List<PHPParser.UseDeclarationContentContext> declarations = ctx.useDeclarationContentList().
                 useDeclarationContent();
         if (declarations == null) {
@@ -405,6 +412,15 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                 alias = StringUtils.substringAfterLast(ns, NAMESPACE_SEPARATOR);
             }
             namespaceAliases.put(alias, ns);
+            if (ctx.Const() != null) {
+                Ref useConstRef = support.ref(declaration.namespaceNameList());
+                useConstRef.defKey = new DefKey(null, ns);
+                support.emit(useConstRef);
+            } else if (ctx.Function() != null) {
+                Ref useFunctionRef = support.ref(declaration.namespaceNameList());
+                useFunctionRef.defKey = new DefKey(null, ns);
+                support.emit(useFunctionRef);
+            }
         }
     }
 

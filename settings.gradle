@@ -1,1 +1,1 @@
-include 'toolchain-core', 'toolchain-php'
+include 'toolchain-core', 'toolchain-php', 'toolchain-objc'

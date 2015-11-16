@@ -7,3 +7,6 @@
 [submodule "testdata/case/antlr-php-classes"]
 	path = testdata/case/antlr-php-classes
 	url = https://github.com/sgtest/antlr-php-classes
+[submodule "testdata/case/antlr-php-constants"]
+	path = testdata/case/antlr-php-constants
+	url = https://github.com/sgtest/antlr-php-constants

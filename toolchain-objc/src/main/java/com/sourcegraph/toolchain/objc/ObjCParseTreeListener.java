@@ -1,6 +1,7 @@
 package com.sourcegraph.toolchain.objc;
 
 import com.sourcegraph.toolchain.core.objects.Def;
+import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
 import com.sourcegraph.toolchain.objc.antlr4.ObjCBaseListener;
@@ -10,6 +11,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.util.HashMap;
@@ -190,6 +192,9 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                     }
                 }
                 varDef.defKey = new DefKey(null, defKey);
+                varDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
+                varDef.defData.setKind("variable");
+                // TODO X
                 support.emit(varDef);
                 if (vars != null) {
                     vars.put(varDef.name, typeName);
@@ -244,6 +249,9 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                         }
                     }
                     varDef.defKey = new DefKey(null, defKey);
+                    varDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
+                    varDef.defData.setKind("variable");
+                    // TODO X
                     support.emit(varDef);
                     if (vars != null) {
                         vars.put(varDef.name, typeName);
@@ -360,6 +368,8 @@ class ObjCParseTreeListener extends ObjCBaseListener {
         // interface definition
         Def interfaceDef = support.def(ctx.class_name(), "CLASS");
         interfaceDef.defKey = new DefKey(null, interfaceDef.name);
+        interfaceDef.format("@interface", "@interface", DefData.SEPARATOR_SPACE);
+        interfaceDef.defData.setKind("interface");
         support.emit(interfaceDef);
 
         currentClassName = interfaceDef.name;
@@ -481,6 +491,14 @@ class ObjCParseTreeListener extends ObjCBaseListener {
 
         Def fnDef = support.def(ctx.identifier(), "METHOD");
         fnDef.defKey = new DefKey(null, fnDef.name);
+
+        ObjCParser.Parameter_listContext parameterListContext = ctx.parameter_list();
+
+        fnDef.format(StringUtils.EMPTY,
+                parameterListContext == null ? StringUtils.EMPTY : parameterListContext.getText(),
+                DefData.SEPARATOR_EMPTY);
+        fnDef.defData.setKind("function");
+
         support.emit(fnDef);
         support.functions.add(fnDef.name);
 
@@ -492,7 +510,6 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                     type_specifier().forEach(this::processTypeSpecifier);
         }
 
-        ObjCParser.Parameter_listContext parameterListContext = ctx.parameter_list();
         if (parameterListContext == null) {
             return;
         }
@@ -519,6 +536,11 @@ class ObjCParseTreeListener extends ObjCBaseListener {
             }
             Def argDef = support.def(ident, "VAR");
             argDef.defKey = new DefKey(null, currentDefKey(argDef.name));
+            argDef.format(StringUtils.EMPTY,
+                    typeName,
+                    DefData.SEPARATOR_EMPTY);
+            argDef.defData.setKind("argument");
+
             support.emit(argDef);
             paramsVars.put(argDef.name, typeName);
         }
@@ -537,15 +559,23 @@ class ObjCParseTreeListener extends ObjCBaseListener {
         ObjCParser.Struct_declaratorContext structDeclaratorContext =
                 ctx.struct_declaration().struct_declarator_list().struct_declarator(0);
 
+        String typeName = null;
+        // type refs
+        for (ObjCParser.Type_specifierContext type : ctx.struct_declaration().specifier_qualifier_list().type_specifier()) {
+            String t = processTypeSpecifier(type);
+            if (t != null) {
+                typeName = t;
+            }
+        }
+
         // property def
         Def propertyDef = support.def(structDeclaratorContext.declarator().direct_declarator(), "VAR");
         // adding () to distinguish from private members
         propertyDef.defKey = new DefKey(null, currentClassName + '/' + propertyDef.name + "()");
+        propertyDef.format("@property", typeName, DefData.SEPARATOR_SPACE);
+        propertyDef.defData.setName(currentClassName + "::" + propertyDef.name);
+        propertyDef.defData.setKind("property");
         support.emit(propertyDef);
-
-        // type refs
-        ctx.struct_declaration().
-                specifier_qualifier_list().type_specifier().forEach(this::processTypeSpecifier);
     }
 
     @Override
@@ -654,6 +684,8 @@ class ObjCParseTreeListener extends ObjCBaseListener {
             Def typeDef = support.def(ctx.identifier(), "ENUM");
             // TODO (alexsaveliev): encapsulate enums
             typeDef.defKey = new DefKey(null, typeDef.name);
+            typeDef.format("enum", "enum", DefData.SEPARATOR_SPACE);
+            typeDef.defData.setKind("enum");
             support.emit(typeDef);
             typeName = typeDef.name;
         } else {
@@ -691,6 +723,8 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                 }
             }
             enumeratorDef.defKey = new DefKey(null, defKey);
+            enumeratorDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
+            enumeratorDef.defData.setKind("enumerator");
             support.emit(enumeratorDef);
             if (vars != null) {
                 vars.put(enumeratorDef.name, typeName);
@@ -707,8 +741,10 @@ class ObjCParseTreeListener extends ObjCBaseListener {
         for (ObjCParser.Type_specifierContext typeSpecifierContext : ctx.declaration_specifiers().type_specifier()) {
             String type = processTypeSpecifier(typeSpecifierContext);
             if (type != null) {
+                varDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
+                varDef.defData.setKind("variable");
+                // TODO (alexsaveliev) : add heuristic
                 if (currentMethodName != null) {
-                    // TODO  (alexsaveliev)
                     Var var = new Var(varDef.name, type);
                     localVars.peek().put(varDef.name, var);
                     varDef.defKey = new DefKey(null, var.defKey);
@@ -717,6 +753,8 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                         // class
                         varDef.defKey = new DefKey(null, currentClassName + '/' + varDef.name);
                         support.instanceVars.get(currentClassName).put(varDef.name, type);
+                        varDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
+                        varDef.defData.setName(currentClassName + "::" + varDef.name);
                     } else {
                         // global
                         varDef.defKey = new DefKey(null, varDef.name);
@@ -757,6 +795,8 @@ class ObjCParseTreeListener extends ObjCBaseListener {
             Var var = new Var(varDef.name, typeName);
             localVars.peek().put(varDef.name, var);
             varDef.defKey = new DefKey(null, var.defKey);
+            varDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
+            varDef.defData.setKind("variable");
             support.emit(varDef);
         }
     }
@@ -825,7 +865,8 @@ class ObjCParseTreeListener extends ObjCBaseListener {
     }
 
     protected void processMethodDeclaration(String className,
-                                            ObjCParser.Method_declarationContext ctx) {
+                                            ObjCParser.Method_declarationContext ctx,
+                                            boolean isClassMethod) {
         Def methodDef;
         ObjCParser.Method_selectorContext methodSelectorContext = ctx.method_selector();
         ObjCParser.SelectorContext selectorContext = methodSelectorContext.selector();
@@ -835,35 +876,43 @@ class ObjCParseTreeListener extends ObjCBaseListener {
             methodDef = support.def(methodSelectorContext.keyword_declarator().get(0).selector(), "METHOD");
         }
 
-        String key = className + '/' + getFuncName(methodSelectorContext);
-        support.functions.add(key);
-        methodDef.defKey = new DefKey(null, key);
-        support.emit(methodDef);
-
         Ref typeRef = support.ref(ctx.method_type().type_name());
         typeRef.defKey = new DefKey(null, ctx.method_type().type_name().getText());
         support.emit(typeRef);
+
+        String key = className + '/' + getFuncName(methodSelectorContext);
+        support.functions.add(key);
+        methodDef.defKey = new DefKey(null, key);
+        methodDef.format(StringUtils.EMPTY, ctx.method_type().type_name().getText(), DefData.SEPARATOR_SPACE);
+        methodDef.defData.setName((isClassMethod ? "+ " : "- ") + className + "::" + getFuncName(methodSelectorContext));
+        methodDef.defData.setKind("method");
+        support.emit(methodDef);
+
 
         if (selectorContext == null) {
             // args
             boolean first = true;
             for (ObjCParser.Keyword_declaratorContext declaratorCtx : methodSelectorContext.keyword_declarator()) {
                 ObjCParser.SelectorContext sContext = declaratorCtx.selector();
+                List<ObjCParser.Method_typeContext> methodTypeContexts = declaratorCtx.method_type();
+                String typeName = null;
+                if (methodTypeContexts != null) {
+                    for (ObjCParser.Method_typeContext methodTypeContext : methodTypeContexts) {
+                        ObjCParser.Type_nameContext typeNameContext = methodTypeContext.type_name();
+                        Ref argTypeRef = support.ref(typeNameContext);
+                        typeName = typeNameContext.getText();
+                        argTypeRef.defKey = new DefKey(null, typeName);
+                        support.emit(argTypeRef);
+                    }
+                }
                 if (sContext != null && sContext.IDENTIFIER() != null && !first) {
                     Def argDef = support.def(sContext, "VAR");
                     // using /@ to distinguish parameter name from parameter prefix
                     // in the following cases: "reuseIdentifier:(NSString *)reuseIdentifier"
                     argDef.defKey = new DefKey(null, key + "/@" + sContext.IDENTIFIER().getText());
+                    argDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
+                    argDef.defData.setKind("argument");
                     support.emit(argDef);
-                }
-                List<ObjCParser.Method_typeContext> methodTypeContexts = declaratorCtx.method_type();
-                if (methodTypeContexts != null) {
-                    for (ObjCParser.Method_typeContext methodTypeContext : methodTypeContexts) {
-                        ObjCParser.Type_nameContext typeNameContext = methodTypeContext.type_name();
-                        Ref argTypeRef = support.ref(typeNameContext);
-                        argTypeRef.defKey = new DefKey(null, typeNameContext.getText());
-                        support.emit(argTypeRef);
-                    }
                 }
                 first = false;
             }
@@ -947,6 +996,8 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                     paramsVars.put(keywordDeclaratorContext.getStop().getText(), argTypeName);
                     Def argDef = support.def(keywordDeclaratorContext.getStop(), "VAR");
                     argDef.defKey = new DefKey(null, defKey + '/' + keywordDeclaratorContext.getStop().getText());
+                    argDef.format(StringUtils.EMPTY, argTypeName, DefData.SEPARATOR_SPACE);
+                    argDef.defData.setKind("argument");
                     support.emit(argDef);
                 }
             } else {
@@ -1039,6 +1090,9 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                         struct_declarator_list().struct_declarator()) {
                     Def propertyDef = support.def(structDeclaratorContext.declarator().direct_declarator(), "VAR");
                     propertyDef.defKey = new DefKey(null, currentClassName + '/' + propertyDef.name);
+                    propertyDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
+                    propertyDef.defData.setName(currentClassName + "::" + propertyDef.name);
+                    propertyDef.defData.setKind("variable");
                     support.emit(propertyDef);
                     currentClassVars.put(propertyDef.name, typeName);
                 }
@@ -1069,14 +1123,18 @@ class ObjCParseTreeListener extends ObjCBaseListener {
                     interfaceDeclarationListContext.class_method_declaration();
             if (classMethodDeclarationContexts != null) {
                 for (ObjCParser.Class_method_declarationContext classMethodDeclarationContext : classMethodDeclarationContexts) {
-                    processMethodDeclaration(currentClassName, classMethodDeclarationContext.method_declaration());
+                    processMethodDeclaration(currentClassName,
+                            classMethodDeclarationContext.method_declaration(),
+                            true);
                 }
             }
             List<ObjCParser.Instance_method_declarationContext> instanceMethodDeclarationContexts =
                     interfaceDeclarationListContext.instance_method_declaration();
             if (instanceMethodDeclarationContexts != null) {
                 for (ObjCParser.Instance_method_declarationContext instanceMethodDeclarationContext : instanceMethodDeclarationContexts) {
-                    processMethodDeclaration(currentClassName, instanceMethodDeclarationContext.method_declaration());
+                    processMethodDeclaration(currentClassName,
+                            instanceMethodDeclarationContext.method_declaration(),
+                            false);
                 }
             }
         }

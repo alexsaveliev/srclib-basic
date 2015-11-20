@@ -108,11 +108,6 @@ public class Ref {
         public JsonElement serialize(Ref ref, Type arg1, JsonSerializationContext arg2) {
             JsonObject object = new JsonObject();
 
-            if (ref.defKey.getOrigin() != null) {
-                // Add for easier debugging.
-                object.addProperty("_JavaOrigin", ref.defKey.getOrigin().toString());
-            }
-
             if (ref.defRepo != null) object.add("DefRepo", new JsonPrimitive(ref.defRepo));
             if (ref.defUnitType != null) object.add("DefUnitType", new JsonPrimitive(ref.defUnitType));
             if (ref.defUnit != null) object.add("DefUnit", new JsonPrimitive(ref.defUnit));

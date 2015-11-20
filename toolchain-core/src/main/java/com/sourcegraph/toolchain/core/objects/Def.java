@@ -64,6 +64,27 @@ public class Def {
      */
     public boolean test;
 
+    /**
+     *
+     */
+    public DefData defData = new DefData();
+
+    /**
+     * Adds basic formatting data (keyword and type)
+     */
+    public void format(String keyword, String typeExpression) {
+        defData.setKeyword(keyword);
+        defData.setType(typeExpression);
+    }
+
+    /**
+     * Adds basic formatting data (keyword, type, and name and type separator)
+     */
+    public void format(String keyword, String typeExpression, String nameAndTypeSeparator) {
+        format(keyword, typeExpression);
+        defData.setNameAndTypeSeparator(nameAndTypeSeparator);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -112,6 +133,8 @@ public class Def {
 
             object.add("Path", new JsonPrimitive(sym.defKey.formatPath()));
             object.add("TreePath", new JsonPrimitive(sym.defKey.formatTreePath()));
+
+            object.add("Data", arg2.serialize(sym.defData));
 
             return object;
         }

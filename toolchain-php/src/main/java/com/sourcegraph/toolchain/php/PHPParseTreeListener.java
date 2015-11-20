@@ -1,6 +1,7 @@
 package com.sourcegraph.toolchain.php;
 
 import com.sourcegraph.toolchain.core.objects.Def;
+import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
 import com.sourcegraph.toolchain.php.antlr4.PHPParser;
@@ -20,7 +21,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     private static final Pattern INCLUDE_EXPRESSION = Pattern.compile("\\s*\\(?\\s*['\"]([^'\"]+)['\"]\\s*\\)?");
     private static final Pattern CONSTANT_NAME_EXPRESSION = Pattern.compile("['\"]([a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*)['\"]");
 
-    private static final String NAMESPACE_SEPARATOR = ":";
+    private static final String NAMESPACE_SEPARATOR = ";";
+    private static final char CLASS_NAME_SEPARATOR = '!';
+
     private static final String GLOBAL_NAMESPACE = StringUtils.EMPTY;
 
     private static final String MAYBE_METHOD = "(?M)";
@@ -101,6 +104,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         Def fnDef = def(ctx.identifier(), DefKind.FUNCTION);
         String fqn = fqn(fnDef.name);
         fnDef.defKey = new DefKey(null, fqn);
+        fnDef.format("function", "(" + ctx.formalParameterList().getText() + ")", DefData.SEPARATOR_EMPTY);
+        fnDef.defData.setName(globalLevelLabel(fnDef.name));
+        fnDef.defData.setKind("function");
         support.emit(fnDef);
 
         support.functions.add(fqn);
@@ -137,6 +143,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                     Def constantDef = def(constant, DefKind.CONSTANT);
                     constantDef.name = constantName;
                     constantDef.defKey = new DefKey(null, fqn(constantName));
+                    constantDef.format("define", "const", DefData.SEPARATOR_SPACE);
+                    constantDef.defData.setKind("constant");
                     support.emit(constantDef);
                 }
             }
@@ -184,6 +192,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         if (interfaceNode != null) {
             Def interfaceDef = def(ctx.identifier(), DefKind.INTERFACE);
             interfaceDef.defKey = new DefKey(null, fqn(interfaceDef.name));
+            interfaceDef.format("interface", "interface", DefData.SEPARATOR_SPACE);
+            interfaceDef.defData.setKind("interface");
+            interfaceDef.defData.setName(globalLevelLabel(interfaceDef.name));
             support.emit(interfaceDef);
 
             PHPParser.InterfaceListContext interfaces = ctx.interfaceList();
@@ -210,9 +221,22 @@ class PHPParseTreeListener extends PHPParserBaseListener {
 
         } else {
             PHPParser.ClassEntryTypeContext classEntryTypeContext = ctx.classEntryType();
-            Def classOrTraitDef = def(ctx.identifier(),
-                    classEntryTypeContext.Trait() != null ? DefKind.TRAIT : DefKind.CLASS);
+            String kind;
+            String keyword;
+
+            if (classEntryTypeContext.Trait() != null) {
+                kind = DefKind.TRAIT;
+                keyword = "trait";
+            } else {
+                kind = DefKind.CLASS;
+                keyword = "class";
+            }
+
+            Def classOrTraitDef = def(ctx.identifier(), kind);
             classOrTraitDef.defKey = new DefKey(null, fqn(classOrTraitDef.name));
+            classOrTraitDef.format(keyword, keyword, DefData.SEPARATOR_SPACE);
+            classOrTraitDef.defData.setName(globalLevelLabel(classOrTraitDef.name));
+            classOrTraitDef.defData.setKind(keyword);
             support.emit(classOrTraitDef);
 
             PHPParser.QualifiedStaticTypeRefContext extendsCtx = ctx.qualifiedStaticTypeRef();
@@ -267,6 +291,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             PHPParser.IdentifierContext ident = constant.identifier();
             Def constantDef = def(ident, DefKind.CONSTANT);
             constantDef.defKey = new DefKey(null, fqn(constantDef.name));
+            constantDef.format("const", "const", DefData.SEPARATOR_SPACE);
+            constantDef.defData.setName(globalLevelLabel(constantDef.name));
+            constantDef.defData.setKind("constant");
             support.emit(constantDef);
         }
     }
@@ -312,6 +339,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         if (label != null) {
             Def labelDef = def(label, DefKind.LABEL);
             labelDef.defKey = new DefKey(null, labelDef.name + getBlockNameSuffix() + getFileSuffix());
+            labelDef.format("label", "label", DefData.SEPARATOR_SPACE);
+            labelDef.defData.setKind("label");
             support.emit(labelDef);
         }
     }
@@ -367,7 +396,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
         if (defining != null) {
             Ref constructorRef = support.ref(typeCtx);
-            constructorRef.defKey = new DefKey(null, defining + '/' + method + "()");
+            constructorRef.defKey = new DefKey(null, defining + CLASS_NAME_SEPARATOR + method + "()");
             support.emit(constructorRef);
         }
     }
@@ -437,7 +466,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                 support.emit(classRef);
                 ParserRuleContext varCtx = ctx.keyedVariable(0);
                 Ref staticClassPropertyRef = support.ref(varCtx);
-                staticClassPropertyRef.defKey = new DefKey(null, typeName + '/' + varCtx.getText());
+                staticClassPropertyRef.defKey = new DefKey(null, typeName + CLASS_NAME_SEPARATOR + varCtx.getText());
                 support.emit(staticClassPropertyRef);
             }
             return;
@@ -490,7 +519,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             }
             ref.defKey = new DefKey(null, prefix + propertyName);
         } else {
-            String path = varType + '/' + propertyName;
+            String path = varType + CLASS_NAME_SEPARATOR + propertyName;
             if (isMethodCall) {
                 path += "()";
             }
@@ -510,7 +539,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String path = null;
         if ("$this".equals(varName)) {
             local = true;
-            path = currentClassInfo.className + "/$this";
+            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
         } else {
             if (functionArguments.containsKey(varName)) {
                 local = true;
@@ -531,6 +560,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                 local = false;
             }
             varDef.defKey = new DefKey(null, fqn(getBlockNamePrefix()) + varName);
+            varDef.format(StringUtils.EMPTY, "mixed", DefData.SEPARATOR_SPACE);
+            varDef.defData.setKind("variable");
             support.emit(varDef);
             localVars.put(varName, local);
         } else {
@@ -576,6 +607,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             propertyDef.local = false;
             propertyDef.exported = true;
             propertyDef.defKey = new DefKey(null, fqn(getBlockNamePrefix() + propertyDef.name));
+            propertyDef.format(StringUtils.EMPTY, "mixed", DefData.SEPARATOR_SPACE);
+            propertyDef.defData.setName(classLevelLabel(propertyDef.name));
+            propertyDef.defData.setKind("property");
             support.emit(propertyDef);
             support.resolutions.put(MAYBE_PROPERTY + propertyDef.name, propertyDef);
         }
@@ -587,6 +621,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         for (PHPParser.IdentifierInititalizerContext constant : constants) {
             Def classConstantDef = def(constant.identifier(), DefKind.CONSTANT);
             classConstantDef.defKey = new DefKey(null, fqn(getBlockNamePrefix() + classConstantDef.name));
+            classConstantDef.format("const", "const", DefData.SEPARATOR_SPACE);
+            classConstantDef.defData.setKind("constant");
+            classConstantDef.defData.setName(classLevelLabel(classConstantDef.name));
             support.emit(classConstantDef);
             support.resolutions.put(MAYBE_CONSTANT + classConstantDef.name, classConstantDef);
             currentClassInfo.definesConstants.add(classConstantDef.name);
@@ -602,22 +639,26 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String className = blockStack.peek();
         ParserRuleContext methodCtx = ctx.identifier();
         String methodName = methodCtx.getText();
-        blockStack.push(methodName);
 
         String definingClass = this.support.getDefiningClass(fqn(className), methodName);
         if (definingClass == null) {
             currentClassInfo.definesMethods.add(methodName);
             Def classMethodDef = def(methodCtx, DefKind.METHOD);
             // adding () to distinguish properties from methods
-            classMethodDef.defKey = new DefKey(null, fqn(className + '/' + methodName + "()"));
+            classMethodDef.defKey = new DefKey(null, fqn(className + CLASS_NAME_SEPARATOR + methodName + "()"));
             support.emit(classMethodDef);
+            classMethodDef.format("function", "(" + ctx.formalParameterList().getText() + ")", DefData.SEPARATOR_EMPTY);
+            classMethodDef.defData.setName(classLevelLabel(classMethodDef.name));
+            classMethodDef.defData.setKind("method");
             support.resolutions.put(MAYBE_METHOD + methodName, classMethodDef);
         } else {
             Ref classMethodRef = support.ref(methodCtx);
             // adding () to distinguish properties from methods
-            classMethodRef.defKey = new DefKey(null, resolveFqn(definingClass) + '/' + methodName + "()");
+            classMethodRef.defKey = new DefKey(null, resolveFqn(definingClass) + CLASS_NAME_SEPARATOR + methodName + "()");
             support.emit(classMethodRef);
         }
+
+        blockStack.push(methodName);
 
         // TODO (alexsaveliev): what is ctx.typeParameterListInBrackets()?
         List<PHPParser.FormalParameterContext> fnParams = ctx.formalParameterList().formalParameter();
@@ -660,6 +701,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             }
             Def fnArgDef = def(fnParam.variableInitializer().VarName().getSymbol(), DefKind.ARGUMENT);
             fnArgDef.defKey = new DefKey(null, fqn(getBlockNamePrefix() + fnArgDef.name));
+            fnArgDef.format(StringUtils.EMPTY, typeName == null ? "mixed" : typeName, DefData.SEPARATOR_SPACE);
+            fnArgDef.defData.setKind("argument");
             support.emit(fnArgDef);
             functionArguments.put(fnArgDef.name, typeName);
         }
@@ -717,14 +760,14 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             String methodClass = this.support.getDefiningClass(rootClassName, parts[1]);
             if (methodClass != null) {
                 Ref classMethodRef = support.ref(ctx.identifier());
-                classMethodRef.defKey = new DefKey(null, methodClass + '/' + parts[1] + "()");
+                classMethodRef.defKey = new DefKey(null, methodClass + CLASS_NAME_SEPARATOR + parts[1] + "()");
                 support.emit(classMethodRef);
             }
         } else {
             String constantClass = this.support.getConstantClass(rootClassName, parts[1]);
             if (constantClass != null) {
                 Ref classConstRef = support.ref(ctx.identifier());
-                classConstRef.defKey = new DefKey(null, constantClass + '/' + parts[1]);
+                classConstRef.defKey = new DefKey(null, constantClass + CLASS_NAME_SEPARATOR + parts[1]);
                 support.emit(classConstRef);
             }
         }
@@ -749,7 +792,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     private String getBlockNamePrefix() {
         StringBuilder ret = new StringBuilder();
         for (String blockName : blockStack) {
-            ret.append(blockName).append('/');
+            ret.append(blockName).append(CLASS_NAME_SEPARATOR);
         }
         return ret.toString();
     }
@@ -822,4 +865,34 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     private void resolveClass(String fullyQualifiedClassName) {
         support.resolveClass(fullyQualifiedClassName.replace(NAMESPACE_SEPARATOR, "\\"));
     }
+
+    /**
+     * Formats name defined on global level (possibly with namespace). Used to format functions, global constants
+     * @param name name to format
+     * @return name optionally prefixed by namespace (if namespace is not empty)
+     */
+    private String globalLevelLabel(String name) {
+        String ns = namespace.peek();
+        if (ns.isEmpty()) {
+            return name;
+        }
+        return ns.replace(NAMESPACE_SEPARATOR, "\\") + '\\' + name;
+    }
+
+    /**
+     * Formats name defined on clas level. Used to format class members, properties, and constants
+     * @param name name to format
+     * @return label in form [\NS\]CLASSNAME:NAME
+     */
+    private String classLevelLabel(String name) {
+        String ns = namespace.peek();
+        if (!ns.isEmpty()) {
+            ns = ns.replace(NAMESPACE_SEPARATOR, "\\") + '\\';
+        }
+        String block = getBlockNamePrefix();
+        // removing trailing CLASS_NAME_SEPARATOR
+        block = block.substring(0, block.length() - 1);
+        return ns + block + "::" + name;
+    }
+
 }

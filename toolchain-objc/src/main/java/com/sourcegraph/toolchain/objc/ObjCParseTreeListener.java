@@ -807,6 +807,43 @@ class ObjCParseTreeListener extends ObjCBaseListener {
     }
 
     @Override
+    public void enterFor_in_statement(ObjCParser.For_in_statementContext ctx) {
+        localVars.push(new HashMap<>());
+
+        ObjCParser.Declaration_specifiersContext declarationSpecifiersContext = ctx.
+                for_in_type_variable_declarator().declaration_specifiers();
+        if (declarationSpecifiersContext == null) {
+            return;
+        }
+
+        String typeName = null;
+        for (ObjCParser.Type_specifierContext typeSpecifierContext : declarationSpecifiersContext.type_specifier()) {
+            String type = processTypeSpecifier(typeSpecifierContext);
+            if (type != null) {
+                typeName = type;
+            }
+        }
+
+        ParserRuleContext ident = ident(ctx.for_in_type_variable_declarator().declarator());
+        if (ident == null) {
+            return;
+        }
+
+        Def varDef = support.def(ident, "VAR");
+        Var var = new Var(varDef.name, typeName);
+        localVars.peek().put(varDef.name, var);
+        varDef.defKey = new DefKey(null, var.defKey);
+        varDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
+        varDef.defData.setKind("variable");
+        support.emit(varDef);
+    }
+
+    @Override
+    public void exitFor_in_statement(ObjCParser.For_in_statementContext ctx) {
+        localVars.pop();
+    }
+
+    @Override
     public void enterCatch_statement(ObjCParser.Catch_statementContext ctx) {
         localVars.push(new HashMap<>());
     }

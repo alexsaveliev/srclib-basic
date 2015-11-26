@@ -43,6 +43,11 @@ public class LanguageImpl extends LanguageBase {
 
     private CompoundClassFileResolver classFileResolver;
 
+    /**
+     * @param rootClassName starting class
+     * @param methodName method name we searching for
+     * @return class name that defines given method or null
+     */
     public String getDefiningClass(String rootClassName, String methodName) {
         ClassInfo info = classes.get(rootClassName);
         if (info == null) {
@@ -74,12 +79,17 @@ public class LanguageImpl extends LanguageBase {
         return null;
     }
 
+    /**
+     * @param rootClassName starting class
+     * @param constant constant name
+     * @return class name that defines given constant or null
+     */
     public String getConstantClass(String rootClassName, String constant) {
         ClassInfo info = classes.get(rootClassName);
         if (info == null) {
             return null;
         }
-        if (info.definesConstants.contains(constant)) {
+        if (info.constants.contains(constant)) {
             return rootClassName;
         }
         for (String interfaceName : info.implementsInterfaces) {
@@ -105,6 +115,41 @@ public class LanguageImpl extends LanguageBase {
         return null;
     }
 
+    /**
+     * @param rootClassName starting class
+     * @param property property name
+     * @return class name that defines given property or null
+     */
+    public String getPropertyClass(String rootClassName, String property) {
+        ClassInfo info = classes.get(rootClassName);
+        if (info == null) {
+            return null;
+        }
+        if (info.properties.contains(property)) {
+            return rootClassName;
+        }
+        for (String interfaceName : info.implementsInterfaces) {
+            String definingClass = getPropertyClass(interfaceName, property);
+            if (definingClass != null) {
+                return definingClass;
+            }
+        }
+
+        for (String className : info.extendsClasses) {
+            String definingClass = getPropertyClass(className, property);
+            if (definingClass != null) {
+                return definingClass;
+            }
+        }
+
+        for (String traitName : info.usesTraits) {
+            String definingClass = getPropertyClass(traitName, property);
+            if (definingClass != null) {
+                return definingClass;
+            }
+        }
+        return null;
+    }
 
     @Override
     public String getName() {

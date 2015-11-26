@@ -21,8 +21,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     private static final Pattern INCLUDE_EXPRESSION = Pattern.compile("\\s*\\(?\\s*['\"]([^'\"]+)['\"]\\s*\\)?");
     private static final Pattern CONSTANT_NAME_EXPRESSION = Pattern.compile("['\"]([a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*)['\"]");
 
-    private static final String NAMESPACE_SEPARATOR = ";";
-    private static final char CLASS_NAME_SEPARATOR = '!';
+    private static final String NAMESPACE_SEPARATOR = ":";
+    private static final char CLASS_NAME_SEPARATOR = '/';
 
     private static final String GLOBAL_NAMESPACE = StringUtils.EMPTY;
 
@@ -460,13 +460,27 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             // Foo:$bar
             String typeName = resolveFqn(classNameCtx.getText());
             resolveClass(typeName);
-            if (support.classes.containsKey(typeName)) {
+
+            ParserRuleContext varCtx = ctx.keyedVariable(0);
+
+            String propertyClass = support.getPropertyClass(typeName, varCtx.getText());
+            if (propertyClass == null) {
+                if (support.classes.containsKey(typeName)) {
+                    Ref classRef = support.ref(classNameCtx);
+                    classRef.defKey = new DefKey(null, typeName);
+                    support.emit(classRef);
+                }
+                // maybe we'll be able to guess def later
+                Ref staticClassPropertyRef = support.ref(varCtx);
+                staticClassPropertyRef.candidate = true;
+                staticClassPropertyRef.defKey = new DefKey(null, MAYBE_PROPERTY + varCtx.getText());
+                support.emit(staticClassPropertyRef);
+            } else {
                 Ref classRef = support.ref(classNameCtx);
                 classRef.defKey = new DefKey(null, typeName);
                 support.emit(classRef);
-                ParserRuleContext varCtx = ctx.keyedVariable(0);
                 Ref staticClassPropertyRef = support.ref(varCtx);
-                staticClassPropertyRef.defKey = new DefKey(null, typeName + CLASS_NAME_SEPARATOR + varCtx.getText());
+                staticClassPropertyRef.defKey = new DefKey(null, propertyClass + CLASS_NAME_SEPARATOR + varCtx.getText());
                 support.emit(staticClassPropertyRef);
             }
             return;
@@ -475,9 +489,39 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         if (vars.size() == 1) {
             // $foo
             processVariable(vars.get(0));
+            return;
         }
         // $foo::$bar
-        // TODO (alexsaveliev) can we support $foo::$bar?
+        String objectVarName = vars.get(0).getText();
+        Boolean local;
+        Map<String, Boolean> localVars = support.vars.peek();
+        String path = null;
+        if ("$this".equals(objectVarName)) {
+            local = true;
+            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
+        } else {
+            if (functionArguments.containsKey(objectVarName)) {
+                local = true;
+            } else {
+                local = localVars.get(objectVarName);
+            }
+        }
+        if (local != null) {
+            Ref objectVarRef = support.ref(vars.get(0));
+            if (path == null) {
+                path = local ? fqn(getBlockNamePrefix()) + objectVarName : NAMESPACE_SEPARATOR + objectVarName;
+            }
+            objectVarRef.defKey = new DefKey(null, path);
+            support.emit(objectVarRef);
+        }
+
+        String propertyVarName = vars.get(1).getText();
+        // TODO (alexsaveliev): we should try to determine object variable type and use it to resolve property
+        Ref propertyVarRef = support.ref(vars.get(1));
+        path = MAYBE_PROPERTY + propertyVarName;
+        propertyVarRef.defKey = new DefKey(null, path);
+        propertyVarRef.candidate = true;
+        support.emit(propertyVarRef);
     }
 
     @Override
@@ -610,6 +654,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             propertyDef.format(StringUtils.EMPTY, "mixed", DefData.SEPARATOR_SPACE);
             propertyDef.defData.setName(classLevelLabel(propertyDef.name));
             propertyDef.defData.setKind("property");
+            currentClassInfo.properties.add(propertyDef.name);
             support.emit(propertyDef);
             support.resolutions.put(MAYBE_PROPERTY + propertyDef.name, propertyDef);
         }
@@ -626,7 +671,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             classConstantDef.defData.setName(classLevelLabel(classConstantDef.name));
             support.emit(classConstantDef);
             support.resolutions.put(MAYBE_CONSTANT + classConstantDef.name, classConstantDef);
-            currentClassInfo.definesConstants.add(classConstantDef.name);
+            currentClassInfo.constants.add(classConstantDef.name);
         }
         blockStack.push(blockName);
     }

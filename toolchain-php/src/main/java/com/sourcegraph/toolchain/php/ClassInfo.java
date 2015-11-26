@@ -14,5 +14,6 @@ class ClassInfo {
     Collection<String> definesMethods = new HashSet<>();
     Collection<String> implementsMethods = new HashSet<>();
 
-    Collection<String> definesConstants = new HashSet<>();
+    Collection<String> constants = new HashSet<>();
+    Collection<String> properties = new HashSet<>();
 }

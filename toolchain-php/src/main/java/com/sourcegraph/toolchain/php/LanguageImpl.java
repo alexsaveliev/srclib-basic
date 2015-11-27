@@ -26,10 +26,9 @@ public class LanguageImpl extends LanguageBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(LanguageImpl.class);
 
     /**
-     * keeps global and function-level variables. At each level holds map
-     * variable name => is_local
+     * keeps global and function-level variables.
      */
-    Stack<Map<String, Boolean>> vars = new Stack<>();
+    Stack<Map<String, VarInfo>> vars = new Stack<>();
 
     Map<String, ClassInfo> classes = new HashMap<>();
     Set<String> functions = new HashSet<>();

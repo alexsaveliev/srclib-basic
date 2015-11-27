@@ -18,52 +18,120 @@ import java.util.regex.Pattern;
 
 class PHPParseTreeListener extends PHPParserBaseListener {
 
+    /**
+     * Pattern being used to resolve include file names
+     */
     private static final Pattern INCLUDE_EXPRESSION = Pattern.compile("\\s*\\(?\\s*['\"]([^'\"]+)['\"]\\s*\\)?");
+
+    /**
+     * Pattern being used to resolve constant names
+     */
     private static final Pattern CONSTANT_NAME_EXPRESSION = Pattern.compile("['\"]([a-zA-Z_\\x7f-\\xff][a-zA-Z0-9_\\x7f-\\xff]*)['\"]");
 
+    /**
+     * Separates FQN: NS1 SEP NS2 SEP ... NSn in path
+     */
     private static final String NAMESPACE_SEPARATOR = ":";
+
+    /**
+     * Separates class name from property/method/constant in path
+     */
     private static final char CLASS_NAME_SEPARATOR = '/';
 
+    /**
+     * Global namespace identifer
+     */
     private static final String GLOBAL_NAMESPACE = StringUtils.EMPTY;
 
+    /**
+     * Indicates that we think there might be a ref to method with a given name
+     */
     private static final String MAYBE_METHOD = "(?M)";
+
+    /**
+     * Indicates that we think there might be a ref to property with a given name
+     */
     private static final String MAYBE_PROPERTY = "(?P)";
+
+    /**
+     * Indicates that we think there might be a ref to constant with a given name
+     */
     private static final String MAYBE_CONSTANT = "(?C)";
 
+    /**
+     * Caller
+     */
     private LanguageImpl support;
 
+    /**
+     * Current class being processed
+     */
     private ClassInfo currentClassInfo;
 
+    /**
+     * Counts blocks (identified by opening/closing brackets). Using it to generate unique suffixes in path,
+     * for example to distinguish two local variables
+     */
     private Stack<Integer> blockCounter = new Stack<>();
+
+    /**
+     * Keeps stack of blocks which may be: namespace, class, function
+     */
     private Stack<String> blockStack = new Stack<>();
 
+    /**
+     * Current function arguments (name => type)
+     */
     private Map<String, String> functionArguments = new HashMap<>();
 
+    /**
+     * Keeps stack of namespaces, updated upon "namespace N {}" or "namespace N;"
+     */
     private Stack<String> namespace = new Stack<>();
 
+    /**
+     * Maps aliases to namespaces. Updated by "use X [as Y]" statements
+     */
     private Map<String, String> namespaceAliases = new HashMap<>();
 
     public PHPParseTreeListener(LanguageImpl support) {
         this.support = support;
-
+        // initializing variables with an empty map
         support.vars.push(new HashMap<>());
-
+        // initializing block counter
         blockCounter.push(0);
+        // current namespace is the global one
         namespace.push(GLOBAL_NAMESPACE);
     }
 
+    /**
+     * Initializes and emits definition
+     * @param ctx
+     * @param kind
+     * @return
+     */
     protected Def def(ParserRuleContext ctx, String kind) {
         Def def = support.def(ctx, kind);
         initDef(def);
         return def;
     }
 
+    /**
+     * Initializes and emits definition
+     * @param token
+     * @param kind
+     * @return
+     */
     protected Def def(Token token, String kind) {
         Def def = support.def(token, kind);
         initDef(def);
         return def;
     }
 
+    /**
+     * Initializes definition by adding local and test attributes
+     * @param def
+     */
     protected void initDef(Def def) {
         def.test = false; // not in PHP
         def.exported =
@@ -76,19 +144,25 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         def.local = !def.exported;
     }
 
+    /**
+     * Handles { ... } statements. Updates block counters
+     */
     @Override
     public void enterBlockStatement(PHPParser.BlockStatementContext ctx) {
         blockCounter.push(blockCounter.pop() + 1);
         blockCounter.push(0);
     }
 
+    /**
+     * Handles { ... } statements. Updates block counters
+     */
     @Override
     public void exitBlockStatement(PHPParser.BlockStatementContext ctx) {
         blockCounter.pop();
     }
 
     /**
-     * Processing include../require.. statements, trying to process include files
+     * Handles include../require.. statements, trying to process include files
      */
     @Override
     public void enterPreprocessorExpression(PHPParser.PreprocessorExpressionContext ctx) {
@@ -98,9 +172,13 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles function foo() { ... } statements.
+     */
     @Override
     public void enterFunctionDeclaration(PHPParser.FunctionDeclarationContext ctx) {
 
+        // Emitting function definition
         Def fnDef = def(ctx.identifier(), DefKind.FUNCTION);
         String fqn = fqn(fnDef.name);
         fnDef.defKey = new DefKey(null, fqn);
@@ -110,23 +188,33 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         support.emit(fnDef);
 
         support.functions.add(fqn);
+        // Updating local variables, function resets them
         support.vars.push(new HashMap<>());
+        // Updating block stack
         blockStack.push(fnDef.name);
-
-        // TODO (alexsaveliev): what is ctx.typeParameterListInBrackets()?
+        // Processing function arguments
         processFunctionParameters(ctx.formalParameterList().formalParameter());
     }
 
+    /**
+     * Handles function foo() { ... } statements.
+     */
     @Override
     public void exitFunctionDeclaration(PHPParser.FunctionDeclarationContext ctx) {
+        // clearing arguments and local vars, updating block stack
         support.vars.pop();
         blockStack.pop();
 
         functionArguments.clear();
     }
 
+    /**
+     * Handles foo(...) statements.
+     */
     @Override
     public void enterFunctionCall(PHPParser.FunctionCallContext ctx) {
+
+        // Ref to function
         PHPParser.FunctionCallNameContext fnCallNameCtx = ctx.functionCallName();
         PHPParser.QualifiedNamespaceNameContext qNameCtx = fnCallNameCtx.qualifiedNamespaceName();
         if (qNameCtx != null) {
@@ -134,6 +222,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             fnRef.defKey = new DefKey(null, resolveFunctionFqn(qNameCtx.getText()));
             support.emit(fnRef);
         }
+        // Special processing of define("A", "B") - emits A constant definition if possible
         if ("define".equals(fnCallNameCtx.getText())) {
             // constant definition
             PHPParser.ActualArgumentContext constant = ctx.actualArguments().arguments().actualArgument(0);
@@ -156,13 +245,18 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles global foo; statements.
+     */
     @Override
     public void enterGlobalStatement(PHPParser.GlobalStatementContext ctx) {
         if (this.support.vars.size() < 2) {
+            // We do not expect global $foo in the global scope
             return;
         }
         List<PHPParser.GlobalVarContext> vars = ctx.globalVar();
         if (vars == null) {
+            // Just in case
             return;
         }
         for (PHPParser.GlobalVarContext var : vars) {
@@ -170,16 +264,28 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             if (varNameNode != null) {
                 String varName = varNameNode.getText();
                 if (!this.support.vars.firstElement().containsKey(varName)) {
+                    // make sure there is global variable defined
                     continue;
                 }
                 Ref globalVarRef = support.ref(varNameNode.getSymbol());
                 globalVarRef.defKey = new DefKey(null, GLOBAL_NAMESPACE + varName);
                 support.emit(globalVarRef);
-                this.support.vars.peek().put(varName, false);
+                // Pushing variable info into current map, trying to preserve type if known
+                VarInfo globalInfo = this.support.vars.get(0).get(varName);
+                VarInfo localInfo;
+                if (globalInfo == null) {
+                    localInfo = new VarInfo(null, false);
+                } else {
+                    localInfo = new VarInfo(globalInfo.type, false);
+                }
+                this.support.vars.peek().put(varName, localInfo);
             }
         }
     }
 
+    /**
+     * Handles class Foo, interface Foo, and trait Foo statements.
+     */
     @Override
     public void enterClassDeclaration(PHPParser.ClassDeclarationContext ctx) {
         TerminalNode interfaceNode = ctx.Interface();
@@ -281,6 +387,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         blockStack.pop();
     }
 
+    /**
+     * Handles const foo = bar; statements.
+     */
     @Override
     public void enterGlobalConstantDeclaration(PHPParser.GlobalConstantDeclarationContext ctx) {
         List<PHPParser.IdentifierInititalizerContext> constants = ctx.identifierInititalizer();
@@ -298,6 +407,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles function FUNCTION(), const CONSTANT, use TRAIT, and [var] $PROPERTY statements inside class
+     */
     @Override
     public void enterClassStatement(PHPParser.ClassStatementContext ctx) {
 
@@ -333,6 +445,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         blockStack.pop();
     }
 
+    /**
+     * Handles labels
+     */
     @Override
     public void enterNonEmptyStatement(PHPParser.NonEmptyStatementContext ctx) {
         PHPParser.IdentifierContext label = ctx.identifier();
@@ -345,6 +460,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Probably the most important statement in the world
+     */
     @Override
     public void enterGotoStatement(PHPParser.GotoStatementContext ctx) {
         PHPParser.IdentifierContext label = ctx.identifier();
@@ -355,6 +473,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles references to CONSTANT
+     */
     @Override
     public void enterConstant(PHPParser.ConstantContext ctx) {
 
@@ -380,6 +501,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles new Foo() statements
+     */
     @Override
     public void enterNewexpr(PHPParser.NewexprContext ctx) {
         ParserRuleContext typeCtx = ctx.typeRef();
@@ -399,8 +523,44 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             constructorRef.defKey = new DefKey(null, defining + CLASS_NAME_SEPARATOR + method + "()");
             support.emit(constructorRef);
         }
+
+        // looking for parent assignment expression to track var => type map
+        ParserRuleContext parent = ctx.getParent();
+        if (parent == null || !(parent instanceof PHPParser.NewExpressionContext)) {
+            return;
+        }
+        parent = parent.getParent();
+        if (parent == null || !(parent instanceof PHPParser.AssignmentExpressionContext)) {
+            return;
+        }
+        PHPParser.AssignmentExpressionContext assignment = (PHPParser.AssignmentExpressionContext) parent;
+        PHPParser.ChainContext chain = assignment.chain(0);
+        if (chain.memberAccess() != null && !chain.memberAccess().isEmpty()) {
+            // we don't supporting $foo->bar = new baz; yet
+            return;
+        }
+        PHPParser.ChainBaseContext chainBase = chain.chainBase();
+        if (chainBase.qualifiedStaticTypeRef() != null) {
+            // we don't supporting foo::$bar = new baz; yet
+            return;
+        }
+        List<PHPParser.KeyedVariableContext> vars = chainBase.keyedVariable();
+        if (vars.size() > 1) {
+            // we don't supporting $foo::$bar = new baz; yet
+            return;
+        }
+        String varName = vars.get(0).getText();
+        VarInfo info = support.vars.peek().get(varName);
+        if (info != null) {
+            // updating type info
+            info.type = className;
+        }
+
     }
 
+    /**
+     * Handles namespace foo; statements.
+     */
     @Override
     public void enterNamespaceDeclaration(PHPParser.NamespaceDeclarationContext ctx) {
         processNamespaceChange(ctx.namespaceNameList());
@@ -423,6 +583,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         processNamespaceChange(ctx.namespaceNameList());
     }
 
+    /**
+     * Handles use foo [as bar]; statements.
+     */
     @Override
     public void enterUseDeclaration(PHPParser.UseDeclarationContext ctx) {
         List<PHPParser.UseDeclarationContentContext> declarations = ctx.useDeclarationContentList().
@@ -453,11 +616,14 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles foo::$bar, $foo, and $foo::$bar
+     */
     @Override
     public void enterChainBase(PHPParser.ChainBaseContext ctx) {
         ParserRuleContext classNameCtx = ctx.qualifiedStaticTypeRef();
         if (classNameCtx != null) {
-            // Foo:$bar
+            // Foo::$bar
             String typeName = resolveFqn(classNameCtx.getText());
             resolveClass(typeName);
 
@@ -493,30 +659,42 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
         // $foo::$bar
         String objectVarName = vars.get(0).getText();
-        Boolean local;
-        Map<String, Boolean> localVars = support.vars.peek();
+        VarInfo info;
+        Map<String, VarInfo> localVars = support.vars.peek();
         String path = null;
         if ("$this".equals(objectVarName)) {
-            local = true;
+            info = new VarInfo(currentClassInfo.className, true);
             path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
         } else {
             if (functionArguments.containsKey(objectVarName)) {
-                local = true;
+                info = new VarInfo(functionArguments.get(objectVarName), true);
             } else {
-                local = localVars.get(objectVarName);
+                info = localVars.get(objectVarName);
             }
         }
-        if (local != null) {
+        if (info != null) {
             Ref objectVarRef = support.ref(vars.get(0));
             if (path == null) {
-                path = local ? fqn(getBlockNamePrefix()) + objectVarName : NAMESPACE_SEPARATOR + objectVarName;
+                path = info.local ? fqn(getBlockNamePrefix()) + objectVarName : NAMESPACE_SEPARATOR + objectVarName;
             }
             objectVarRef.defKey = new DefKey(null, path);
             support.emit(objectVarRef);
         }
 
         String propertyVarName = vars.get(1).getText();
-        // TODO (alexsaveliev): we should try to determine object variable type and use it to resolve property
+        if (info != null) {
+            String type = this.support.getPropertyClass(info.type, propertyVarName);
+            if (type != null) {
+                // we were able to resolve type
+                Ref propertyVarRef = support.ref(vars.get(1));
+                path = type + CLASS_NAME_SEPARATOR + propertyVarName;
+                propertyVarRef.defKey = new DefKey(null, path);
+                support.emit(propertyVarRef);
+                return;
+            }
+        }
+
+        // maybe we'll resolve it later
         Ref propertyVarRef = support.ref(vars.get(1));
         path = MAYBE_PROPERTY + propertyVarName;
         propertyVarRef.defKey = new DefKey(null, path);
@@ -524,6 +702,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         support.emit(propertyVarRef);
     }
 
+    /**
+     * Handles $foo->bar and $foo->bar() statements.
+     */
     @Override
     public void enterMemberAccess(PHPParser.MemberAccessContext ctx) {
         PHPParser.ChainContext parent = (PHPParser.ChainContext) ctx.getParent();
@@ -544,7 +725,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
 
         if (varType == null) {
-            // TODO (alexsaveliev) type hint check in local vars
+            VarInfo info = this.support.vars.peek().get(varName);
+            if (info != null) {
+                varType = info.type;
+            }
         }
         PHPParser.KeyedFieldNameContext keyedFieldNameContext = ctx.keyedFieldName();
         String propertyName = keyedFieldNameContext.getText();
@@ -572,56 +756,68 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         support.emit(ref);
     }
 
+    /**
+     * Handles references to $foo
+     */
     private void processVariable(PHPParser.KeyedVariableContext ctx) {
         TerminalNode varNameNode = ctx.VarName();
         if (varNameNode == null) {
             return;
         }
         String varName = varNameNode.getText();
-        Boolean local;
-        Map<String, Boolean> localVars = support.vars.peek();
+        VarInfo info;
+        Map<String, VarInfo> localVars = support.vars.peek();
         String path = null;
         if ("$this".equals(varName)) {
-            local = true;
+            info = new VarInfo(currentClassInfo.className, true);
             path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
         } else {
             if (functionArguments.containsKey(varName)) {
-                local = true;
+                info = new VarInfo(functionArguments.get(varName), true);
             } else {
-                local = localVars.get(varName);
+                info = localVars.get(varName);
             }
         }
-        if (local == null) {
+        if (info == null) {
             // new variable
             Def varDef = def(varNameNode.getSymbol(), DefKind.VARIABLE);
             if (!blockStack.empty()) {
                 varDef.local = true;
                 varDef.exported = false;
-                local = true;
+                info = new VarInfo(null, true);
             } else {
                 varDef.local = false;
                 varDef.exported = true;
-                local = false;
+                info = new VarInfo(null, false);
             }
             varDef.defKey = new DefKey(null, fqn(getBlockNamePrefix()) + varName);
             varDef.format(StringUtils.EMPTY, "mixed", DefData.SEPARATOR_SPACE);
             varDef.defData.setKind("variable");
             support.emit(varDef);
-            localVars.put(varName, local);
+            localVars.put(varName, info);
         } else {
             Ref varRef = support.ref(varNameNode.getSymbol());
             if (path == null) {
-                path = local ? fqn(getBlockNamePrefix()) + varName : NAMESPACE_SEPARATOR + varName;
+                path = info.local ? fqn(getBlockNamePrefix()) + varName : NAMESPACE_SEPARATOR + varName;
             }
             varRef.defKey = new DefKey(null, path);
             support.emit(varRef);
         }
     }
 
+    /**
+     * Updates current namespace stack
+     * @param ctx
+     */
     private void processNamespaceChange(PHPParser.NamespaceNameListContext ctx) {
         namespace.push(makeNamespaceName(ctx));
     }
 
+    /**
+     * Constructs namespace
+     * @param ctx namespace list
+     * @return namespace string
+     */
     private String makeNamespaceName(PHPParser.NamespaceNameListContext ctx) {
         if (ctx == null) {
             // global namespace
@@ -642,7 +838,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
-
+    /**
+     * Processes class properties
+     * @param variables
+     */
     private void processClassProperties(List<PHPParser.VariableInitializerContext> variables) {
         String blockName = blockStack.pop();
 
@@ -661,6 +860,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         blockStack.push(blockName);
     }
 
+    /**
+     * Processes class constants
+     * @param constants
+     */
     private void processClassConstant(List<PHPParser.IdentifierInititalizerContext> constants) {
         String blockName = blockStack.pop();
         for (PHPParser.IdentifierInititalizerContext constant : constants) {
@@ -676,6 +879,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         blockStack.push(blockName);
     }
 
+    /**
+     * Processes class method
+     */
     private void processClassMethod(PHPParser.ClassStatementContext ctx) {
 
         // does current class defines method? implements it? both?
@@ -705,11 +911,14 @@ class PHPParseTreeListener extends PHPParserBaseListener {
 
         blockStack.push(methodName);
 
-        // TODO (alexsaveliev): what is ctx.typeParameterListInBrackets()?
         List<PHPParser.FormalParameterContext> fnParams = ctx.formalParameterList().formalParameter();
         processFunctionParameters(fnParams);
     }
 
+    /**
+     * Processes "use trait"
+     * @param ctx
+     */
     private void processUseTraits(PHPParser.ClassStatementContext ctx) {
 
         // TODO (alexsaveliev) trait conflicts resolution (insteadof / as)
@@ -727,6 +936,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles function parameters
+     * @param parameters
+     */
     private void processFunctionParameters(List<PHPParser.FormalParameterContext> parameters) {
         if (parameters == null) {
             return;
@@ -753,6 +966,11 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
+    /**
+     * Handles foo::bar statements
+     * @param ctx
+     * @param isCall
+     */
     private void processClassConstantRef(PHPParser.ClassConstantContext ctx, boolean isCall) {
         if (ctx.identifier() == null) {
             return;
@@ -781,6 +999,11 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                 Ref classRef = support.ref(ctx.qualifiedStaticTypeRef());
                 classRef.defKey = new DefKey(null, fqn);
                 support.emit(classRef);
+            } else {
+                VarInfo info = support.vars.peek().get(parts[0]);
+                if (info != null) {
+                    rootClassName = info.type;
+                }
             }
         }
 
@@ -818,14 +1041,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
     }
 
-    private String getBlockSuffix() {
-        StringBuilder ret = new StringBuilder();
-        for (int i = 1; i < blockCounter.size(); i++) {
-            ret.append(':').append(blockCounter.get(i));
-        }
-        return ret.toString();
-    }
-
+    /**
+     * @return suffix constructed from current block stack, for example ":class:function"
+     */
     private String getBlockNameSuffix() {
         StringBuilder ret = new StringBuilder();
         for (String blockName : blockStack) {
@@ -834,6 +1052,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         return ret.toString();
     }
 
+    /**
+     * @return prefix constructed from current block stack, for example "class/"
+     */
     private String getBlockNamePrefix() {
         StringBuilder ret = new StringBuilder();
         for (String blockName : blockStack) {
@@ -842,10 +1063,18 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         return ret.toString();
     }
 
+    /**
+     * @return current file name converted to printable suffix (replaces / with |)
+     */
     private String getFileSuffix() {
         return ":" + support.getCurrentFile().replace('/', '|');
     }
 
+    /**
+     * Extracts include file name
+     * @param expressionText
+     * @return
+     */
     private static String extractIncludeName(String expressionText) {
         Matcher m = INCLUDE_EXPRESSION.matcher(expressionText);
         if (m.matches()) {
@@ -854,6 +1083,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         return null;
     }
 
+    /**
+     * @param expressionText
+     * @return extracted constant name
+     */
     private static String extractConstantName(String expressionText) {
         Matcher m = CONSTANT_NAME_EXPRESSION.matcher(expressionText);
         if (m.matches()) {
@@ -869,10 +1102,18 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         return ctx.qualifiedNamespaceName();
     }
 
+    /**
+     * @param name local name
+     * @return fully qualified name made by combining current namespace with local name
+     */
     private String fqn(String name) {
         return namespace.peek() + NAMESPACE_SEPARATOR + name;
     }
 
+    /**
+     * @param name absolute, relative or local name
+     * @return fully qualified name
+     */
     private String resolveFqn(String name) {
         name = name.replace("\\", NAMESPACE_SEPARATOR);
         if (name.startsWith(NAMESPACE_SEPARATOR)) {
@@ -886,6 +1127,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         return fqn(name);
     }
 
+    /**
+     * @param name absolute, relative or local name
+     * @return fully qualified function name (there are special rules for functions differ from classes and constants)
+     */
     private String resolveFunctionFqn(String name) {
         name = name.replace("\\", NAMESPACE_SEPARATOR);
         String fqn;
@@ -907,6 +1152,11 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         return name;
     }
 
+    /**
+     * When encountered a statement that might be class name, trying to "touch" it by trying to
+     * process file which might define given class (support of PHP autoload)
+     * @param fullyQualifiedClassName fully qualified class name
+     */
     private void resolveClass(String fullyQualifiedClassName) {
         support.resolveClass(fullyQualifiedClassName.replace(NAMESPACE_SEPARATOR, "\\"));
     }

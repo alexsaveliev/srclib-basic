@@ -13,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 class ScanCommand {
 
@@ -55,7 +56,7 @@ class ScanCommand {
         for (SourceUnit unit : units) {
             unit.Dir = PathUtil.relativizeCwd(unit.Dir);
             unit.Repo = repoUri;
-            Collection<String> files = new ArrayList<>();
+            List<String> files = new ArrayList<>();
             for (String file : unit.Files) {
                 Path p = Paths.get(file).toAbsolutePath();
                 if (p.startsWith(PathUtil.CWD)) {
@@ -64,6 +65,7 @@ class ScanCommand {
                     LOGGER.warn("Excluding {} from source files because it located outside of current directory", p);
                 }
             }
+            files.sort(String::compareTo);
             unit.Files = files;
         }
     }

@@ -8,6 +8,13 @@
       "DefStart": 32,
       "DefEnd": 33,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "f1"
+      },
       "TreePath": ":f1"
     },
     {
@@ -18,6 +25,13 @@
       "DefStart": 59,
       "DefEnd": 60,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "f2"
+      },
       "TreePath": ":f2"
     },
     {
@@ -28,6 +42,13 @@
       "DefStart": 291,
       "DefEnd": 292,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\functions\\foo\\bar\\baz\\f3"
+      },
       "TreePath": ":functions:foo:bar:baz:f3"
     },
     {
@@ -38,6 +59,13 @@
       "DefStart": 113,
       "DefEnd": 114,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\functions\\ns1\\f1"
+      },
       "TreePath": ":functions:ns1:f1"
     },
     {
@@ -48,6 +76,13 @@
       "DefStart": 233,
       "DefEnd": 234,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\functions\\ns2\\f2"
+      },
       "TreePath": ":functions:ns2:f2"
     }
   ],

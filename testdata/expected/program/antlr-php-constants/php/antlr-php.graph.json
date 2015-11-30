@@ -8,6 +8,12 @@
       "DefStart": 417,
       "DefEnd": 427,
       "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "define",
+        "Kind": "constant",
+        "Separator": " "
+      },
       "TreePath": ":ACONSTANT"
     },
     {
@@ -18,6 +24,13 @@
       "DefStart": 32,
       "DefEnd": 39,
       "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\x\\y\\a\\CONSTANT"
+      },
       "TreePath": ":x:y:a:CONSTANT"
     },
     {
@@ -28,6 +41,13 @@
       "DefStart": 56,
       "DefEnd": 56,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\x\\y\\a\\f"
+      },
       "TreePath": ":x:y:a:f"
     },
     {
@@ -38,6 +58,13 @@
       "DefStart": 91,
       "DefEnd": 98,
       "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\x\\y\\b\\CONSTANT"
+      },
       "TreePath": ":x:y:b:CONSTANT"
     },
     {
@@ -48,6 +75,13 @@
       "DefStart": 115,
       "DefEnd": 115,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\x\\y\\b\\f"
+      },
       "TreePath": ":x:y:b:f"
     },
     {
@@ -58,6 +92,13 @@
       "DefStart": 150,
       "DefEnd": 157,
       "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\x\\y\\c\\CONSTANT"
+      },
       "TreePath": ":x:y:c:CONSTANT"
     }
   ],

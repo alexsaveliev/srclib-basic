@@ -238,7 +238,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
      */
     private SourceUnit getSourceUnit(File rootDir, String repoUri) throws IOException {
         SourceUnit unit = new SourceUnit();
-        unit.Name = ".";
+        unit.Name = getName();
         unit.Dir = PathUtil.relativizeCwd(rootDir.toPath());
         Collection<File> files = getFileCollector(rootDir, repoUri).collect(rootDir);
         unit.Files = files.stream().map(File::toString).collect(Collectors.toList());

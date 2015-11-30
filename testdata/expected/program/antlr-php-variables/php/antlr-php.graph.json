@@ -8,6 +8,12 @@
       "DefStart": 7,
       "DefEnd": 13,
       "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
       "TreePath": ":$global"
     },
     {
@@ -18,6 +24,13 @@
       "DefStart": 30,
       "DefEnd": 30,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "f"
+      },
       "TreePath": ":f"
     },
     {
@@ -28,6 +41,12 @@
       "DefStart": 121,
       "DefEnd": 122,
       "Local": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
       "TreePath": ":f/$i"
     },
     {
@@ -38,6 +57,12 @@
       "DefStart": 81,
       "DefEnd": 86,
       "Local": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
       "TreePath": ":f/$local"
     },
     {
@@ -48,6 +73,13 @@
       "DefStart": 41,
       "DefEnd": 41,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\foo\\bar\\baz\\h"
+      },
       "TreePath": ":foo:bar:baz:h"
     },
     {
@@ -58,6 +90,12 @@
       "DefStart": 49,
       "DefEnd": 54,
       "Local": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
       "TreePath": ":foo:bar:baz:h/$local"
     },
     {
@@ -68,6 +106,13 @@
       "DefStart": 150,
       "DefEnd": 150,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\foo\\bar\\quz\\h"
+      },
       "TreePath": ":foo:bar:quz:h"
     },
     {
@@ -78,6 +123,12 @@
       "DefStart": 158,
       "DefEnd": 163,
       "Local": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
       "TreePath": ":foo:bar:quz:h/$local"
     },
     {
@@ -88,6 +139,13 @@
       "DefStart": 265,
       "DefEnd": 265,
       "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "g"
+      },
       "TreePath": ":g"
     },
     {
@@ -98,6 +156,12 @@
       "DefStart": 272,
       "DefEnd": 277,
       "Local": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
       "TreePath": ":g/$local"
     }
   ],

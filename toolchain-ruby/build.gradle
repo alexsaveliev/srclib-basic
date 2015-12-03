@@ -1,0 +1,12 @@
+
+dependencies {
+    compile project(':toolchain-core')
+    compile "org.jruby:jruby:9.0.4.0"
+}
+
+jar {
+    def gitRef = "git rev-parse --short HEAD".execute().text.trim()
+    manifest {
+        attributes "Version" : gitRef
+    }
+}

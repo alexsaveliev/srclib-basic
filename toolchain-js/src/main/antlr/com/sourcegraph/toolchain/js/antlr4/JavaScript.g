@@ -24,6 +24,11 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
  * OTHER DEALINGS IN THE SOFTWARE.
  */
+
+/**
+ * Based on https://github.com/antlr/grammars-v4/blob/3430e35aea2c654e362d528d22c63fd3bdcb1220/ecmascript/ECMAScript.g4
+**/
+
 grammar JavaScript;
 
 @parser::members {

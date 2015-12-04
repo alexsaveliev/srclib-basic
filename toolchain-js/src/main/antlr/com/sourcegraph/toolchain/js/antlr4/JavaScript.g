@@ -31,6 +31,10 @@
 
 grammar JavaScript;
 
+@header {
+    package com.sourcegraph.toolchain.js.antlr4;
+}
+
 @parser::members {
   
     /**

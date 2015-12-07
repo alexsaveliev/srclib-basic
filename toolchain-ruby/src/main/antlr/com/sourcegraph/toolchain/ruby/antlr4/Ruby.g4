@@ -103,6 +103,7 @@ primary
 	| primary '::' IDENTIFIER
 	| '::' IDENTIFIER
 	| primary '[' args? ']'
+	| '[]'
 	| '[' (args ','?)? ']'
 	| '{' (args | assocs ','?)? '}'
 	| 'return' ('(' callArgs? ')')?

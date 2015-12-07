@@ -9,11 +9,12 @@ program
 	;
 
 compstmt
-	: stmt (expr)*
+	: stmt (term+ expr)* term?
+	| term?
 	;
 
 stmt
-	: call 'do' ('|' blockVar? '|')? compstmt 'end'
+	: call 'do' ('|' blockVar? '|')? term? compstmt 'end'
 	| 'undef' fname
 	| 'alias' fname fname
 	| stmt 'if' expr
@@ -110,16 +111,16 @@ primary
 	| 'return' ('(' callArgs? ')')?
 	| 'yield' ('(' callArgs? ')')?
 	| 'defined?' '(' arg ')'
-	| 'if' expr 'then'? compstmt ('elsif' expr 'then'? compstmt)* ('else' compstmt)? 'end'
-	| 'unless' expr 'then'? compstmt ('else' compstmt)? 'end'
-	| 'while' expr 'do'? compstmt 'end'
-	| 'until' expr 'do'? compstmt 'end'
-	| 'case' compstmt 'when' whenArgs 'then'? compstmt (whenArgs 'then'? compstmt)* ('else' compstmt)? 'end'
- 	| 'for' blockVar 'in' expr 'do'? compstmt 'end'
-	| 'begin' compstmt ('rescue' args 'do' compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
+	| 'if' expr then compstmt ('elsif' expr then compstmt)* ('else' compstmt)? 'end'
+	| 'unless' expr then compstmt ('else' compstmt)? 'end'
+	| 'while' expr dostmt compstmt 'end'
+	| 'until' expr dostmt compstmt 'end'
+	| 'case' compstmt 'when' whenArgs then compstmt (whenArgs then compstmt)* ('else' compstmt)? 'end'
+ 	| 'for' blockVar 'in' expr dostmt compstmt 'end'
+	| 'begin' compstmt ('rescue' args dostmt compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
 	| 'class' IDENTIFIER ('<' IDENTIFIER)? compstmt 'end'
 	| 'module' IDENTIFIER compstmt 'end'
-	| 'def' fname argDecl compstmt? 'end'
+	| 'def' fname argDecl compstmt 'end'
 	| 'def' singleton ('.' | '::') fname argDecl compstmt 'end'
 	;
 
@@ -174,7 +175,7 @@ args
 
 argDecl
 	: '(' argList ')'
-	| argList
+	| argList term
 	;
 
 argList
@@ -283,9 +284,26 @@ numeric
 // TODO	| '%r' CHAR ANYCHAR* CHAR
 // TODO	;
 
+then
+	: term
+	| 'then'
+	| term 'then'
+	;
+
+dostmt
+	: term
+	| 'do'
+	| term 'do'
+	;
+
+term
+	: ';'
+	| '\n'
+	;
+
 // LEXER
 
-WS  :  [; \r\n\t\u000C] -> skip;
+WS  :  [ \r\t\u000C] -> skip;
 
 IDENTIFIER
 	: [a-zA-Z_][a-zA-Z_0-9]*
@@ -307,20 +325,8 @@ OP_ASGN
 	| '||='
 	;
 
-fragment CHAR
-	: .+?
-	;
-
-fragment ANYCHAR
-	: .+?
-	;
-
 SINGLELINE_COMMENT
     :   '#' ~[\r\n]* -> skip
-    ;
-
-MULTILINE_COMMENT
-    :   '=begin' .+? '=end' -> skip
     ;
 
 StringLiteral
@@ -346,19 +352,19 @@ StringCharactersBT
 
 fragment
 StringCharacterDQ
-	:	~["\\]
+	:	~["\\\n]
 	|	EscapeSequence
 	;
 
 fragment
 StringCharacterSQ
-	:	~['\\]
+	:	~['\\\n]
 	|	EscapeSequence
 	;
 
 fragment
 StringCharacterBT
-	:	~[`\\]
+	:	~[`\\\n]
 	|	EscapeSequence
 	;
 
@@ -514,7 +520,7 @@ FloatingPointLiteral
 
 fragment
 DecimalFloatingPointLiteral
-	:	Digits '.' Digits? ExponentPart?
+	:	Digits '.' Digits ExponentPart?
 	|	'.' Digits ExponentPart?
 	|	Digits ExponentPart
 	|	Digits

@@ -120,8 +120,8 @@ primary
 	| 'begin' compstmt ('rescue' args dostmt compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
 	| 'class' IDENTIFIER ('<' IDENTIFIER)? compstmt 'end'
 	| 'module' IDENTIFIER compstmt 'end'
-	| 'def' fname argDecl compstmt 'end'
-	| 'def' singleton ('.' | '::') fname argDecl compstmt 'end'
+	| 'def' fname '?'? argDecl compstmt 'end'
+	| 'def' singleton ('.' | '::') fname '?'? argDecl compstmt 'end'
 	;
 
 whenArgs:

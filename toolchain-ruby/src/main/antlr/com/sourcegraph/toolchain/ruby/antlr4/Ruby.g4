@@ -4,13 +4,32 @@ grammar Ruby;
     package com.sourcegraph.toolchain.ruby.antlr4;
 }
 
+@lexer::members {
+
+    // A flag indicating if the lexer encountered __END__
+    private boolean end;
+
+    @Override
+    public Token nextToken() {
+
+		if (end) {
+			return emitEOF();
+		}
+        return super.nextToken();
+    }
+
+    private void setEnd() {
+    	this.end = true;
+    }
+
+}
+
 program
 	: compstmt
 	;
 
 compstmt
-	: stmt (term+ expr)* term?
-	| term?
+	: (stmt | term)*
 	;
 
 stmt
@@ -94,7 +113,7 @@ arg
 	| 'defined?' arg
 	| primary
 	| function
-	| function '{' ('|' blockVar? '|')? compstmt '}'
+	| function '{' ('|' blockVar? '|')? term? compstmt '}'
 	;
 
 primary
@@ -306,7 +325,8 @@ term
 WS  :  [ \r\t\u000C] -> skip;
 
 IDENTIFIER
-	: [a-zA-Z_][a-zA-Z_0-9]*
+	: '__END__' { setEnd(); }
+	| [a-zA-Z_][a-zA-Z_0-9]*
 	;
 
 OP_ASGN
@@ -370,7 +390,7 @@ StringCharacterBT
 
 fragment
 EscapeSequence
-	:	'\\' [btnfr"'\\]
+	:	'\\' .
 	|	OctalEscape
     |   UnicodeEscape
 	;
@@ -545,3 +565,4 @@ fragment
 Sign
 	:	[+-]
 	;
+

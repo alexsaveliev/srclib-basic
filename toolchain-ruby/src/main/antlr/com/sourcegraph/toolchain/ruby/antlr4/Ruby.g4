@@ -9,7 +9,7 @@ program
 	;
 
 compstmt
-	: stmt (t expr)* t?
+	: stmt (expr)*
 	;
 
 stmt
@@ -92,6 +92,8 @@ arg
 	| arg '||' arg
 	| 'defined?' arg
 	| primary
+	| function
+	| function '{' ('|' blockVar? '|')? compstmt '}'
 	;
 
 primary
@@ -106,15 +108,13 @@ primary
 	| 'return' ('(' callArgs? ')')?
 	| 'yield' ('(' callArgs? ')')?
 	| 'defined?' '(' arg ')'
-	| function
-	| function '{' ('|' blockVar? '|')? compstmt '}'
-	| 'if' expr then compstmt ('elsif' expr then compstmt)* ('else' compstmt)? 'end'
-	| 'unless' expr then compstmt ('else' compstmt)? 'end'
-	| 'while' expr keywordDo compstmt 'end'
-	| 'until' expr keywordDo compstmt 'end'
-	| 'case' compstmt 'when' whenArgs then compstmt (whenArgs then compstmt)* ('else' compstmt)? 'end'
- 	| 'for' blockVar 'in' expr keywordDo compstmt 'end'
-	| 'begin' compstmt ('rescue' args keywordDo compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
+	| 'if' expr 'then'? compstmt ('elsif' expr 'then'? compstmt)* ('else' compstmt)? 'end'
+	| 'unless' expr 'then' compstmt ('else' compstmt)? 'end'
+	| 'while' expr 'do' compstmt 'end'
+	| 'until' expr 'do' compstmt 'end'
+	| 'case' compstmt 'when' whenArgs 'then' compstmt (whenArgs 'then' compstmt)* ('else' compstmt)? 'end'
+ 	| 'for' blockVar 'in' expr 'do' compstmt 'end'
+	| 'begin' compstmt ('rescue' args 'do' compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
 	| 'class' IDENTIFIER ('<' IDENTIFIER)? compstmt 'end'
 	| 'module' IDENTIFIER compstmt 'end'
 	| 'def' fname argDecl compstmt 'end'
@@ -124,18 +124,6 @@ primary
 whenArgs:
 	args (',' '*' arg)?
 	| '*' arg
-	;
-
-then
-	: t
-	| 'then'
-	| t 'then'
-	;
-
-keywordDo
-	: t
-	| 'do'
-	| t 'do'
 	;
 
 blockVar
@@ -158,6 +146,10 @@ lhs
 	: variable
 	| primary '[' args? ']'
 	| primary '.' IDENTIFIER
+	| function '[' args? ']'
+	| function '{' ('|' blockVar? '|')? compstmt '}' '[' args? ']'
+	| function '.' IDENTIFIER
+	| function '{' ('|' blockVar? '|')? compstmt '}' '.' IDENTIFIER
 	;
 
 mrhs
@@ -180,7 +172,7 @@ args
 
 argDecl
 	: '(' argList ')'
-	| argList t
+	| argList
 	;
 
 argList
@@ -209,7 +201,7 @@ variable
 	;
 
 literal
-	: 'numeric'
+	: numeric
 	| symbol
 	| string
 	| string2
@@ -268,10 +260,13 @@ global
 	;
 
 string
-	: '"' ANYCHAR* '"'
-	| '’' ANYCHAR* '’'
-	| '‘' ANYCHAR* '‘'
+	: StringLiteral
 	;
+
+numeric
+    : IntegerLiteral
+    | FloatingPointLiteral
+    ;
 
 string2
 	: '%' ('Q'|'q'|'x')CHAR ANYCHAR* CHAR
@@ -286,15 +281,9 @@ regexp
 	| '%r' CHAR ANYCHAR* CHAR
 	;
 
-t
-	: ';'
-	| '\n'
-	;
-
 // LEXER
 
-WS	: ' ' { _ttype = Token.SKIP; }
-	;
+WS  :  [; \r\n\t\u000C] -> skip;
 
 IDENTIFIER
 	: [a-zA-Z_][a-zA-Z_0-9]*
@@ -316,10 +305,213 @@ OP_ASGN
 	| '||='
 	;
 
-CHAR
+fragment CHAR
 	: .+?
 	;
 
-ANYCHAR
+fragment ANYCHAR
 	: .+?
+	;
+
+SINGLELINE_COMMENT
+    :   '#' ~[\r\n]* -> skip
+    ;
+
+MULTILINE_COMMENT
+    :   '=begin' .+? '=end' -> skip
+    ;
+
+StringLiteral
+	: '"' StringCharacters? '"'
+	| '`' StringCharacters? '`'
+	| '\'' StringCharacters? '\''
+	;
+
+fragment
+StringCharacters
+	:	StringCharacter+
+	;
+
+fragment
+StringCharacter
+	:	~["\\]
+	|	EscapeSequence
+	;
+
+fragment
+EscapeSequence
+	:	'\\' [btnfr"'\\]
+	|	OctalEscape
+    |   UnicodeEscape
+	;
+
+fragment
+OctalEscape
+	:	'\\' OctalDigit
+	|	'\\' OctalDigit OctalDigit
+	|	'\\' ZeroToThree OctalDigit OctalDigit
+	;
+
+fragment
+ZeroToThree
+	:	[0-3]
+	;
+
+fragment
+UnicodeEscape
+    :   '\\' 'u' HexDigit HexDigit HexDigit HexDigit
+    ;
+
+IntegerLiteral
+	:	DecimalIntegerLiteral
+	|	HexIntegerLiteral
+	|	OctalIntegerLiteral
+	|	BinaryIntegerLiteral
+	;
+
+DecimalIntegerLiteral
+	:	'0'
+	|	NonZeroDigit (Digits? | Underscores Digits)
+	;
+
+HexIntegerLiteral
+	:	'0' [xX] HexDigits
+	;
+
+OctalIntegerLiteral
+    : '0' Underscores? OctalDigits
+	;
+
+fragment
+BinaryIntegerLiteral
+	:	'0' [bB] BinaryDigits
+	;
+
+fragment
+Digits
+	:	Digit (DigitsAndUnderscores? Digit)?
+	;
+
+fragment
+Digit
+	:	'0'
+	|	NonZeroDigit
+	;
+
+fragment
+NonZeroDigit
+	:	[1-9]
+	;
+
+fragment
+DigitsAndUnderscores
+	:	DigitOrUnderscore+
+	;
+
+fragment
+DigitOrUnderscore
+	:	Digit
+	|	'_'
+	;
+
+fragment
+Underscores
+	:	'_'+
+	;
+
+fragment
+HexDigits
+	:	HexDigit (HexDigitsAndUnderscores? HexDigit)?
+	;
+
+fragment
+HexDigit
+	:	[0-9a-fA-F]
+	;
+
+fragment
+HexDigitsAndUnderscores
+	:	HexDigitOrUnderscore+
+	;
+
+fragment
+HexDigitOrUnderscore
+	:	HexDigit
+	|	'_'
+	;
+
+fragment
+OctalDigits
+	:	OctalDigit (OctalDigitsAndUnderscores? OctalDigit)?
+	;
+
+fragment
+OctalDigit
+	:	[0-7]
+	;
+
+fragment
+OctalDigitsAndUnderscores
+	:	OctalDigitOrUnderscore+
+	;
+
+fragment
+OctalDigitOrUnderscore
+	:	OctalDigit
+	|	'_'
+	;
+
+fragment
+BinaryDigits
+	:	BinaryDigit (BinaryDigitsAndUnderscores? BinaryDigit)?
+	;
+
+fragment
+BinaryDigit
+	:	[01]
+	;
+
+fragment
+BinaryDigitsAndUnderscores
+	:	BinaryDigitOrUnderscore+
+	;
+
+fragment
+BinaryDigitOrUnderscore
+	:	BinaryDigit
+	|	'_'
+	;
+
+// Â§3.10.2 Floating-Point Literals
+
+FloatingPointLiteral
+	:	DecimalFloatingPointLiteral
+	;
+
+fragment
+DecimalFloatingPointLiteral
+	:	Digits '.' Digits? ExponentPart?
+	|	'.' Digits ExponentPart?
+	|	Digits ExponentPart
+	|	Digits
+	;
+
+fragment
+ExponentPart
+	:	ExponentIndicator SignedInteger
+	;
+
+fragment
+ExponentIndicator
+	:	[eE]
+	;
+
+fragment
+SignedInteger
+	:	Sign? Digits
+	;
+
+fragment
+Sign
+	:	[+-]
 	;

@@ -109,10 +109,10 @@ primary
 	| 'yield' ('(' callArgs? ')')?
 	| 'defined?' '(' arg ')'
 	| 'if' expr 'then'? compstmt ('elsif' expr 'then'? compstmt)* ('else' compstmt)? 'end'
-	| 'unless' expr 'then' compstmt ('else' compstmt)? 'end'
+	| 'unless' expr 'then'? compstmt ('else' compstmt)? 'end'
 	| 'while' expr 'do'? compstmt 'end'
 	| 'until' expr 'do'? compstmt 'end'
-	| 'case' compstmt 'when' whenArgs 'then' compstmt (whenArgs 'then' compstmt)* ('else' compstmt)? 'end'
+	| 'case' compstmt 'when' whenArgs 'then'? compstmt (whenArgs 'then'? compstmt)* ('else' compstmt)? 'end'
  	| 'for' blockVar 'in' expr 'do'? compstmt 'end'
 	| 'begin' compstmt ('rescue' args 'do' compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
 	| 'class' IDENTIFIER ('<' IDENTIFIER)? compstmt 'end'

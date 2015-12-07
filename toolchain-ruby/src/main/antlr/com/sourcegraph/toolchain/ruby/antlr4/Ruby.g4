@@ -110,10 +110,10 @@ primary
 	| 'defined?' '(' arg ')'
 	| 'if' expr 'then'? compstmt ('elsif' expr 'then'? compstmt)* ('else' compstmt)? 'end'
 	| 'unless' expr 'then' compstmt ('else' compstmt)? 'end'
-	| 'while' expr 'do' compstmt 'end'
-	| 'until' expr 'do' compstmt 'end'
+	| 'while' expr 'do'? compstmt 'end'
+	| 'until' expr 'do'? compstmt 'end'
 	| 'case' compstmt 'when' whenArgs 'then' compstmt (whenArgs 'then' compstmt)* ('else' compstmt)? 'end'
- 	| 'for' blockVar 'in' expr 'do' compstmt 'end'
+ 	| 'for' blockVar 'in' expr 'do'? compstmt 'end'
 	| 'begin' compstmt ('rescue' args 'do' compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
 	| 'class' IDENTIFIER ('<' IDENTIFIER)? compstmt 'end'
 	| 'module' IDENTIFIER compstmt 'end'
@@ -204,9 +204,9 @@ literal
 	: numeric
 	| symbol
 	| string
-	| string2
-	| heredoc
-	| regexp
+// TODO	| string2
+// TODO	| heredoc
+// TODO	| regexp
 	;
 
 symbol
@@ -255,8 +255,8 @@ varname
 
 global
 	: '$' IDENTIFIER
-	| '$' ANYCHAR
-	| '$-' ANYCHAR
+// TODO	| '$' ANYCHAR
+// TODO	| '$-' ANYCHAR
 	;
 
 string
@@ -268,18 +268,18 @@ numeric
     | FloatingPointLiteral
     ;
 
-string2
-	: '%' ('Q'|'q'|'x')CHAR ANYCHAR* CHAR
-	;
+// TODO string2
+// TODO	: '%' ('Q'|'q'|'x')CHAR ANYCHAR* CHAR
+// TODO	;
 
-heredoc
-	: '<<' (IDENTIFIER | string) ANYCHAR* IDENTIFIER
-	;
+// TODO heredoc
+// TODO	: '<<' (IDENTIFIER | string) ANYCHAR* IDENTIFIER
+// TODO	;
 
-regexp
-	: '/' CHAR* '/' ('i'|'o'|'p')?
-	| '%r' CHAR ANYCHAR* CHAR
-	;
+// TODO regexp
+// TODO	: '/' CHAR* '/' ('i'|'o'|'p')?
+// TODO	| '%r' CHAR ANYCHAR* CHAR
+// TODO	;
 
 // LEXER
 

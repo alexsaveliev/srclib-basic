@@ -322,19 +322,41 @@ MULTILINE_COMMENT
     ;
 
 StringLiteral
-	: '"' StringCharacters? '"'
-	| '`' StringCharacters? '`'
-	| '\'' StringCharacters? '\''
+	: '"' StringCharactersDQ ? '"'
+	| '`' StringCharactersBT ? '`'
+	| '\'' StringCharactersSQ ? '\''
 	;
 
 fragment
-StringCharacters
-	:	StringCharacter+
+StringCharactersDQ
+	:	StringCharacterDQ+
 	;
 
 fragment
-StringCharacter
+StringCharactersSQ
+	:	StringCharacterSQ+
+	;
+
+fragment
+StringCharactersBT
+	:	StringCharacterBT+
+	;
+
+fragment
+StringCharacterDQ
 	:	~["\\]
+	|	EscapeSequence
+	;
+
+fragment
+StringCharacterSQ
+	:	~['\\]
+	|	EscapeSequence
+	;
+
+fragment
+StringCharacterBT
+	:	~[`\\]
 	|	EscapeSequence
 	;
 

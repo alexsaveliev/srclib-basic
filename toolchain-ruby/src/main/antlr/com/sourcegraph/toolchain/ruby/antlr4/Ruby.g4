@@ -103,6 +103,7 @@ primary
 	| primary '::' IDENTIFIER
 	| '::' IDENTIFIER
 	| primary '[' args? ']'
+	| primary '.' primary '[' args? ']'
 	| '[]'
 	| '[' (args ','?)? ']'
 	| '{' (args | assocs ','?)? '}'
@@ -118,7 +119,7 @@ primary
 	| 'begin' compstmt ('rescue' args 'do' compstmt)* ('else' compstmt)? ('ensure' compstmt)? 'end'
 	| 'class' IDENTIFIER ('<' IDENTIFIER)? compstmt 'end'
 	| 'module' IDENTIFIER compstmt 'end'
-	| 'def' fname argDecl compstmt 'end'
+	| 'def' fname argDecl compstmt? 'end'
 	| 'def' singleton ('.' | '::') fname argDecl compstmt 'end'
 	;
 

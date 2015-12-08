@@ -241,7 +241,43 @@ statement
  | throwStatement
  | tryStatement
  | debuggerStatement
+ | importStatement
  ;
+
+importStatement
+ : 'import' importClause fromClause ';'
+ | 'import' StringLiteral ';'
+;
+
+
+fromClause
+  : 'from' StringLiteral
+;
+
+importClause
+ : Identifier
+ | nameSpaceImport
+ | namedImports
+ | Identifier ',' nameSpaceImport
+ | Identifier ',' namedImports
+;
+
+nameSpaceImport
+  : '*' 'as' Identifier
+;
+
+namedImports
+  : '{' importsList? '}'
+;
+
+importsList
+  : importSpecifier+
+;
+
+importSpecifier
+  : Identifier
+  | Identifier 'as' Identifier
+;
 
 /// Block :
 ///     { StatementList? }

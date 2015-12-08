@@ -1,12 +1,19 @@
+apply plugin: 'antlr'
 
 dependencies {
     compile project(':toolchain-core')
-    compile "org.jruby:jruby:9.0.4.0"
+   	antlr "org.antlr:antlr4:4.5.1"
 }
 
-jar {
-    def gitRef = "git rev-parse --short HEAD".execute().text.trim()
-    manifest {
-        attributes "Version" : gitRef
+generateGrammarSource {
+    outputDirectory = new File("${project.buildDir}/generated-src/antlr/com/sourcegraph/toolchain/ruby/antlr4")
+    arguments += ["-encoding",  "UTF-8"]
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "${project.buildDir}/generated-src/antlr"
+        }
     }
 }

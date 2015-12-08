@@ -64,18 +64,18 @@ call
 	;
 
 command
-	: commandOrFunctionName callArgs
+	: operation callArgs
+	| primary '.' operation callArgs
+	| function '::' operation callArgs
+	| 'super' callArgs
 	;
 
 function
-	: commandOrFunctionName ('(' callArgs? ')')?
-	;
-
-commandOrFunctionName
-	: operation 
-	| primary '.' operation
-	| primary '::' operation
-	| 'super'
+	: operation ('(' callArgs? ')')?
+	| function '.' operation ('(' callArgs? ')')?
+	| function '::' operation ('(' callArgs? ')')?
+	| 'super' ('(' callArgs? ')')?
+	| primary
 	;
 
 arg
@@ -111,16 +111,14 @@ arg
 	| arg '&&' arg 
 	| arg '||' arg
 	| 'defined?' arg
-	| primary
-	| function
-	| function '{' ('|' blockVar? '|')? term? compstmt '}'
+	| arg '?' arg ':' arg
+	| primaryOrFunction
 	;
 
 primary
 	: '(' compstmt ')'
 	| literal
 	| variable
-	| primary '::' IDENTIFIER
 	| '::' IDENTIFIER
 	| primary '[' args? ']'
 	| primary '.' primary '[' args? ']'
@@ -166,18 +164,19 @@ mlhsItem
 
 lhs
 	: variable
-	| primary '[' args? ']'
-	| primary '.' IDENTIFIER
-	| function '[' args? ']'
-	| function '{' ('|' blockVar? '|')? compstmt '}' '[' args? ']'
-	| function '.' IDENTIFIER
-	| function '{' ('|' blockVar? '|')? compstmt '}' '.' IDENTIFIER
+	| primaryOrFunction '[' args? ']'
+	| primaryOrFunction '.' IDENTIFIER
 	;
 
 mrhs
 	: args (',' '*' arg)?
 	| '*' arg
 	;
+
+primaryOrFunction
+		: primary
+		| function
+		;
 
 callArgs
 	: args
@@ -565,4 +564,3 @@ fragment
 Sign
 	:	[+-]
 	;
-

@@ -225,6 +225,7 @@ sourceElement
 ///     ThrowStatement
 ///     TryStatement
 ///     DebuggerStatement
+///     TODO: remove import, export and lexical from statements
 statement
  : block
  | variableStatement
@@ -243,7 +244,73 @@ statement
  | debuggerStatement
  | importStatement
  | exportStatement
+ | lexicalStatement
  ;
+
+lexicalStatement
+  : 'let' bindingList
+  | 'const' bindingList
+;
+
+bindingList
+  : lexicalBinding
+  | bindingList ',' lexicalBinding
+;
+
+lexicalBinding
+  : Identifier initialiser
+  | bindingPattern initialiser
+;
+
+bindingPattern
+  : objectBindingPattern
+  | arrayBindingPattern
+;
+
+//{ }
+//{ BindingPropertyList [?Yield] }
+//{ BindingPropertyList [?Yield] , }
+
+objectBindingPattern
+  : '{' '}'
+  | '{' bindingPropertyList '}'
+  | '{' bindingPropertyList ',' '}'
+;
+
+bindingPropertyList
+  : bindingProperty
+  | bindingPropertyList ',' bindingProperty
+;
+
+bindingProperty
+  : Identifier initialiser
+  | propertyName ':' bindingElement
+;
+
+bindingElement
+  : Identifier initialiser
+  | bindingPattern initialiser?
+;
+
+//ArrayBindingPattern [Yield] :
+//[ Elision opt BindingRestElement [?Yield]opt ]
+//[ BindingElementList [?Yield] ]
+//[ BindingElementList [?Yield] , Elision opt BindingRestElement [?Yield]opt ]
+
+arrayBindingPattern
+  : '[' elision? bindingRestElement ']'
+  | '[' bindingElementList ']'
+  | '[' bindingElementList ',' elision? bindingRestElement ']'
+;
+
+bindingElementList
+  : elision? bindingElement
+  | bindingElementList ',' elision? bindingElementList
+;
+
+bindingRestElement
+  : '...' Identifier
+;
 
 importStatement
  : 'import' importClause fromClause ';'?
@@ -288,6 +355,7 @@ exportStatement
   | 'export' namedImports fromClause? ';'?
   | 'export' variableStatement
   | 'export' functionDeclaration
+  | 'export' lexicalStatement
   | 'export' 'default' functionDeclaration
   | 'export' 'default' singleExpression ';'?
 ;

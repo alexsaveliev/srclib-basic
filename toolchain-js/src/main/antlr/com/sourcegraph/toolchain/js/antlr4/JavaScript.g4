@@ -242,11 +242,12 @@ statement
  | tryStatement
  | debuggerStatement
  | importStatement
+ | exportStatement
  ;
 
 importStatement
- : 'import' importClause fromClause ';'
- | 'import' StringLiteral ';'
+ : 'import' importClause fromClause ';'?
+ | 'import' StringLiteral ';'?
 ;
 
 
@@ -267,16 +268,28 @@ nameSpaceImport
 ;
 
 namedImports
-  : '{' importsList? '}'
+  : '{' '}'
+  | '{' importsList '}'
+  | '{' importsList ',' '}'
 ;
 
 importsList
-  : importSpecifier+
+  : importSpecifier
+  | importsList ',' importSpecifier
 ;
 
 importSpecifier
   : Identifier
   | Identifier 'as' Identifier
+;
+
+exportStatement
+  : 'export' '*' fromClause ';'?
+  | 'export' namedImports fromClause? ';'?
+  | 'export' variableStatement
+  | 'export' functionDeclaration
+  | 'export' 'default' functionDeclaration
+  | 'export' 'default' singleExpression ';'?
 ;
 
 /// Block :

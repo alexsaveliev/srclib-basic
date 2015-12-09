@@ -53,10 +53,10 @@ command
 	;
 
 function
-	: operation (OpenRoundBracket callArgs? CloseRoundBracket)?
-	| function Dot operation (OpenRoundBracket callArgs? CloseRoundBracket)?
+	: operation (OpenRoundBracket term? callArgs? term? CloseRoundBracket)?
+	| function Dot operation (OpenRoundBracket term? callArgs? term? CloseRoundBracket)?
 	| function DoubleColon operation (OpenRoundBracket callArgs? CloseRoundBracket)?
-	| Super (OpenRoundBracket callArgs? CloseRoundBracket)?
+	| Super (OpenRoundBracket term? callArgs? term? CloseRoundBracket)?
 	| primary
 	;
 
@@ -107,8 +107,8 @@ primary
 	| SquareBrackets
 	| OpenSquareBracket (args Comma?)? CloseSquareBracket
 	| OpenCurlyBracket (args | assocs Comma?)? CloseCurlyBracket
-	| Return (OpenRoundBracket callArgs? CloseRoundBracket)?
-	| Yield (OpenRoundBracket callArgs? CloseRoundBracket)?
+	| Return (OpenRoundBracket term? callArgs? term? CloseRoundBracket)?
+	| Yield (OpenRoundBracket term? callArgs? CloseRoundBracket)?
 	| Defined OpenRoundBracket arg CloseRoundBracket
 	| If expr then compstmt (Elsif expr then compstmt)* (Else compstmt)? End
 	| Unless expr then compstmt (Else compstmt)? End
@@ -170,7 +170,7 @@ callArgs
 	;
 
 args
-	: arg (Comma arg)*
+	: arg (Comma term? arg)*
 	;
 
 argDecl

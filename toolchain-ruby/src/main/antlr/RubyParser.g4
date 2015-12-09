@@ -207,9 +207,9 @@ literal
 	: numeric
 	| symbol
 	| string
-// TODO	| string2
+	| pstring
 	| heredoc
-// TODO	| regexp
+	| regexp
 	;
 
 symbol
@@ -271,10 +271,6 @@ numeric
     | FloatingPointLiteral
     ;
 
-// TODO string2
-// TODO	: '%' ('QBarqBarx')CHAR ANYCHAR* CHAR
-// TODO	;
-
 heredoc
 	: StartHereDoc1 HereDocText+
 	| StartHereDoc2 HereDocText+
@@ -282,10 +278,15 @@ heredoc
 	| StartHereDoc4 HereDocText+
  ;
 
-// TODO regexp
-// TODO	: '/' CHAR* '/' ('iBaroBarp')?
-// TODO	| '%r' CHAR ANYCHAR* CHAR
-// TODO	;
+regexp
+	: RegularExpressionLiteral QuotedString RegularExpressionModifiers?
+	| GeneralDelimitedRegularExpressionLiteral QuotedString RegularExpressionModifiers?
+	;
+
+pstring
+	:
+		PercentString QuotedString
+	;
 
 then
 	: term

@@ -2,9 +2,23 @@ lexer grammar RubyLexer;
 
 @header {
     package com.sourcegraph.toolchain.ruby.antlr4;
+
+    import java.util.Map;
+    import java.util.HashMap;
+    import java.util.Queue;
+    import java.util.LinkedList;
 }
 
 @lexer::members {
+
+    private static final Map<Character, Character> BRACKET_PAIRS = new HashMap<>();
+
+    static {
+        BRACKET_PAIRS.put('<', '>');
+        BRACKET_PAIRS.put('{', '}');
+        BRACKET_PAIRS.put('(', ')');
+        BRACKET_PAIRS.put('[', ']');
+    }
 
     // A flag indicating if the lexer encountered __END__
     private boolean end;
@@ -12,51 +26,82 @@ lexer grammar RubyLexer;
     // Saved identifier used in the last heredoc
     private String heredocIdent;
 
+    private Token lastToken;
+
+    private char quotedStringDelimiter;
+
+    private boolean quotedStringState;
+
+    private boolean regexpMode;
+
+    private StringBuilder quotedStringBuffer = new StringBuilder();
+
+    private Queue<Token> queue = new LinkedList<>();
+
     @Override
     public Token nextToken() {
-		if (end) {
-			return emitEOF();
-		}
-			Token token = super.nextToken();
-	    	if (_mode == HereDoc) {
-        	switch (token.getType())
-        	{
-				case StartHereDoc1:
-				case StartHereDoc2:
-				case StartHereDoc3:
-				case StartHereDoc4:
-					heredocIdent = extractHeredocIdent(token.getText());
-					while (isCrLf()) {
-						_input.consume();
-					}
-					break;
-        	    case HereDocText:
-            	    if (checkHeredocEnd(token.getText())) {
-                    	popMode();
-                    	token = super.nextToken();
-                	}
-                	break;
+
+        if (!queue.isEmpty()) {
+            return queue.remove();
+        }
+
+        if (end) {
+            return emitEOF();
+        }
+
+        Token token = next();
+
+        if (_mode == ModeHereDoc) {
+            switch (token.getType())
+            {
+                case StartHereDoc1:
+                case StartHereDoc2:
+                case StartHereDoc3:
+                case StartHereDoc4:
+                    heredocIdent = extractHeredocIdent(token.getText());
+                    while (isCrLf()) {
+                        _input.consume();
+                    }
+                    break;
+                case HereDocText:
+                    if (checkHeredocEnd(token.getText())) {
+                        popMode();
+                        return nextToken();
+                    }
+                    break;
+            }
+        } else if (_mode == ModeQuotedString) {
+            if (!quotedStringState) {
+				if ("%r".equals(lastToken.getText())) {
+					regexpMode = true;
+				}
+                quotedStringState = true;
+            } else {
+                token = lastToken = extractQuotedStringTokens();
+                popMode();
+                quotedStringState = false;
+                regexpMode = false;
             }
         }
         return token;
     }
 
     private void setEnd() {
-    	this.end = true;
+        this.end = true;
     }
 
     private String extractHeredocIdent(String tokenText) {
-    	// remove leading <<
-    	tokenText = tokenText.substring(2).trim();
-    	char c = tokenText.charAt(0);
+        // remove leading <<
+        tokenText = tokenText.substring(2).trim();
+        char c = tokenText.charAt(0);
         if (c == '-') {
-        	// remove optional leading -
-        	tokenText = tokenText.substring(1);
-        	c = tokenText.charAt(0);
+            // remove optional leading -
+            tokenText = tokenText.substring(1);
+            c = tokenText.charAt(0);
         }
         if (c == '\'' || c == '"' || c == '`') {
-        	// remove leading and trailing quote
-        	tokenText = tokenText.substring(1, tokenText.length() - 1);
+            // remove leading and trailing quote
+            tokenText = tokenText.substring(1, tokenText.length() - 1);
         }
         return tokenText;
     }
@@ -70,6 +115,117 @@ lexer grammar RubyLexer;
         return _input.LA(1) == '\r' || _input.LA(1) == '\n';
     }
 
+    private boolean isRegexPossible() {
+
+        if (this.lastToken == null) {
+            // No token has been produced yet: at the start of the input,
+            // no division is possible, so a regex literal _is_ possible.
+            return true;
+        }
+
+        switch (this.lastToken.getType()) {
+            case Identifier:
+            case Nil:
+            case Self:
+            case CloseSquareBracket:
+            case CloseRoundBracket:
+            case OctalIntegerLiteral:
+            case DecimalIntegerLiteral:
+            case HexIntegerLiteral:
+            case StringLiteral:
+                // After any of the tokens above, no regex literal can follow.
+                return false;
+            default:
+                // In all other cases, a regex literal _is_ possible.
+                return true;
+        }
+    }
+
+    private boolean isPercentStringPossible() {
+        int c = _input.LA(2);
+        if (c == '=') {
+            return false;
+        }
+        if ("qQriIwWxs".indexOf(c) >= 0) {
+            return true;
+        }
+        if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9') {
+            return false;
+        }
+        return true;
+    }
+
+    private void startRegexp() {
+        regexpMode = true;
+        pushMode(ModeQuotedString);
+        quotedStringDelimiter = '/';
+        quotedStringBuffer.setLength(0);
+        quotedStringBuffer.append((char) _input.LA(1));
+    }
+
+    private void guessQuotedString() {
+        char c = (char) _input.LA(1);
+        quotedStringBuffer.setLength(0);
+        quotedStringBuffer.append(c);
+        Character delim = BRACKET_PAIRS.get(c);
+        if (delim == null) {
+            delim = c;
+        }
+        this.quotedStringDelimiter = delim;
+        //_input.consume();
+        pushMode(ModeQuotedString);
+    }
+
+    private Token extractQuotedStringTokens() {
+        Token t = next();
+        boolean escaped = false;
+        while (t.getType() != EOF) {
+            char c = t.getText().charAt(0);
+            if (c == '\\') {
+                escaped = !escaped;
+            } else if (c == quotedStringDelimiter) {
+                if (!escaped) {
+                    quotedStringBuffer.append(t.getText());
+                    if (regexpMode) {
+                        extractRegExpModifiers();
+                    }
+                    return new CommonToken(QuotedString, quotedStringBuffer.toString());
+                }
+                escaped = false;
+            } else {
+                escaped = false;
+            }
+            quotedStringBuffer.append(t.getText());
+            t = next();
+        }
+        return emitEOF();
+    }
+
+    private void extractRegExpModifiers() {
+        StringBuilder buf = new StringBuilder();
+        int c = _input.LA(1);
+        while (c != EOF) {
+            if ("ioxmuesn".indexOf(c) >= 0) {
+                buf.append((char) c);
+                _input.consume();
+            } else {
+                if (buf.length() > 0) {
+                    queue.add(new CommonToken(RegularExpressionModifiers, buf.toString()));
+                }
+                break;
+            }
+			c = _input.LA(1);
+        }
+    }
+
+    private Token next() {
+        Token token = super.nextToken();
+        if (token.getChannel() == Token.DEFAULT_CHANNEL) {
+            // Keep track of the last token on the default channel.
+            this.lastToken = token;
+        }
+        return token;
+    }
 }
 
 WS
@@ -467,8 +623,8 @@ Smaller:            '<';
 Plus:               '+';
 Minus:              '-';
 Asterisk:           '*';
-Percent:            '%';
-Divide:             '/';
+Divide:             {!isRegexPossible()}? '/';
+Percent:            {!isPercentStringPossible()}? '%';
 QuestionMark:       '?';
 IsSmallerOrEqual:   '<=';
 IsGreaterOrEqual:   '>=';
@@ -494,23 +650,44 @@ ExlQ:   			'!?';
 Lf:          		'\n';
 
 StartHereDoc1
-    : '<<' '-'?  Identifier  { isCrLf() }? -> pushMode(HereDoc)
+    : '<<' '-'?  Identifier  { isCrLf() }? -> pushMode(ModeHereDoc)
     ;
 
 StartHereDoc2
-    : '<<' '-'?  '"' ~["] '"' { isCrLf() }? -> pushMode(HereDoc)
+    : '<<' '-'?  '"' ~["] '"' { isCrLf() }? -> pushMode(ModeHereDoc)
     ;
 
 StartHereDoc3
-	: '<<' '-'?  '\'' ~['] '\'' { isCrLf() }? -> pushMode(HereDoc)
-;
+	: '<<' '-'?  '\'' ~['] '\'' { isCrLf() }? -> pushMode(ModeHereDoc)
+    ;
 
 StartHereDoc4
-	: '<<' '-'?  '`' ~[`] '`' { isCrLf() }? -> pushMode(HereDoc)
-;
+	: '<<' '-'?  '`' ~[`] '`' { isCrLf() }? -> pushMode(ModeHereDoc)
+    ;
 
-mode HereDoc;
+RegularExpressionLiteral
+    : {isRegexPossible()}? '/' { startRegexp(); }
+    ;
+
+GeneralDelimitedRegularExpressionLiteral
+    : '%r' { guessQuotedString(); }
+    ;
+
+PercentString
+    : {isPercentStringPossible()}? '%' [qQiIwWxs]? { guessQuotedString(); }
+    ;
+
+mode ModeHereDoc;
 
 HereDocText
 	: ~[\r\n]*? '\r'? '\n'
 	;
+
+mode ModeQuotedString;
+
+QuotedString
+	:  ~[\r\n];
+
+RegularExpressionModifiers
+    : [ioxmuesn]+
+    ;

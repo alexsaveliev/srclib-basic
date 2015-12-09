@@ -678,6 +678,10 @@ PercentString
     : {isPercentStringPossible()}? '%' [qQiIwWxs]? { guessQuotedString(); }
     ;
 
+MultiLineComment
+    :   '=begin' .*? '=end' -> skip
+    ;
+
 mode ModeHereDoc;
 
 HereDocText

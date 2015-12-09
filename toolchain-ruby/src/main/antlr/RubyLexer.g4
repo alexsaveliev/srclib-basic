@@ -9,17 +9,65 @@ lexer grammar RubyLexer;
     // A flag indicating if the lexer encountered __END__
     private boolean end;
 
+    // Saved identifier used in the last heredoc
+    private String heredocIdent;
+
     @Override
     public Token nextToken() {
-
 		if (end) {
 			return emitEOF();
 		}
-        return super.nextToken();
+			Token token = super.nextToken();
+	    	if (_mode == HereDoc) {
+        	switch (token.getType())
+        	{
+				case StartHereDoc1:
+				case StartHereDoc2:
+				case StartHereDoc3:
+				case StartHereDoc4:
+					heredocIdent = extractHeredocIdent(token.getText());
+					while (isCrLf()) {
+						_input.consume();
+					}
+					break;
+        	    case HereDocText:
+            	    if (checkHeredocEnd(token.getText())) {
+                    	popMode();
+                    	token = super.nextToken();
+                	}
+                	break;
+            }
+        }
+        return token;
     }
 
     private void setEnd() {
     	this.end = true;
+    }
+
+    private String extractHeredocIdent(String tokenText) {
+    	// remove leading <<
+    	tokenText = tokenText.substring(2).trim();
+    	char c = tokenText.charAt(0);
+        if (c == '-') {
+        	// remove optional leading -
+        	tokenText = tokenText.substring(1);
+        	c = tokenText.charAt(0);
+        }
+        if (c == '\'' || c == '"' || c == '`') {
+        	// remove leading and trailing quote
+        	tokenText = tokenText.substring(1, tokenText.length() - 1);
+        }
+        return tokenText;
+    }
+
+    private boolean checkHeredocEnd(String text)
+    {
+        return text.trim().equals(heredocIdent);
+    }
+
+    private boolean isCrLf() {
+        return _input.LA(1) == '\r' || _input.LA(1) == '\n';
     }
 
 }
@@ -445,3 +493,24 @@ EqQ:   				'=?';
 ExlQ:   			'!?';
 Lf:          		'\n';
 
+StartHereDoc1
+    : '<<' '-'?  Identifier  { isCrLf() }? -> pushMode(HereDoc)
+    ;
+
+StartHereDoc2
+    : '<<' '-'?  '"' ~["] '"' { isCrLf() }? -> pushMode(HereDoc)
+    ;
+
+StartHereDoc3
+	: '<<' '-'?  '\'' ~['] '\'' { isCrLf() }? -> pushMode(HereDoc)
+;
+
+StartHereDoc4
+	: '<<' '-'?  '`' ~[`] '`' { isCrLf() }? -> pushMode(HereDoc)
+;
+
+mode HereDoc;
+
+HereDocText
+	: ~[\r\n]*? '\r'? '\n'
+	;

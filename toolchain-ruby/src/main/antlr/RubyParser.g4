@@ -208,7 +208,7 @@ literal
 	| symbol
 	| string
 // TODO	| string2
-// TODO	| heredoc
+	| heredoc
 // TODO	| regexp
 	;
 
@@ -275,9 +275,12 @@ numeric
 // TODO	: '%' ('QBarqBarx')CHAR ANYCHAR* CHAR
 // TODO	;
 
-// TODO heredoc
-// TODO	: '<<' (Identifier | string) ANYCHAR* Identifier
-// TODO	;
+heredoc
+	: StartHereDoc1 HereDocText+
+	| StartHereDoc2 HereDocText+
+	| StartHereDoc3 HereDocText+
+	| StartHereDoc4 HereDocText+
+ ;
 
 // TODO regexp
 // TODO	: '/' CHAR* '/' ('iBaroBarp')?

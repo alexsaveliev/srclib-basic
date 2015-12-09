@@ -86,7 +86,8 @@ arg
 	| arg IsNotEq arg
 	| arg EqQ arg
 	| arg ExlQ arg
-	| Bang arg 
+	| Bang arg
+	| Tilde arg
 	| QuestionMark arg
 	| arg ShiftLeft arg
 	| arg ShiftRight arg
@@ -237,6 +238,7 @@ fname
 	| Divide
 	| Percent
 	| Pow
+	| Tilde
 	| ShiftLeft
 	| ShiftRight
 	| QuestionMark

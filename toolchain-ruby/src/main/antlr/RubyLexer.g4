@@ -623,6 +623,7 @@ Smaller:            '<';
 Plus:               '+';
 Minus:              '-';
 Asterisk:           '*';
+Tilde:              '~';
 Divide:             {!isRegexPossible()}? '/';
 Percent:            {!isPercentStringPossible()}? '%';
 QuestionMark:       '?';
@@ -686,7 +687,7 @@ HereDocText
 mode ModeQuotedString;
 
 QuotedString
-	:  ~[\r\n];
+	:  .;
 
 RegularExpressionModifiers
     : [ioxmuesn]+

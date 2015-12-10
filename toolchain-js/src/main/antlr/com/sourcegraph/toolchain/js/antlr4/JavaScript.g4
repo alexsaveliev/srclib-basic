@@ -207,6 +207,10 @@ sourceElements
 sourceElement
  : statement
  | functionDeclaration
+ | importDeclaration
+ | exportDeclaration
+ | lexicalDeclaration
+ | classDeclaration
  ;
 
 /// Statement :
@@ -242,14 +246,11 @@ statement
  | throwStatement
  | tryStatement
  | debuggerStatement
- | importStatement
- | exportStatement
- | lexicalStatement
- ;
+;
 
-lexicalStatement
-  : 'let' bindingList
-  | 'const' bindingList
+lexicalDeclaration
+  : Let bindingList
+  | Const bindingList
 ;
 
 bindingList
@@ -312,9 +313,9 @@ bindingRestElement
   : '...' Identifier
 ;
 
-importStatement
- : 'import' importClause fromClause ';'?
- | 'import' StringLiteral ';'?
+importDeclaration
+ : Import importClause fromClause ';'?
+ | Import StringLiteral ';'?
 ;
 
 
@@ -350,14 +351,37 @@ importSpecifier
   | Identifier 'as' Identifier
 ;
 
-exportStatement
-  : 'export' '*' fromClause ';'?
-  | 'export' namedImports fromClause? ';'?
-  | 'export' variableStatement
-  | 'export' functionDeclaration
-  | 'export' lexicalStatement
-  | 'export' 'default' functionDeclaration
-  | 'export' 'default' singleExpression ';'?
+exportDeclaration
+  : Export '*' fromClause ';'?
+  | Export namedImports fromClause? ';'?
+  | Export variableStatement
+  | Export functionDeclaration
+  | Export lexicalDeclaration
+  | Export Default functionDeclaration
+  | Export Default singleExpression ';'?
+;
+
+classDeclaration
+  : Default? Class Identifier? classTail
+;
+
+classTail
+  : heritage? '{' classElement+ '}'
+;
+
+heritage
+  : Extends singleExpression
+;
+
+classElement
+  : Static? methodDefinition
+;
+
+methodDefinition
+  : propertyName '(' formalParameterList ')' '{' functionBody '}'
+  | getter propertyName '(' ')' '{' functionBody '}'
+  | setter propertyName '(' propertySetParameterList ')' '{' functionBody '}'
+  | '*' propertyName '(' formalParameterList ')' '{' functionBody '}'
 ;
 
 /// Block :

@@ -82,6 +82,13 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
         this.files.forEach(this::process);
     }
 
+    public void addSourceFile(File sourceFile) {
+        if (files == null) {
+            files = new HashSet<>();
+        }
+        files.add(sourceFile);
+    }
+
     /**
      * Processes single file. May be called by parser tree listener to add more file for processing.
      * For example when parser encountered "#include "foo" it may ask to process foo before current file

@@ -4,24 +4,24 @@
       "Subcmd": "scan",
       "Op": "scan",
       "SourceUnitTypes": [
-        "antlr-php",
-        "antlr-objc"
+        "basic-php",
+        "basic-objc"
       ]
     },
     {
       "Subcmd": "graph",
       "Op": "graph",
       "SourceUnitTypes": [
-        "antlr-php",
-        "antlr-objc"
+        "basic-php",
+        "basic-objc"
       ]
     },
     {
       "Subcmd": "depresolve",
       "Op": "depresolve",
       "SourceUnitTypes": [
-        "antlr-php",
-        "antlr-objc"
+        "basic-php",
+        "basic-objc"
       ]
     }
   ],
@@ -29,8 +29,8 @@
     "Paths": [
       "Srclibtoolchain",
       ".bin",
-      ".bin/srclib-antlr",
-      ".bin/srclib-antlr.bat",
+      ".bin/srclib-basic",
+      ".bin/srclib-basic.bat",
       ".bin/antlr4-4.5.1.jar",
       ".bin/jcommander-1.30.jar",
       ".bin/slf4j-log4j12-1.7.12.jar",

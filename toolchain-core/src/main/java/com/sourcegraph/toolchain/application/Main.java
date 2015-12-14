@@ -22,7 +22,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         String version = getVersion();
 
-        LOGGER.info("srclib-antlr version {}", version);
+        LOGGER.info("srclib-basic version {}", version);
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Current working directory [{}]", SystemUtils.getUserDir());
             LOGGER.debug("Command line arguments [{}]", StringUtils.join(args, ' '));

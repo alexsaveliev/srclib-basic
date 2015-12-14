@@ -40,7 +40,8 @@
       ".bin/gson-2.3.jar",
       ".bin/slf4j-api-1.7.12.jar",
       ".bin/toolchain-core-0.0.1.jar",
-      ".bin/toolchain-php-0.0.1.jar"
+      ".bin/toolchain-php-0.0.1.jar",
+      ".bin/toolchain-objc-0.0.1.jar"
     ],
     "Commands": [
       "make install"

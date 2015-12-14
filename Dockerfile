@@ -8,6 +8,5 @@ RUN for f in /etc/ssl/certs/ca-cert-*; do keytool -keystore /usr/lib/jvm/java-1.
 RUN wget https://downloads.gradle.org/distributions/gradle-2.8-bin.zip && unzip gradle-2.8-bin.zip && rm gradle-2.8-bin.zip
 ENV PATH /gradle-2.8/bin:$PATH
 RUN go get github.com/sourcegraph/srclib/cmd/srclib && rm -rf /usr/local/src/ /usr/local/pkg/
-RUN srclib toolchain install go && rm -rf /usr/local/src/ /usr/local/pkg/
 RUN srclib toolchain install basic && rm -rf /root/.gradle/ /root/.srclib/sourcegraph.com/sourcegraph/srclib-basic/build
 ENTRYPOINT ["srclib"]

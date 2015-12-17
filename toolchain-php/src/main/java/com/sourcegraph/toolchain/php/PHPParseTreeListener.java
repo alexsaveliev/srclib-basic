@@ -58,6 +58,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
      */
     private static final String MAYBE_CONSTANT = "(?C)";
 
+    private static final String THIS_KEYWORD = "$this";
+
     /**
      * Caller
      */
@@ -662,9 +664,12 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         VarInfo info;
         Map<String, VarInfo> localVars = support.vars.peek();
         String path = null;
-        if ("$this".equals(objectVarName)) {
+        if (THIS_KEYWORD.equals(objectVarName)) {
+            if (currentClassInfo == null) {
+                return;
+            }
             info = new VarInfo(currentClassInfo.className, true);
-            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
+            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + THIS_KEYWORD;
         } else {
             if (functionArguments.containsKey(objectVarName)) {
                 info = new VarInfo(functionArguments.get(objectVarName), true);
@@ -719,7 +724,13 @@ class PHPParseTreeListener extends PHPParserBaseListener {
                 TerminalNode varNameNode = var.get(0).VarName();
                 if (varNameNode != null) {
                     varName = varNameNode.getText();
-                    varType = functionArguments.get(varName);
+                    if (THIS_KEYWORD.equals(varName)) {
+                        if (currentClassInfo != null) {
+                            varType = currentClassInfo.className;
+                        }
+                    } else {
+                        varType = functionArguments.get(varName);
+                    }
                 }
             }
         }
@@ -747,7 +758,11 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             }
             ref.defKey = new DefKey(null, prefix + propertyName);
         } else {
-            String path = varType + CLASS_NAME_SEPARATOR + propertyName;
+            String propertyClass = support.getPropertyClass(varType, propertyName);
+            if (propertyClass == null) {
+                propertyClass = varType;
+            }
+            String path = propertyClass + CLASS_NAME_SEPARATOR + propertyName;
             if (isMethodCall) {
                 path += "()";
             }
@@ -768,9 +783,12 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         VarInfo info;
         Map<String, VarInfo> localVars = support.vars.peek();
         String path = null;
-        if ("$this".equals(varName)) {
+        if (THIS_KEYWORD.equals(varName)) {
+            if (currentClassInfo == null) {
+                return;
+            }
             info = new VarInfo(currentClassInfo.className, true);
-            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
+            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + THIS_KEYWORD;
         } else {
             if (functionArguments.containsKey(varName)) {
                 info = new VarInfo(functionArguments.get(varName), true);
@@ -979,6 +997,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String parts[] = ctx.getText().split("::");
         String rootClassName = null;
         if ("self".equals(parts[0])) {
+            if (currentClassInfo == null) {
+                return;
+            }
             rootClassName = currentClassInfo.className;
             Ref selfRef = support.ref(ctx.qualifiedStaticTypeRef());
             selfRef.defKey = new DefKey(null, rootClassName);

@@ -84,13 +84,13 @@ public class GraphCommand {
 
     private Graph normalize(Language language, GraphData data) {
 
-        Map<DefKey, DefKey> resolutions = new HashMap<>();
+        Map<DefKey, Collection<DefKey>> resolutions = new HashMap<>();
         Graph g = new Graph();
         g.Defs = data.getDefs();
         Collection<Ref> refs = data.getRefs();
         for (Ref ref : refs) {
             if (ref.candidate) {
-                DefKey adjusted = resolutions.get(ref.defKey);
+                Collection<DefKey> adjusted = resolutions.get(ref.defKey);
                 if (adjusted == null) {
                     adjusted = language.resolve(ref.defKey);
                     if (adjusted == null) {
@@ -98,7 +98,14 @@ public class GraphCommand {
                     }
                     resolutions.put(ref.defKey, adjusted);
                 }
-                ref.defKey = adjusted;
+                LOGGER.info("{} candidates in {} at {}-{}", adjusted.size(), ref.file, ref.start, ref.end);
+                for (DefKey resolvedKey : adjusted) {
+                    Ref r = new Ref(ref);
+                    LOGGER.info("Candidate {} {}", r.file, resolvedKey.toString());
+                    r.defKey = resolvedKey;
+                    g.Refs.add(r);
+                }
+                continue;
             }
             g.Refs.add(ref);
         }

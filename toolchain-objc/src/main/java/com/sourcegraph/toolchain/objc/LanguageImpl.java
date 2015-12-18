@@ -1,26 +1,16 @@
 package com.sourcegraph.toolchain.objc;
 
-import com.sourcegraph.toolchain.core.GraphWriter;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.objc.antlr4.ObjCLexer;
 import com.sourcegraph.toolchain.objc.antlr4.ObjCParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class LanguageImpl extends LanguageBase {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LanguageImpl.class);
-
-    GraphWriter writer;
 
     Map<String, String> globalVars = new HashMap<>();
     // class name -> (variable -> type)
@@ -28,9 +18,6 @@ public class LanguageImpl extends LanguageBase {
 
     Set<String> functions = new HashSet<>();
     Set<String> types = new HashSet<>();
-
-    private Set<String> visited = new HashSet<>();
-    private Set<String> files;
 
     @Override
     protected void parse(File sourceFile) throws ParseException {
@@ -59,7 +46,7 @@ public class LanguageImpl extends LanguageBase {
     }
 
     @Override
-    public DefKey resolve(DefKey source) {
+    public Collection<DefKey> resolve(DefKey source) {
         // TODO (alexsaveliev)
         return null;
     }

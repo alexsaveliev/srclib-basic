@@ -56,6 +56,25 @@ public class Ref {
      */
     public boolean def;
 
+    public Ref() {
+    }
+
+    /**
+     * Copy constructor
+     * @param source source ref to copy from
+     */
+    public Ref(Ref source) {
+        this.defKey = source.defKey;
+        this.def = source.def;
+        this.defRepo = source.defRepo;
+        this.defUnit = source.defUnit;
+        this.defUnitType = source.defUnitType;
+        this.candidate = source.candidate;
+        this.start = source.start;
+        this.end = source.end;
+        this.file = source.file;
+    }
+
     public void setDefTarget(ResolvedTarget target) {
         defRepo = target.ToRepoCloneURL;
         defUnitType = target.ToUnitType;

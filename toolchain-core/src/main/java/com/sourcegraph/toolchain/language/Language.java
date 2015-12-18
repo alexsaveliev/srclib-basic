@@ -50,7 +50,7 @@ public interface Language {
      * all references marked as "candidate" when all definitions and refs were emitted and removes all candidate
      * refs that weren't resolved
      * @param source source key to resolve
-     * @return resolved key or null if resolution failed.
+     * @return resolved key(s) or null if resolution failed.
      */
-    DefKey resolve(DefKey source);
+    Collection<DefKey> resolve(DefKey source);
 }

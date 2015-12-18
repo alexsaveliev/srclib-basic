@@ -873,7 +873,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             propertyDef.defData.setKind("property");
             currentClassInfo.properties.add(propertyDef.name);
             support.emit(propertyDef);
-            support.resolutions.put(MAYBE_PROPERTY + propertyDef.name, propertyDef);
+            support.addDefCandidate(MAYBE_PROPERTY + propertyDef.name, propertyDef);
         }
         blockStack.push(blockName);
     }
@@ -891,7 +891,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             classConstantDef.defData.setKind("constant");
             classConstantDef.defData.setName(classLevelLabel(classConstantDef.name));
             support.emit(classConstantDef);
-            support.resolutions.put(MAYBE_CONSTANT + classConstantDef.name, classConstantDef);
+            support.addDefCandidate(MAYBE_CONSTANT + classConstantDef.name, classConstantDef);
             currentClassInfo.constants.add(classConstantDef.name);
         }
         blockStack.push(blockName);
@@ -919,7 +919,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             classMethodDef.format("function", "(" + ctx.formalParameterList().getText() + ")", DefData.SEPARATOR_EMPTY);
             classMethodDef.defData.setName(classLevelLabel(classMethodDef.name));
             classMethodDef.defData.setKind("method");
-            support.resolutions.put(MAYBE_METHOD + methodName, classMethodDef);
+            support.addDefCandidate(MAYBE_METHOD + methodName, classMethodDef);
         } else {
             Ref classMethodRef = support.ref(methodCtx);
             // adding () to distinguish properties from methods

@@ -36,9 +36,9 @@ public class LanguageImpl extends LanguageBase {
     private Set<String> seenClasses = new HashSet<>();
 
     /**
-     * Map ident => definition. We using it to resolve reference candidates.
+     * Map ident => definition(s). We using it to resolve reference candidates.
      */
-    Map<String, Def> resolutions = new HashMap<>();
+    private Map<String, Collection<DefKey>> resolutions = new HashMap<>();
 
     private CompoundClassFileResolver classFileResolver;
 
@@ -156,12 +156,8 @@ public class LanguageImpl extends LanguageBase {
     }
 
     @Override
-    public DefKey resolve(DefKey source) {
-        Def def = resolutions.get(source.getPath());
-        if (def != null) {
-            return def.defKey;
-        }
-        return null;
+    public Collection<DefKey> resolve(DefKey source) {
+        return resolutions.get(source.getPath());
     }
 
     @Override
@@ -223,6 +219,21 @@ public class LanguageImpl extends LanguageBase {
     }
 
     /**
+     * Adds candidate which might used later
+     * @param name candidate identifier. For example "property:$name" which later we'll use while looking for def(s)
+     * referenced by "$name" ref
+     * @param def definition to add
+     */
+    void addDefCandidate(String name, Def def) {
+        Collection<DefKey> defs = resolutions.get(name);
+        if (defs == null) {
+            defs = new ArrayList<>();
+            resolutions.put(name, defs);
+        }
+        defs.add(def.defKey);
+    }
+
+    /**
      * Initializes autoloader (currently PSR-4 and PSR-0 are supported)
      * @param composerSchemaJson configuration from composer.json
      */
@@ -254,6 +265,6 @@ public class LanguageImpl extends LanguageBase {
             classFileResolver.addResolver(psr0ClassFileResolver);
         }
         // TODO: classmap?
-
     }
+
 }

@@ -387,6 +387,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     @Override
     public void exitClassDeclaration(PHPParser.ClassDeclarationContext ctx) {
         blockStack.pop();
+        currentClassInfo = null;
     }
 
     /**

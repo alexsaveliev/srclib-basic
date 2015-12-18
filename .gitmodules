@@ -10,3 +10,9 @@
 [submodule "testdata/case/antlr-php-constants"]
 	path = testdata/case/antlr-php-constants
 	url = https://github.com/sgtest/antlr-php-constants
+[submodule "testdata/case/antlr-php-this"]
+	path = testdata/case/antlr-php-this
+	url = https://github.com/sgtest/antlr-php-this
+[submodule "testdata/case/antlr-php-namespace-in-extends"]
+	path = testdata/case/antlr-php-namespace-in-extends
+	url = https://github.com/sgtest/antlr-php-namespace-in-extends

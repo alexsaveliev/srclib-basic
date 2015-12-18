@@ -6,7 +6,7 @@
       "Kind": "variable",
       "File": "variables.php",
       "DefStart": 7,
-      "DefEnd": 13,
+      "DefEnd": 14,
       "Exported": true,
       "Data": {
         "Type": "mixed",
@@ -22,7 +22,7 @@
       "Kind": "func",
       "File": "variables.php",
       "DefStart": 30,
-      "DefEnd": 30,
+      "DefEnd": 31,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -39,7 +39,7 @@
       "Kind": "variable",
       "File": "variables.php",
       "DefStart": 121,
-      "DefEnd": 122,
+      "DefEnd": 123,
       "Local": true,
       "Data": {
         "Type": "mixed",
@@ -55,7 +55,7 @@
       "Kind": "variable",
       "File": "variables.php",
       "DefStart": 81,
-      "DefEnd": 86,
+      "DefEnd": 87,
       "Local": true,
       "Data": {
         "Type": "mixed",
@@ -71,7 +71,7 @@
       "Kind": "func",
       "File": "namespace.php",
       "DefStart": 41,
-      "DefEnd": 41,
+      "DefEnd": 42,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -88,7 +88,7 @@
       "Kind": "variable",
       "File": "namespace.php",
       "DefStart": 49,
-      "DefEnd": 54,
+      "DefEnd": 55,
       "Local": true,
       "Data": {
         "Type": "mixed",
@@ -104,7 +104,7 @@
       "Kind": "func",
       "File": "namespace.php",
       "DefStart": 150,
-      "DefEnd": 150,
+      "DefEnd": 151,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -121,7 +121,7 @@
       "Kind": "variable",
       "File": "namespace.php",
       "DefStart": 158,
-      "DefEnd": 163,
+      "DefEnd": 164,
       "Local": true,
       "Data": {
         "Type": "mixed",
@@ -137,7 +137,7 @@
       "Kind": "func",
       "File": "variables.php",
       "DefStart": 265,
-      "DefEnd": 265,
+      "DefEnd": 266,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -154,7 +154,7 @@
       "Kind": "variable",
       "File": "variables.php",
       "DefStart": 272,
-      "DefEnd": 277,
+      "DefEnd": 278,
       "Local": true,
       "Data": {
         "Type": "mixed",
@@ -170,131 +170,131 @@
       "DefPath": "$global",
       "File": "variables.php",
       "Start": 45,
-      "End": 51
+      "End": 52
     },
     {
       "DefPath": ":$global",
       "File": "variables.php",
       "Start": 69,
-      "End": 75
+      "End": 76
     },
     {
       "DefPath": ":$global",
       "Def": true,
       "File": "variables.php",
       "Start": 7,
-      "End": 13
+      "End": 14
     },
     {
       "DefPath": ":f/$i",
       "Def": true,
       "File": "variables.php",
       "Start": 121,
-      "End": 122
+      "End": 123
     },
     {
       "DefPath": ":f/$i",
       "File": "variables.php",
       "Start": 129,
-      "End": 130
+      "End": 131
     },
     {
       "DefPath": ":f/$i",
       "File": "variables.php",
       "Start": 137,
-      "End": 138
+      "End": 139
     },
     {
       "DefPath": ":f/$i",
       "File": "variables.php",
       "Start": 173,
-      "End": 174
+      "End": 175
     },
     {
       "DefPath": ":f/$i",
       "File": "variables.php",
       "Start": 181,
-      "End": 182
+      "End": 183
     },
     {
       "DefPath": ":f/$i",
       "File": "variables.php",
       "Start": 189,
-      "End": 190
+      "End": 191
     },
     {
       "DefPath": ":f/$i",
       "File": "variables.php",
       "Start": 231,
-      "End": 232
+      "End": 233
     },
     {
       "DefPath": ":f/$local",
       "Def": true,
       "File": "variables.php",
       "Start": 81,
-      "End": 86
+      "End": 87
     },
     {
       "DefPath": ":foo:bar:baz:h/$local",
       "File": "namespace.php",
       "Start": 100,
-      "End": 105
+      "End": 106
     },
     {
       "DefPath": ":foo:bar:baz:h/$local",
       "Def": true,
       "File": "namespace.php",
       "Start": 49,
-      "End": 54
+      "End": 55
     },
     {
       "DefPath": ":foo:bar:baz:h",
       "Def": true,
       "File": "namespace.php",
       "Start": 41,
-      "End": 41
+      "End": 42
     },
     {
       "DefPath": ":foo:bar:quz:h/$local",
       "Def": true,
       "File": "namespace.php",
       "Start": 158,
-      "End": 163
+      "End": 164
     },
     {
       "DefPath": ":foo:bar:quz:h/$local",
       "File": "namespace.php",
       "Start": 209,
-      "End": 214
+      "End": 215
     },
     {
       "DefPath": ":foo:bar:quz:h",
       "Def": true,
       "File": "namespace.php",
       "Start": 150,
-      "End": 150
+      "End": 151
     },
     {
       "DefPath": ":f",
       "Def": true,
       "File": "variables.php",
       "Start": 30,
-      "End": 30
+      "End": 31
     },
     {
       "DefPath": ":g/$local",
       "Def": true,
       "File": "variables.php",
       "Start": 272,
-      "End": 277
+      "End": 278
     },
     {
       "DefPath": ":g",
       "Def": true,
       "File": "variables.php",
       "Start": 265,
-      "End": 265
+      "End": 266
     }
   ]
 }

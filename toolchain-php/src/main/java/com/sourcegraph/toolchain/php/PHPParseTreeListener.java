@@ -387,6 +387,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     @Override
     public void exitClassDeclaration(PHPParser.ClassDeclarationContext ctx) {
         blockStack.pop();
+        currentClassInfo = null;
     }
 
     /**
@@ -570,7 +571,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
 
     @Override
     public void exitNamespaceDeclaration(PHPParser.NamespaceDeclarationContext ctx) {
-        namespace.pop();
+        // only pop for "namespace A {}" statements, not for "namespace A;"
+        if (!";".equals(ctx.getStop().getText())) {
+            namespace.pop();
+        }
     }
 
     @Override

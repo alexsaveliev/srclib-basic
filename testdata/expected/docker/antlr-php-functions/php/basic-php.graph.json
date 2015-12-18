@@ -6,7 +6,7 @@
       "Kind": "func",
       "File": "functions.php",
       "DefStart": 32,
-      "DefEnd": 33,
+      "DefEnd": 34,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -23,7 +23,7 @@
       "Kind": "func",
       "File": "functions.php",
       "DefStart": 59,
-      "DefEnd": 60,
+      "DefEnd": 61,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -40,7 +40,7 @@
       "Kind": "func",
       "File": "functions.php",
       "DefStart": 291,
-      "DefEnd": 292,
+      "DefEnd": 293,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -57,7 +57,7 @@
       "Kind": "func",
       "File": "functions.php",
       "DefStart": 113,
-      "DefEnd": 114,
+      "DefEnd": 115,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -74,7 +74,7 @@
       "Kind": "func",
       "File": "functions.php",
       "DefStart": 233,
-      "DefEnd": 234,
+      "DefEnd": 235,
       "Exported": true,
       "Data": {
         "Type": "()",
@@ -91,132 +91,132 @@
       "DefPath": ":f1",
       "File": "functions.php",
       "Start": 141,
-      "End": 143
+      "End": 144
     },
     {
       "DefPath": ":f1",
       "File": "functions.php",
       "Start": 321,
-      "End": 322
+      "End": 323
     },
     {
       "DefPath": ":f1",
       "Def": true,
       "File": "functions.php",
       "Start": 32,
-      "End": 33
+      "End": 34
     },
     {
       "DefPath": ":f1",
       "File": "functions.php",
       "Start": 361,
-      "End": 363
+      "End": 364
     },
     {
       "DefPath": ":f2",
       "File": "functions.php",
       "Start": 159,
-      "End": 160
+      "End": 161
     },
     {
       "DefPath": ":f2",
       "File": "functions.php",
       "Start": 176,
-      "End": 178
+      "End": 179
     },
     {
       "DefPath": ":f2",
       "File": "functions.php",
       "Start": 341,
-      "End": 342
+      "End": 343
     },
     {
       "DefPath": ":f2",
       "File": "functions.php",
       "Start": 382,
-      "End": 384
+      "End": 385
     },
     {
       "DefPath": ":f2",
       "File": "functions.php",
       "Start": 520,
-      "End": 522
+      "End": 523
     },
     {
       "DefPath": ":f2",
       "File": "functions.php",
       "Start": 541,
-      "End": 542
+      "End": 543
     },
     {
       "DefPath": ":f2",
       "Def": true,
       "File": "functions.php",
       "Start": 59,
-      "End": 60
+      "End": 61
     },
     {
       "DefPath": ":functions:foo:bar:baz:f3",
       "Def": true,
       "File": "functions.php",
       "Start": 291,
-      "End": 292
+      "End": 293
     },
     {
       "DefPath": ":functions:foo:bar:baz:f3",
       "File": "functions.php",
       "Start": 743,
-      "End": 752
+      "End": 753
     },
     {
       "DefPath": ":functions:ns1:f1",
       "Def": true,
       "File": "functions.php",
       "Start": 113,
-      "End": 114
+      "End": 115
     },
     {
       "DefPath": ":functions:ns1:f1",
       "File": "functions.php",
       "Start": 125,
-      "End": 126
+      "End": 127
     },
     {
       "DefPath": ":functions:ns1:f1",
       "File": "functions.php",
       "Start": 403,
-      "End": 419
+      "End": 420
     },
     {
       "DefPath": ":functions:ns2:f2",
       "Def": true,
       "File": "functions.php",
       "Start": 233,
-      "End": 234
+      "End": 235
     },
     {
       "DefPath": ":functions:ns2:f2",
       "File": "functions.php",
       "Start": 442,
-      "End": 458
+      "End": 459
     },
     {
       "DefPath": ":functions:ns2:f2",
       "File": "functions.php",
       "Start": 561,
-      "End": 577
+      "End": 578
     },
     {
       "DefPath": ":functions:ns2:f2",
       "File": "functions.php",
       "Start": 600,
-      "End": 605
+      "End": 606
     },
     {
       "DefPath": ":functions:ns2:f2",
       "File": "functions.php",
       "Start": 673,
-      "End": 678
+      "End": 679
     }
   ]
 }

@@ -746,12 +746,30 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             }
         }
         PHPParser.KeyedFieldNameContext keyedFieldNameContext = ctx.keyedFieldName();
-        String propertyName = keyedFieldNameContext.getText();
+        String propertyName;
+        PHPParser.KeyedVariableContext var = keyedFieldNameContext.keyedVariable();
+        Ref ref;
+
+        if (var != null) {
+            TerminalNode varNameNode = var.VarName();
+            if (varNameNode == null) {
+                return;
+            }
+            propertyName = varNameNode.getText();
+            ref = support.ref(varNameNode.getSymbol());
+
+        } else {
+            PHPParser.IdentifierContext ident = keyedFieldNameContext.keyedSimpleFieldName().identifier();
+            if (ident == null) {
+                return;
+            }
+            ref = support.ref(ident);
+            propertyName = ident.getText();
+        }
         boolean isMethodCall = ctx.actualArguments() != null;
         if (!isMethodCall && keyedFieldNameContext.keyedSimpleFieldName() != null) {
             propertyName = "$" + propertyName;}
 
-        Ref ref = support.ref(keyedFieldNameContext);
         if (varType == null) {
             ref.candidate = true;
             String prefix;

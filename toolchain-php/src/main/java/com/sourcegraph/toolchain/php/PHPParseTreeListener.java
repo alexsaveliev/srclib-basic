@@ -723,6 +723,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String varType = null;
 
         if (chainBaseContext != null) {
+            // looking for object part (foo in $foo->bar). We'll try to determine
+            // object type to emit proper ref
             List<PHPParser.KeyedVariableContext> var = chainBaseContext.keyedVariable();
             if (var != null && !var.isEmpty()) {
                 TerminalNode varNameNode = var.get(0).VarName();
@@ -740,19 +742,36 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         }
 
         if (varType == null) {
+            // last hope: maybe there was a type hint in function definition?
             VarInfo info = this.support.vars.peek().get(varName);
             if (info != null) {
                 varType = info.type;
             }
         }
         PHPParser.KeyedFieldNameContext keyedFieldNameContext = ctx.keyedFieldName();
-        String propertyName = keyedFieldNameContext.getText();
-        boolean isMethodCall = ctx.actualArguments() != null;
-        if (!isMethodCall && keyedFieldNameContext.keyedSimpleFieldName() != null) {
-            propertyName = "$" + propertyName;}
 
-        Ref ref = support.ref(keyedFieldNameContext);
+        PHPParser.KeyedSimpleFieldNameContext keyedSimpleFieldNameContext = keyedFieldNameContext.keyedSimpleFieldName();
+        if (keyedSimpleFieldNameContext == null) {
+            // $foo->$bar or $foo->${bar} is not supported yet
+            return;
+        }
+        // handling $foo->bar or $foo->bar[..]
+        PHPParser.IdentifierContext ident = keyedSimpleFieldNameContext.identifier();
+        if (ident == null) {
+            return;
+        }
+        Ref ref = support.ref(ident);
+        String propertyName = ident.getText();
+        // we should distinguish properties and methods
+        boolean isMethodCall = ctx.actualArguments() != null;
+
+        String targetDefName = propertyName;
+        if (!isMethodCall) {
+            targetDefName = "$" + targetDefName;
+        }
+
         if (varType == null) {
+            // when we were unable to identify object's type, let's emit ref candidate
             ref.candidate = true;
             String prefix;
             if (isMethodCall) {
@@ -760,13 +779,19 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             } else {
                 prefix = MAYBE_PROPERTY;
             }
-            ref.defKey = new DefKey(null, prefix + propertyName);
+            ref.defKey = new DefKey(null, prefix + targetDefName);
         } else {
-            String propertyClass = support.getPropertyClass(varType, propertyName);
-            if (propertyClass == null) {
-                propertyClass = varType;
+            // looking for a class or interface where property/method was defined
+            String definingClass;
+            if (isMethodCall) {
+                definingClass = support.getDefiningClass(varType, propertyName);
+            } else {
+                definingClass = support.getPropertyClass(varType, targetDefName);
             }
-            String path = propertyClass + CLASS_NAME_SEPARATOR + propertyName;
+            if (definingClass == null) {
+                definingClass = varType;
+            }
+            String path = definingClass + CLASS_NAME_SEPARATOR + targetDefName;
             if (isMethodCall) {
                 path += "()";
             }

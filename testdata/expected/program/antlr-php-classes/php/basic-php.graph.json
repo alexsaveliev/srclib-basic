@@ -454,6 +454,12 @@
     },
     {
       "DefPath": ":A/bar()",
+      "File": "inheritance.php",
+      "Start": 203,
+      "End": 206
+    },
+    {
+      "DefPath": ":A/bar()",
       "Def": true,
       "File": "inheritance.php",
       "Start": 98,
@@ -496,12 +502,6 @@
       "File": "inheritance.php",
       "Start": 278,
       "End": 279
-    },
-    {
-      "DefPath": ":B/bar()",
-      "File": "inheritance.php",
-      "Start": 203,
-      "End": 206
     },
     {
       "DefPath": ":B",

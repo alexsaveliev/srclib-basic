@@ -4,24 +4,27 @@
       "Subcmd": "scan",
       "Op": "scan",
       "SourceUnitTypes": [
-        "basic-php",
-        "basic-objc"
+        "antlr-php",
+        "antlr-objc",
+        "antlr-js"
       ]
     },
     {
       "Subcmd": "graph",
       "Op": "graph",
       "SourceUnitTypes": [
-        "basic-php",
-        "basic-objc"
+        "antlr-php",
+        "antlr-objc",
+        "antlr-js"
       ]
     },
     {
       "Subcmd": "depresolve",
       "Op": "depresolve",
       "SourceUnitTypes": [
-        "basic-php",
-        "basic-objc"
+        "antlr-php",
+        "antlr-objc",
+        "antlr-js"
       ]
     }
   ],
@@ -42,6 +45,7 @@
       ".bin/toolchain-core-0.0.1.jar",
       ".bin/toolchain-php-0.0.1.jar",
       ".bin/toolchain-objc-0.0.1.jar"
+      ".bin/toolchain-js-0.0.1.jar"
     ],
     "Commands": [
       "make install"

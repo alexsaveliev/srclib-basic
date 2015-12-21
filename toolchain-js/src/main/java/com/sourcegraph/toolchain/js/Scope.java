@@ -8,17 +8,23 @@ import java.util.HashMap;
  * Created by iisaev on 17.12.15.
  */
 public class Scope {
-    private HashMap<String, Def> idents;
+    private HashMap<String, SemaElement> idents;
+    private String name;
 
-    public Scope() {
-        idents = new HashMap<String, Def>();
+    public Scope(String name) {
+        idents = new HashMap<String, SemaElement>();
+        this.name = name;
     }
 
-    public Def find(String id) {
+    public SemaElement find(String id) {
         return idents.get(id);
     }
 
-    public void add(Def d) {
-        idents.put(d.name, d);
+    public void add(SemaElement e) {
+        idents.put(e.getName(), e);
+    }
+
+    public String getName() {
+        return name;
     }
 }

@@ -16,3 +16,6 @@
 [submodule "testdata/case/antlr-php-namespace-in-extends"]
 	path = testdata/case/antlr-php-namespace-in-extends
 	url = https://github.com/sgtest/antlr-php-namespace-in-extends
+[submodule "testdata/case/antlr-php-array-property"]
+	path = testdata/case/antlr-php-array-property
+	url = https://github.com/sgtest/antlr-php-array-property

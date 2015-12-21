@@ -1,0 +1,126 @@
+{
+  "Defs": [
+    {
+      "Path": ":A",
+      "Name": "A",
+      "Kind": "class",
+      "File": "test.php",
+      "DefStart": 14,
+      "DefEnd": 15,
+      "Exported": true,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Kind": "class",
+        "Separator": " ",
+        "Name": "A"
+      },
+      "TreePath": ":A"
+    },
+    {
+      "Path": ":A/$foo",
+      "Name": "$foo",
+      "Kind": "variable",
+      "File": "test.php",
+      "DefStart": 27,
+      "DefEnd": 31,
+      "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "property",
+        "Separator": " ",
+        "Name": "A::$foo"
+      },
+      "TreePath": ":A/$foo"
+    },
+    {
+      "Path": ":A/f()",
+      "Name": "f",
+      "Kind": "method",
+      "File": "test.php",
+      "DefStart": 54,
+      "DefEnd": 55,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "A::f"
+      },
+      "TreePath": ":A/f()"
+    },
+    {
+      "Path": ":A/g()",
+      "Name": "g",
+      "Kind": "method",
+      "File": "test.php",
+      "DefStart": 121,
+      "DefEnd": 122,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "A::g"
+      },
+      "TreePath": ":A/g()"
+    }
+  ],
+  "Refs": [
+    {
+      "DefPath": ":A/$foo",
+      "File": "test.php",
+      "Start": 165,
+      "End": 168
+    },
+    {
+      "DefPath": ":A/$foo",
+      "Def": true,
+      "File": "test.php",
+      "Start": 27,
+      "End": 31
+    },
+    {
+      "DefPath": ":A/$foo",
+      "File": "test.php",
+      "Start": 98,
+      "End": 101
+    },
+    {
+      "DefPath": ":A/$this",
+      "File": "test.php",
+      "Start": 158,
+      "End": 163
+    },
+    {
+      "DefPath": ":A/$this",
+      "File": "test.php",
+      "Start": 91,
+      "End": 96
+    },
+    {
+      "DefPath": ":A/f()",
+      "Def": true,
+      "File": "test.php",
+      "Start": 54,
+      "End": 55
+    },
+    {
+      "DefPath": ":A/g()",
+      "Def": true,
+      "File": "test.php",
+      "Start": 121,
+      "End": 122
+    },
+    {
+      "DefPath": ":A",
+      "Def": true,
+      "File": "test.php",
+      "Start": 14,
+      "End": 15
+    }
+  ]
+}

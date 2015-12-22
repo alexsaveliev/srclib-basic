@@ -1,0 +1,874 @@
+{
+  "Defs": [
+    {
+      "Path": ":$a",
+      "Name": "$a",
+      "Kind": "variable",
+      "File": "inheritance.php",
+      "DefStart": 255,
+      "DefEnd": 257,
+      "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
+      "TreePath": ":$a"
+    },
+    {
+      "Path": ":$b",
+      "Name": "$b",
+      "Kind": "variable",
+      "File": "inheritance.php",
+      "DefStart": 269,
+      "DefEnd": 271,
+      "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
+      "TreePath": ":$b"
+    },
+    {
+      "Path": ":A",
+      "Name": "A",
+      "Kind": "class",
+      "File": "inheritance.php",
+      "DefStart": 63,
+      "DefEnd": 64,
+      "Exported": true,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Kind": "class",
+        "Separator": " ",
+        "Name": "A"
+      },
+      "TreePath": ":A"
+    },
+    {
+      "Path": ":A/A()",
+      "Name": "A",
+      "Kind": "method",
+      "File": "inheritance.php",
+      "DefStart": 78,
+      "DefEnd": 79,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "A::A"
+      },
+      "TreePath": ":A/A()"
+    },
+    {
+      "Path": ":A/bar()",
+      "Name": "bar",
+      "Kind": "method",
+      "File": "inheritance.php",
+      "DefStart": 98,
+      "DefEnd": 101,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "A::bar"
+      },
+      "TreePath": ":A/bar()"
+    },
+    {
+      "Path": ":B",
+      "Name": "B",
+      "Kind": "class",
+      "File": "inheritance.php",
+      "DefStart": 118,
+      "DefEnd": 119,
+      "Exported": true,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Kind": "class",
+        "Separator": " ",
+        "Name": "B"
+      },
+      "TreePath": ":B"
+    },
+    {
+      "Path": ":B/__construct()",
+      "Name": "__construct",
+      "Kind": "method",
+      "File": "inheritance.php",
+      "DefStart": 156,
+      "DefEnd": 167,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "B::__construct"
+      },
+      "TreePath": ":B/__construct()"
+    },
+    {
+      "Path": ":I",
+      "Name": "I",
+      "Kind": "interface",
+      "File": "inheritance.php",
+      "DefStart": 17,
+      "DefEnd": 18,
+      "Exported": true,
+      "Data": {
+        "Type": "interface",
+        "Keyword": "interface",
+        "Kind": "interface",
+        "Separator": " ",
+        "Name": "I"
+      },
+      "TreePath": ":I"
+    },
+    {
+      "Path": ":I/C1",
+      "Name": "C1",
+      "Kind": "constant",
+      "File": "inheritance.php",
+      "DefStart": 28,
+      "DefEnd": 30,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "I::C1"
+      },
+      "TreePath": ":I/C1"
+    },
+    {
+      "Path": ":I/foo()",
+      "Name": "foo",
+      "Kind": "method",
+      "File": "inheritance.php",
+      "DefStart": 47,
+      "DefEnd": 50,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "I::foo"
+      },
+      "TreePath": ":I/foo()"
+    },
+    {
+      "Path": ":d",
+      "Name": "d",
+      "Kind": "class",
+      "File": "namespace.php",
+      "DefStart": 285,
+      "DefEnd": 286,
+      "Exported": true,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Kind": "class",
+        "Separator": " ",
+        "Name": "d"
+      },
+      "TreePath": ":d"
+    },
+    {
+      "Path": ":d/$property",
+      "Name": "$property",
+      "Kind": "variable",
+      "File": "namespace.php",
+      "DefStart": 303,
+      "DefEnd": 312,
+      "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "property",
+        "Separator": " ",
+        "Name": "d::$property"
+      },
+      "TreePath": ":d/$property"
+    },
+    {
+      "Path": ":d/CONSTANT",
+      "Name": "CONSTANT",
+      "Kind": "constant",
+      "File": "namespace.php",
+      "DefStart": 377,
+      "DefEnd": 385,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "d::CONSTANT"
+      },
+      "TreePath": ":d/CONSTANT"
+    },
+    {
+      "Path": ":d/method()",
+      "Name": "method",
+      "Kind": "method",
+      "File": "namespace.php",
+      "DefStart": 341,
+      "DefEnd": 347,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "d::method"
+      },
+      "TreePath": ":d/method()"
+    },
+    {
+      "Path": ":f",
+      "Name": "f",
+      "Kind": "class",
+      "File": "namespace.php",
+      "DefStart": 408,
+      "DefEnd": 409,
+      "Exported": true,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Kind": "class",
+        "Separator": " ",
+        "Name": "f"
+      },
+      "TreePath": ":f"
+    },
+    {
+      "Path": ":f/$name",
+      "Name": "$name",
+      "Kind": "variable",
+      "File": "namespace.php",
+      "DefStart": 424,
+      "DefEnd": 429,
+      "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "property",
+        "Separator": " ",
+        "Name": "f::$name"
+      },
+      "TreePath": ":f/$name"
+    },
+    {
+      "Path": ":f/name()",
+      "Name": "name",
+      "Kind": "method",
+      "File": "namespace.php",
+      "DefStart": 457,
+      "DefEnd": 461,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "f::name"
+      },
+      "TreePath": ":f/name()"
+    },
+    {
+      "Path": ":foo:bar:baz:c",
+      "Name": "c",
+      "Kind": "class",
+      "File": "namespace.php",
+      "DefStart": 38,
+      "DefEnd": 39,
+      "Exported": true,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Kind": "class",
+        "Separator": " ",
+        "Name": "\\foo\\bar\\baz\\c"
+      },
+      "TreePath": ":foo:bar:baz:c"
+    },
+    {
+      "Path": ":foo:bar:baz:c/$property",
+      "Name": "$property",
+      "Kind": "variable",
+      "File": "namespace.php",
+      "DefStart": 73,
+      "DefEnd": 82,
+      "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "property",
+        "Separator": " ",
+        "Name": "\\foo\\bar\\baz\\c::$property"
+      },
+      "TreePath": ":foo:bar:baz:c/$property"
+    },
+    {
+      "Path": ":foo:bar:baz:c/CONSTANT",
+      "Name": "CONSTANT",
+      "Kind": "constant",
+      "File": "namespace.php",
+      "DefStart": 50,
+      "DefEnd": 58,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\foo\\bar\\baz\\c::CONSTANT"
+      },
+      "TreePath": ":foo:bar:baz:c/CONSTANT"
+    },
+    {
+      "Path": ":foo:bar:baz:c/method()",
+      "Name": "method",
+      "Kind": "method",
+      "File": "namespace.php",
+      "DefStart": 106,
+      "DefEnd": 112,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "\\foo\\bar\\baz\\c::method"
+      },
+      "TreePath": ":foo:bar:baz:c/method()"
+    },
+    {
+      "Path": ":foo:bar:qux:c",
+      "Name": "c",
+      "Kind": "class",
+      "File": "namespace.php",
+      "DefStart": 166,
+      "DefEnd": 167,
+      "Exported": true,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Kind": "class",
+        "Separator": " ",
+        "Name": "\\foo\\bar\\qux\\c"
+      },
+      "TreePath": ":foo:bar:qux:c"
+    },
+    {
+      "Path": ":foo:bar:qux:c/$property",
+      "Name": "$property",
+      "Kind": "variable",
+      "File": "namespace.php",
+      "DefStart": 179,
+      "DefEnd": 188,
+      "Exported": true,
+      "Data": {
+        "Type": "mixed",
+        "Keyword": "",
+        "Kind": "property",
+        "Separator": " ",
+        "Name": "\\foo\\bar\\qux\\c::$property"
+      },
+      "TreePath": ":foo:bar:qux:c/$property"
+    },
+    {
+      "Path": ":foo:bar:qux:c/CONSTANT",
+      "Name": "CONSTANT",
+      "Kind": "constant",
+      "File": "namespace.php",
+      "DefStart": 243,
+      "DefEnd": 251,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\foo\\bar\\qux\\c::CONSTANT"
+      },
+      "TreePath": ":foo:bar:qux:c/CONSTANT"
+    },
+    {
+      "Path": ":foo:bar:qux:c/method()",
+      "Name": "method",
+      "Kind": "method",
+      "File": "namespace.php",
+      "DefStart": 212,
+      "DefEnd": 218,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "method",
+        "Separator": "",
+        "Name": "\\foo\\bar\\qux\\c::method"
+      },
+      "TreePath": ":foo:bar:qux:c/method()"
+    }
+  ],
+  "Refs": [
+    {
+      "DefPath": ":$a",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 255,
+      "End": 257
+    },
+    {
+      "DefPath": ":$b",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 269,
+      "End": 271
+    },
+    {
+      "DefPath": ":A/A()",
+      "File": "inheritance.php",
+      "Start": 264,
+      "End": 265
+    },
+    {
+      "DefPath": ":A/A()",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 78,
+      "End": 79
+    },
+    {
+      "DefPath": ":A/bar()",
+      "File": "inheritance.php",
+      "Start": 203,
+      "End": 206
+    },
+    {
+      "DefPath": ":A/bar()",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 98,
+      "End": 101
+    },
+    {
+      "DefPath": ":A",
+      "File": "inheritance.php",
+      "Start": 128,
+      "End": 129
+    },
+    {
+      "DefPath": ":A",
+      "File": "inheritance.php",
+      "Start": 212,
+      "End": 218
+    },
+    {
+      "DefPath": ":A",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 63,
+      "End": 64
+    },
+    {
+      "DefPath": ":B/$this",
+      "File": "inheritance.php",
+      "Start": 196,
+      "End": 201
+    },
+    {
+      "DefPath": ":B/__construct()",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 156,
+      "End": 167
+    },
+    {
+      "DefPath": ":B/__construct()",
+      "File": "inheritance.php",
+      "Start": 278,
+      "End": 279
+    },
+    {
+      "DefPath": ":B",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 118,
+      "End": 119
+    },
+    {
+      "DefPath": ":B",
+      "File": "inheritance.php",
+      "Start": 226,
+      "End": 230
+    },
+    {
+      "DefPath": ":I/C1",
+      "File": "inheritance.php",
+      "Start": 232,
+      "End": 234
+    },
+    {
+      "DefPath": ":I/C1",
+      "File": "inheritance.php",
+      "Start": 245,
+      "End": 247
+    },
+    {
+      "DefPath": ":I/C1",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 28,
+      "End": 30
+    },
+    {
+      "DefPath": ":I/foo()",
+      "File": "inheritance.php",
+      "Start": 186,
+      "End": 189
+    },
+    {
+      "DefPath": ":I/foo()",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 47,
+      "End": 50
+    },
+    {
+      "DefPath": ":I",
+      "File": "inheritance.php",
+      "Start": 141,
+      "End": 142
+    },
+    {
+      "DefPath": ":I",
+      "Def": true,
+      "File": "inheritance.php",
+      "Start": 17,
+      "End": 18
+    },
+    {
+      "DefPath": ":d/$property",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 303,
+      "End": 312
+    },
+    {
+      "DefPath": ":d/$property",
+      "File": "namespace.php",
+      "Start": 992,
+      "End": 1001
+    },
+    {
+      "DefPath": ":d/CONSTANT",
+      "File": "namespace.php",
+      "Start": 1015,
+      "End": 1023
+    },
+    {
+      "DefPath": ":d/CONSTANT",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 377,
+      "End": 385
+    },
+    {
+      "DefPath": ":d/method()",
+      "File": "namespace.php",
+      "Start": 1037,
+      "End": 1043
+    },
+    {
+      "DefPath": ":d/method()",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 341,
+      "End": 347
+    },
+    {
+      "DefPath": ":d",
+      "File": "namespace.php",
+      "Start": 1012,
+      "End": 1013
+    },
+    {
+      "DefPath": ":d",
+      "File": "namespace.php",
+      "Start": 1034,
+      "End": 1035
+    },
+    {
+      "DefPath": ":d",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 285,
+      "End": 286
+    },
+    {
+      "DefPath": ":d",
+      "File": "namespace.php",
+      "Start": 989,
+      "End": 990
+    },
+    {
+      "DefPath": ":f/$name",
+      "File": "namespace.php",
+      "Start": 1105,
+      "End": 1110
+    },
+    {
+      "DefPath": ":f/$name",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 424,
+      "End": 429
+    },
+    {
+      "DefPath": ":f/name()",
+      "File": "namespace.php",
+      "Start": 1124,
+      "End": 1128
+    },
+    {
+      "DefPath": ":f/name()",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 457,
+      "End": 461
+    },
+    {
+      "DefPath": ":f",
+      "File": "namespace.php",
+      "Start": 1102,
+      "End": 1103
+    },
+    {
+      "DefPath": ":f",
+      "File": "namespace.php",
+      "Start": 1121,
+      "End": 1122
+    },
+    {
+      "DefPath": ":f",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 408,
+      "End": 409
+    },
+    {
+      "DefPath": ":foo:bar:baz:c/$property",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 73,
+      "End": 82
+    },
+    {
+      "DefPath": ":foo:bar:baz:c/$property",
+      "File": "namespace.php",
+      "Start": 775,
+      "End": 784
+    },
+    {
+      "DefPath": ":foo:bar:baz:c/CONSTANT",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 50,
+      "End": 58
+    },
+    {
+      "DefPath": ":foo:bar:baz:c/CONSTANT",
+      "File": "namespace.php",
+      "Start": 806,
+      "End": 814
+    },
+    {
+      "DefPath": ":foo:bar:baz:c/method()",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 106,
+      "End": 112
+    },
+    {
+      "DefPath": ":foo:bar:baz:c/method()",
+      "File": "namespace.php",
+      "Start": 836,
+      "End": 842
+    },
+    {
+      "DefPath": ":foo:bar:baz:c",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 38,
+      "End": 39
+    },
+    {
+      "DefPath": ":foo:bar:baz:c",
+      "File": "namespace.php",
+      "Start": 764,
+      "End": 773
+    },
+    {
+      "DefPath": ":foo:bar:baz:c",
+      "File": "namespace.php",
+      "Start": 795,
+      "End": 804
+    },
+    {
+      "DefPath": ":foo:bar:baz:c",
+      "File": "namespace.php",
+      "Start": 825,
+      "End": 834
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/$property",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 179,
+      "End": 188
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/$property",
+      "File": "namespace.php",
+      "Start": 540,
+      "End": 549
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/$property",
+      "File": "namespace.php",
+      "Start": 683,
+      "End": 692
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/$property",
+      "File": "namespace.php",
+      "Start": 897,
+      "End": 906
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/CONSTANT",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 243,
+      "End": 251
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/CONSTANT",
+      "File": "namespace.php",
+      "Start": 576,
+      "End": 584
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/CONSTANT",
+      "File": "namespace.php",
+      "Start": 714,
+      "End": 722
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/CONSTANT",
+      "File": "namespace.php",
+      "Start": 920,
+      "End": 928
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/method()",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 212,
+      "End": 218
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/method()",
+      "File": "namespace.php",
+      "Start": 611,
+      "End": 617
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/method()",
+      "File": "namespace.php",
+      "Start": 744,
+      "End": 750
+    },
+    {
+      "DefPath": ":foo:bar:qux:c/method()",
+      "File": "namespace.php",
+      "Start": 942,
+      "End": 948
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "Def": true,
+      "File": "namespace.php",
+      "Start": 166,
+      "End": 167
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 524,
+      "End": 538
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 560,
+      "End": 574
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 595,
+      "End": 609
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 672,
+      "End": 681
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 703,
+      "End": 712
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 733,
+      "End": 742
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 894,
+      "End": 895
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 917,
+      "End": 918
+    },
+    {
+      "DefPath": ":foo:bar:qux:c",
+      "File": "namespace.php",
+      "Start": 939,
+      "End": 940
+    }
+  ]
+}

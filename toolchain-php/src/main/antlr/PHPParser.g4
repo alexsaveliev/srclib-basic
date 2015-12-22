@@ -583,7 +583,8 @@ indirectTypeRef
     ;
 
 qualifiedNamespaceName
-    : Namespace? '\\'? namespaceNameList
+    : '\\'? namespaceNameList
+    | Namespace '\\' namespaceNameList
     ;
 
 namespaceNameList

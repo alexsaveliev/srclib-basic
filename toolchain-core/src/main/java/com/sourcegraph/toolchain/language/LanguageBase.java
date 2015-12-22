@@ -125,7 +125,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
     public Def def(ParserRuleContext ctx, String kind) {
         Def def = new Def();
         def.defStart = ctx.getStart().getStartIndex();
-        def.defEnd = ctx.getStop().getStopIndex();
+        def.defEnd = ctx.getStop().getStopIndex() + 1;
         def.name = ctx.getText();
         def.file = getCurrentFile();
         def.kind = kind;
@@ -140,7 +140,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
     public Def def(Token token, String kind) {
         Def def = new Def();
         def.defStart = token.getStartIndex();
-        def.defEnd = token.getStopIndex();
+        def.defEnd = token.getStopIndex() + 1;
         def.name = token.getText();
         def.file = getCurrentFile();
         def.kind = kind;
@@ -154,7 +154,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
     public Ref ref(ParserRuleContext ctx) {
         Ref ref = new Ref();
         ref.start = ctx.getStart().getStartIndex();
-        ref.end = ctx.getStop().getStopIndex();
+        ref.end = ctx.getStop().getStopIndex() + 1;
         ref.file = getCurrentFile();
         return ref;
     }
@@ -166,7 +166,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
     public Ref ref(Token token) {
         Ref ref = new Ref();
         ref.start = token.getStartIndex();
-        ref.end = token.getStopIndex();
+        ref.end = token.getStopIndex() + 1;
         ref.file = getCurrentFile();
         return ref;
     }

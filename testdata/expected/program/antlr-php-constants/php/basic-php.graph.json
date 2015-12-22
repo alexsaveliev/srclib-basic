@@ -1,0 +1,227 @@
+{
+  "Defs": [
+    {
+      "Path": ":ACONSTANT",
+      "Name": "ACONSTANT",
+      "Kind": "constant",
+      "File": "constants.php",
+      "DefStart": 417,
+      "DefEnd": 428,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "define",
+        "Kind": "constant",
+        "Separator": " "
+      },
+      "TreePath": ":ACONSTANT"
+    },
+    {
+      "Path": ":x:y:a:CONSTANT",
+      "Name": "CONSTANT",
+      "Kind": "constant",
+      "File": "constants.php",
+      "DefStart": 32,
+      "DefEnd": 40,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\x\\y\\a\\CONSTANT"
+      },
+      "TreePath": ":x:y:a:CONSTANT"
+    },
+    {
+      "Path": ":x:y:a:f",
+      "Name": "f",
+      "Kind": "func",
+      "File": "constants.php",
+      "DefStart": 56,
+      "DefEnd": 57,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\x\\y\\a\\f"
+      },
+      "TreePath": ":x:y:a:f"
+    },
+    {
+      "Path": ":x:y:b:CONSTANT",
+      "Name": "CONSTANT",
+      "Kind": "constant",
+      "File": "constants.php",
+      "DefStart": 91,
+      "DefEnd": 99,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\x\\y\\b\\CONSTANT"
+      },
+      "TreePath": ":x:y:b:CONSTANT"
+    },
+    {
+      "Path": ":x:y:b:f",
+      "Name": "f",
+      "Kind": "func",
+      "File": "constants.php",
+      "DefStart": 115,
+      "DefEnd": 116,
+      "Exported": true,
+      "Data": {
+        "Type": "()",
+        "Keyword": "function",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "\\x\\y\\b\\f"
+      },
+      "TreePath": ":x:y:b:f"
+    },
+    {
+      "Path": ":x:y:c:CONSTANT",
+      "Name": "CONSTANT",
+      "Kind": "constant",
+      "File": "constants.php",
+      "DefStart": 150,
+      "DefEnd": 158,
+      "Exported": true,
+      "Data": {
+        "Type": "const",
+        "Keyword": "const",
+        "Kind": "constant",
+        "Separator": " ",
+        "Name": "\\x\\y\\c\\CONSTANT"
+      },
+      "TreePath": ":x:y:c:CONSTANT"
+    }
+  ],
+  "Refs": [
+    {
+      "DefPath": ":ACONSTANT",
+      "Def": true,
+      "File": "constants.php",
+      "Start": 417,
+      "End": 428
+    },
+    {
+      "DefPath": ":ACONSTANT",
+      "File": "constants.php",
+      "Start": 440,
+      "End": 449
+    },
+    {
+      "DefPath": ":define",
+      "File": "constants.php",
+      "Start": 410,
+      "End": 416
+    },
+    {
+      "DefPath": ":x:y:a:CONSTANT",
+      "File": "constants.php",
+      "Start": 209,
+      "End": 224
+    },
+    {
+      "DefPath": ":x:y:a:CONSTANT",
+      "Def": true,
+      "File": "constants.php",
+      "Start": 32,
+      "End": 40
+    },
+    {
+      "DefPath": ":x:y:a:CONSTANT",
+      "File": "constants.php",
+      "Start": 375,
+      "End": 389
+    },
+    {
+      "DefPath": ":x:y:a:CONSTANT",
+      "File": "constants.php",
+      "Start": 397,
+      "End": 405
+    },
+    {
+      "DefPath": ":x:y:a:f",
+      "File": "constants.php",
+      "Start": 255,
+      "End": 262
+    },
+    {
+      "DefPath": ":x:y:a:f",
+      "File": "constants.php",
+      "Start": 271,
+      "End": 273
+    },
+    {
+      "DefPath": ":x:y:a:f",
+      "Def": true,
+      "File": "constants.php",
+      "Start": 56,
+      "End": 57
+    },
+    {
+      "DefPath": ":x:y:b:CONSTANT",
+      "File": "constants.php",
+      "Start": 288,
+      "End": 302
+    },
+    {
+      "DefPath": ":x:y:b:CONSTANT",
+      "File": "constants.php",
+      "Start": 310,
+      "End": 318
+    },
+    {
+      "DefPath": ":x:y:b:CONSTANT",
+      "Def": true,
+      "File": "constants.php",
+      "Start": 91,
+      "End": 99
+    },
+    {
+      "DefPath": ":x:y:b:f",
+      "Def": true,
+      "File": "constants.php",
+      "Start": 115,
+      "End": 116
+    },
+    {
+      "DefPath": ":x:y:b:f",
+      "File": "constants.php",
+      "Start": 349,
+      "End": 356
+    },
+    {
+      "DefPath": ":x:y:b:f",
+      "File": "constants.php",
+      "Start": 359,
+      "End": 360
+    },
+    {
+      "DefPath": ":x:y:c:CONSTANT",
+      "Def": true,
+      "File": "constants.php",
+      "Start": 150,
+      "End": 158
+    },
+    {
+      "DefPath": ":x:y:c:CONSTANT",
+      "File": "constants.php",
+      "Start": 170,
+      "End": 178
+    },
+    {
+      "DefPath": ":x:y:c:CONSTANT",
+      "File": "constants.php",
+      "Start": 186,
+      "End": 201
+    }
+  ]
+}

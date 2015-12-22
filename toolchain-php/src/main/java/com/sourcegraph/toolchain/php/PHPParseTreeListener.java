@@ -58,6 +58,8 @@ class PHPParseTreeListener extends PHPParserBaseListener {
      */
     private static final String MAYBE_CONSTANT = "(?C)";
 
+    private static final String THIS_KEYWORD = "$this";
+
     /**
      * Caller
      */
@@ -385,6 +387,7 @@ class PHPParseTreeListener extends PHPParserBaseListener {
     @Override
     public void exitClassDeclaration(PHPParser.ClassDeclarationContext ctx) {
         blockStack.pop();
+        currentClassInfo = null;
     }
 
     /**
@@ -568,7 +571,10 @@ class PHPParseTreeListener extends PHPParserBaseListener {
 
     @Override
     public void exitNamespaceDeclaration(PHPParser.NamespaceDeclarationContext ctx) {
-        namespace.pop();
+        // only pop for "namespace A {}" statements, not for "namespace A;"
+        if (!";".equals(ctx.getStop().getText())) {
+            namespace.pop();
+        }
     }
 
     @Override
@@ -662,9 +668,12 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         VarInfo info;
         Map<String, VarInfo> localVars = support.vars.peek();
         String path = null;
-        if ("$this".equals(objectVarName)) {
+        if (THIS_KEYWORD.equals(objectVarName)) {
+            if (currentClassInfo == null) {
+                return;
+            }
             info = new VarInfo(currentClassInfo.className, true);
-            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
+            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + THIS_KEYWORD;
         } else {
             if (functionArguments.containsKey(objectVarName)) {
                 info = new VarInfo(functionArguments.get(objectVarName), true);
@@ -714,30 +723,55 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String varType = null;
 
         if (chainBaseContext != null) {
+            // looking for object part (foo in $foo->bar). We'll try to determine
+            // object type to emit proper ref
             List<PHPParser.KeyedVariableContext> var = chainBaseContext.keyedVariable();
             if (var != null && !var.isEmpty()) {
                 TerminalNode varNameNode = var.get(0).VarName();
                 if (varNameNode != null) {
                     varName = varNameNode.getText();
-                    varType = functionArguments.get(varName);
+                    if (THIS_KEYWORD.equals(varName)) {
+                        if (currentClassInfo != null) {
+                            varType = currentClassInfo.className;
+                        }
+                    } else {
+                        varType = functionArguments.get(varName);
+                    }
                 }
             }
         }
 
         if (varType == null) {
+            // last hope: maybe there was a type hint in function definition?
             VarInfo info = this.support.vars.peek().get(varName);
             if (info != null) {
                 varType = info.type;
             }
         }
         PHPParser.KeyedFieldNameContext keyedFieldNameContext = ctx.keyedFieldName();
-        String propertyName = keyedFieldNameContext.getText();
-        boolean isMethodCall = ctx.actualArguments() != null;
-        if (!isMethodCall && keyedFieldNameContext.keyedSimpleFieldName() != null) {
-            propertyName = "$" + propertyName;}
 
-        Ref ref = support.ref(keyedFieldNameContext);
+        PHPParser.KeyedSimpleFieldNameContext keyedSimpleFieldNameContext = keyedFieldNameContext.keyedSimpleFieldName();
+        if (keyedSimpleFieldNameContext == null) {
+            // $foo->$bar or $foo->${bar} is not supported yet
+            return;
+        }
+        // handling $foo->bar or $foo->bar[..]
+        PHPParser.IdentifierContext ident = keyedSimpleFieldNameContext.identifier();
+        if (ident == null) {
+            return;
+        }
+        Ref ref = support.ref(ident);
+        String propertyName = ident.getText();
+        // we should distinguish properties and methods
+        boolean isMethodCall = ctx.actualArguments() != null;
+
+        String targetDefName = propertyName;
+        if (!isMethodCall) {
+            targetDefName = "$" + targetDefName;
+        }
+
         if (varType == null) {
+            // when we were unable to identify object's type, let's emit ref candidate
             ref.candidate = true;
             String prefix;
             if (isMethodCall) {
@@ -745,9 +779,19 @@ class PHPParseTreeListener extends PHPParserBaseListener {
             } else {
                 prefix = MAYBE_PROPERTY;
             }
-            ref.defKey = new DefKey(null, prefix + propertyName);
+            ref.defKey = new DefKey(null, prefix + targetDefName);
         } else {
-            String path = varType + CLASS_NAME_SEPARATOR + propertyName;
+            // looking for a class or interface where property/method was defined
+            String definingClass;
+            if (isMethodCall) {
+                definingClass = support.getDefiningClass(varType, propertyName);
+            } else {
+                definingClass = support.getPropertyClass(varType, targetDefName);
+            }
+            if (definingClass == null) {
+                definingClass = varType;
+            }
+            String path = definingClass + CLASS_NAME_SEPARATOR + targetDefName;
             if (isMethodCall) {
                 path += "()";
             }
@@ -768,9 +812,12 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         VarInfo info;
         Map<String, VarInfo> localVars = support.vars.peek();
         String path = null;
-        if ("$this".equals(varName)) {
+        if (THIS_KEYWORD.equals(varName)) {
+            if (currentClassInfo == null) {
+                return;
+            }
             info = new VarInfo(currentClassInfo.className, true);
-            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + "$this";
+            path = currentClassInfo.className + CLASS_NAME_SEPARATOR + THIS_KEYWORD;
         } else {
             if (functionArguments.containsKey(varName)) {
                 info = new VarInfo(functionArguments.get(varName), true);
@@ -979,6 +1026,9 @@ class PHPParseTreeListener extends PHPParserBaseListener {
         String parts[] = ctx.getText().split("::");
         String rootClassName = null;
         if ("self".equals(parts[0])) {
+            if (currentClassInfo == null) {
+                return;
+            }
             rootClassName = currentClassInfo.className;
             Ref selfRef = support.ref(ctx.qualifiedStaticTypeRef());
             selfRef.defKey = new DefKey(null, rootClassName);

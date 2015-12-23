@@ -188,12 +188,10 @@ availability_condition : '#available' '(' availability_arguments ')' ;
 
 availability_arguments : availability_argument (',' availability_argument)* ;
 
-availability_argument : Platform | '*' ;
-
-/** Must match as token so Platform_version doesn't look like a float literal */
-// alexsaveliev: replaced Platform_name with identifier
-// testcase: #elseif os(Linux)
-Platform : Identifier WS? Platform_version ;
+/*
+ * alexsaveliev: argument may be any idenfifier, we don't care
+ */
+availability_argument : Identifier | '*' ;
 
 fragment
 Platform_name
@@ -1127,8 +1125,9 @@ fragment Octal_digit : [0-7] ;
 fragment Octal_literal_character : Octal_digit | '_'  ;
 fragment Octal_literal_characters : Octal_literal_character+ ;
 
-Decimal_literal		: [0-9] [0-9_]* ;
+// alexsaveliev: moving Pure_decimal_digits before Decimal_literal to support foo.0
 Pure_decimal_digits : [0-9]+ ;
+Decimal_literal		: [0-9] [0-9_]* ;
 fragment Decimal_digit : [0-9] ;
 fragment Decimal_literal_character : Decimal_digit | '_'  ;
 fragment Decimal_literal_characters : Decimal_literal_character+ ;

@@ -245,12 +245,20 @@ build_configuration : platform_testing_function
  | build_configuration build_OR build_configuration
  ;
 
-platform_testing_function : 'os' '(' operating_system ')'
- | 'arch' '(' architecture ')'
+/**
+ * alexsaveliev: replaced operating_system with Identifier and architecture with Identifier
+ * "Linux" is valid OS name
+ */
+platform_testing_function : 'os' '(' Identifier ')'
+ | 'arch' '(' Identifier ')'
  ;
 
-operating_system : 'OSX' | 'iOS' | 'watchOS' | 'tvOS' ;
-architecture : 'i386' | 'x86_64' | 'arm' | 'arm64' ;
+/**
+ * alexsaveliev: commented out to support future OSes and architectures
+ * and to resolve conflicts between Identifier and operating_system | architecture
+ */
+// operating_system : 'OSX' | 'iOS' | 'watchOS' | 'tvOS' ;
+// architecture : 'i386' | 'x86_64' | 'arm' | 'arm64' ;
 
 // GRAMMAR OF A LINE CONTROL STATEMENT
 
@@ -391,11 +399,15 @@ function_body : code_block  ;
 parameter_clauses : parameter_clause parameter_clauses? ;
 parameter_clause : '(' ')' |  '(' parameter_list ')'  ;
 parameter_list : parameter (',' parameter)*  ;
+
+/*
+ * alexsaveliev: added attributes?. Example: "func autoreleasepool(@noescape code: () -> Void) {"
+ */
 parameter
- : 'let'?  external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
- | 'var'   external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
- | 'inout' external_parameter_name? local_parameter_name type_annotation
- |         external_parameter_name? local_parameter_name type_annotation range_operator
+ : 'let'? attributes? external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
+ | 'var' attributes? external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
+ | 'inout' attributes? external_parameter_name? local_parameter_name type_annotation
+ |  attributes? external_parameter_name? local_parameter_name type_annotation range_operator
  ;
 external_parameter_name : identifier | '_'  ;
 local_parameter_name : identifier | '_'  ;

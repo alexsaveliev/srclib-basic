@@ -522,8 +522,9 @@ deinitializer_declaration : attributes? 'deinit' code_block  ;
  * alexsaveliev: added requirement_clause? to support
  * "extension TypeIndexed where Value : ForwardIndexType ..."
  * see http://www.raywenderlich.com/109156/introducing-protocol-oriented-programming-in-swift-2
+ * alexsaveliev: added attributes?
  */
-extension_declaration : access_level_modifier? 'extension' type_identifier requirement_clause? type_inheritance_clause? extension_body  ;
+extension_declaration : attributes? access_level_modifier? 'extension' type_identifier requirement_clause? type_inheritance_clause? extension_body  ;
 extension_body : '{' declarations?'}'  ;
 
 // GRAMMAR OF A SUBSCRIPT DECLARATION
@@ -622,7 +623,14 @@ attribute : '@' attribute_name attribute_argument_clause? ;
 attribute_name : identifier  ;
 attribute_argument_clause : '('  balanced_tokens?  ')'  ;
 attributes : attribute+ ;
-balanced_tokens : balanced_token+ ;
+
+/*
+ * alexsaveliev: added comma-separate tokens to support
+ * @available(*, unavailable, message="Please wrap your tuple argument in parentheses: 'print((...))'")
+ */
+balanced_tokens
+ : balanced_token+
+ | balanced_token (',' balanced_token)*;
 balanced_token
  : '('  balanced_tokens? ')'
  | '[' balanced_tokens? ']'

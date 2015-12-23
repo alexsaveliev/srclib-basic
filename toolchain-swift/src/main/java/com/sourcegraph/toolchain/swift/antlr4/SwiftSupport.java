@@ -155,6 +155,9 @@ public class SwiftSupport {
 			return -1;
 		}
 		i++;
+		if (i == tokens.size()) {
+			return -1;
+		}
 		lt = tokens.get(i);
 		while ( lt.getType()!=Token.EOF && isOperatorChar(lt.getType()) ) {
 			i++;

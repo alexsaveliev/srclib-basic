@@ -191,7 +191,9 @@ availability_arguments : availability_argument (',' availability_argument)* ;
 availability_argument : Platform | '*' ;
 
 /** Must match as token so Platform_version doesn't look like a float literal */
-Platform : Platform_name WS? Platform_version ;
+// alexsaveliev: replaced Platform_name with identifier
+// testcase: #elseif os(Linux)
+Platform : Identifier WS? Platform_version ;
 
 fragment
 Platform_name
@@ -428,10 +430,24 @@ struct_body : '{' declarations?'}'  ;
 
 // GRAMMAR OF A CLASS DECLARATION
 
+/*
+ * alexsaveliev: replaced access_level_modifier? with class_modifiers?
+ * to handle 'public final class Foo'
+ * "Prevenging Overrides" in
+ * See https://developer.apple.com/library/mac/documentation/Swift/Conceptual/Swift_Programming_Language/Inheritance.html
+ */
 class_declaration
- : attributes? access_level_modifier? 'class' class_name
+ : attributes? class_modifiers? 'class' class_name
    generic_parameter_clause? type_inheritance_clause? class_body
  ;
+
+class_modifiers
+ : access_level_modifier
+ | access_level_modifier 'final'
+ | 'final'
+ | 'final' access_level_modifier
+ ;
+
 class_name : identifier ;
 class_body : '{' declarations? '}'  ;
 
@@ -492,7 +508,12 @@ deinitializer_declaration : attributes? 'deinit' code_block  ;
 
 // GRAMMAR OF AN EXTENSION DECLARATION
 
-extension_declaration : access_level_modifier? 'extension' type_identifier type_inheritance_clause? extension_body  ;
+/*
+ * alexsaveliev: added requirement_clause? to support
+ * "extension TypeIndexed where Value : ForwardIndexType ..."
+ * see http://www.raywenderlich.com/109156/introducing-protocol-oriented-programming-in-swift-2
+ */
+extension_declaration : access_level_modifier? 'extension' type_identifier requirement_clause? type_inheritance_clause? extension_body  ;
 extension_body : '{' declarations?'}'  ;
 
 // GRAMMAR OF A SUBSCRIPT DECLARATION

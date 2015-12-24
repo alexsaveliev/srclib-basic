@@ -1,23 +1,15 @@
 package com.sourcegraph.toolchain.js;
 
 import com.sourcegraph.toolchain.core.objects.Def;
-import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
 import com.sourcegraph.toolchain.js.antlr4.JavaScriptBaseListener;
-import com.sourcegraph.toolchain.js.antlr4.JavaScriptLexer;
 import com.sourcegraph.toolchain.js.antlr4.JavaScriptParser;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
 
-import java.io.File;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+
 
 class JavaScriptParseTreeListener extends JavaScriptBaseListener {
 
@@ -31,14 +23,15 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
 
     @Override
     public void enterFunctionDeclaration(JavaScriptParser.FunctionDeclarationContext ctx) {
-        Def funcDef = support.def(ctx.Identifier().getSymbol(), "function");
-        funcDef.defKey = new DefKey(null, ctxt.getName() + "@" + ctx.Identifier().getSymbol().getText());
+        Token t = ctx.Identifier().getSymbol();
+        String ident = t.getText();
+        Def funcDef = support.def(t, "function");
+        funcDef.defKey = new DefKey(null, ctxt.getName() + "@" + ident);
         support.emit(funcDef);
-        Prototype p = new Prototype(ctx.Identifier().getSymbol().getText());
+        Prototype p = new Prototype(ident);
         p.setDef(funcDef);
         ctxt.addToCurrentScope(p);
-        ctxt.pushScope(ctxt.getName() + "@" + ctx.Identifier().getSymbol().getText());
-        ctxt.setProtoDecl();
+        ctxt.pushScope(ctxt.getName() + "@" + ident);
         ctxt.setCurProtoDecl(p);
     }
 
@@ -60,19 +53,23 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
 
     @Override
     public void enterVariableDeclaration(JavaScriptParser.VariableDeclarationContext ctx) {
-        Def varDef = support.def(ctx.Identifier().getSymbol(), "var");
+        Token t = ctx.Identifier().getSymbol();
+        String ident = t.getText();
+        Def varDef = support.def(t, "var");
         varDef.defKey = new DefKey(null, ctxt.getName() + "@" + varDef.name);
         support.emit(varDef);
-        Variable v = new Variable(ctx.Identifier().getSymbol().getText());
+        Variable v = new Variable(ident);
         v.setDef(varDef);
         ctxt.addToCurrentScope(v);
     }
 
     @Override
     public void enterIdentifierExpression(JavaScriptParser.IdentifierExpressionContext ctx) {
-        SemaElement e = ctxt.find(ctx.Identifier().getSymbol().getText());
+        Token t = ctx.Identifier().getSymbol();
+        String ident = t.getText();
+        SemaElement e = ctxt.find(ident);
         if (e != null) {
-            Ref ref = support.ref(ctx.Identifier().getSymbol());
+            Ref ref = support.ref(t);
             ref.defKey = e.getDef().defKey;
             support.emit(ref);
         }
@@ -81,8 +78,9 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
 
     @Override
     public void enterThisExpression(JavaScriptParser.ThisExpressionContext ctx) {
-        if (ctxt.isProtoDecl()) {
-            ctxt.setResolved(ctxt.getCurProtoDecl());
+        Prototype protodecl = ctxt.getCurProtoDecl();
+        if (protodecl != null) {
+            ctxt.setResolved(protodecl);
             Ref ref = support.ref(ctx.This().getSymbol());
             ref.defKey = ctxt.getCurProtoDecl().getDef().defKey;
             support.emit(ref);
@@ -97,26 +95,6 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
         }
     }
 
-    /*@Override
-    public void exitAssignmentExpression(JavaScriptParser.AssignmentExpressionContext ctx) {
-        if (ctxt.isProtoDecl()) {
-            //check if left hand is this.field
-            if ((ctx.singleExpression() instanceof JavaScriptParser.MemberDotExpressionContext) && (((JavaScriptParser.MemberDotExpressionContext) ctx.singleExpression()).singleExpression() instanceof JavaScriptParser.ThisExpressionContext)) {
-                if (ctx.expressionSequence().singleExpression(0) instanceof JavaScriptParser.FunctionExpressionContext) {
-                    //if right hand is function decl - add method
-                } else {
-                    //otherwise add field
-                    Variable v = new Variable(((JavaScriptParser.MemberDotExpressionContext) ctx.singleExpression()).identifierName().Identifier().getSymbol().getText());
-                    ctxt.getCurProtoDecl().addField(v);
-                    Def def = support.def(((JavaScriptParser.MemberDotExpressionContext) ctx.singleExpression()).identifierName().Identifier().getSymbol(), "var");
-                    def.defKey = new DefKey(null, ctxt.getName() + "~" + def.name);
-                    support.emit(def);
-                    v.setDef(def);
-                }
-            }
-        }
-    }*/
-
     @Override
     public void exitAssignmentExpression(JavaScriptParser.AssignmentExpressionContext ctx) {
         ctxt.unsetPrototype();
@@ -128,18 +106,20 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
         if (e != null) {
             if (e.isPrototype()) {
                 Prototype p = (Prototype) e;
-                SemaElement el = p.getField(ctx.identifierName().Identifier().getSymbol().getText());
+                Token t = ctx.identifierName().Identifier().getSymbol();
+                String ident = t.getText();
+                SemaElement el = p.getField(ident);
                 if (el != null) {
-                    if (ctx.identifierName().Identifier().getSymbol().getText().equals("prototype")) {
+                    if (ident.equals("prototype")) {
                         ctxt.setPrototype((Prototype) el);
                     }
-                    Ref ref = support.ref(ctx.identifierName().Identifier().getSymbol());
+                    Ref ref = support.ref(t);
                     ref.defKey = el.getDef().defKey;
                     support.emit(ref);
                 } else {
-                    el = new Variable(ctx.identifierName().Identifier().getSymbol().getText());
+                    el = new Variable(ident);
                     p.addField(el);
-                    Def def = support.def(ctx.identifierName().Identifier().getSymbol(), "var");
+                    Def def = support.def(t, "var");
                     def.defKey = new DefKey(null, p.getName() + "~" + def.name);
                     support.emit(def);
                     el.setDef(def);
@@ -152,14 +132,16 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
     @Override
     public void enterFunctionExpression(JavaScriptParser.FunctionExpressionContext ctx) {
         if (ctx.Identifier() != null) {
-            Def funcDef = support.def(ctx.Identifier().getSymbol(), "function");
+            Token t = ctx.Identifier().getSymbol();
+            String funcname = t.getText();
+            Def funcDef = support.def(t, "function");
             funcDef.defKey = new DefKey(null, ctxt.getName() + "@" + funcDef.name);
             support.emit(funcDef);
-            Method m = new Method(ctx.Identifier().getSymbol().getText());
+            Method m = new Method(funcname);
             m.setDef(funcDef);
             //should we do this?
             //ctxt.addToCurrentScope(funcDef);
-            ctxt.pushScope(ctxt.getName() + "@" + ctx.Identifier().getSymbol().getText());
+            ctxt.pushScope(ctxt.getName() + "@" + funcname);
             ctxt.addToCurrentScope(m);
         } else {
             ctxt.pushScope(ctxt.makeAnonScope(ctxt.getName()));
@@ -184,12 +166,17 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
     @Override
     public void exitFunctionDeclaration(JavaScriptParser.FunctionDeclarationContext ctx) {
         ctxt.popScope();
-        ctxt.unsetProtoDecl();
+        ctxt.setCurProtoDecl(null);
     }
 
     @Override
+    public void exitStatement(JavaScriptParser.StatementContext ctx) {
+        ctxt.setResolved(null);
+    }
+
+
+    @Override
     public void enterProgram(JavaScriptParser.ProgramContext ctx) {
-        //support.emit();
     }
 
 

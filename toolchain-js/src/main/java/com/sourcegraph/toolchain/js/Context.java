@@ -1,6 +1,6 @@
 package com.sourcegraph.toolchain.js;
 
-import com.sourcegraph.toolchain.core.objects.Def;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Stack;
 
@@ -10,8 +10,6 @@ import java.util.Stack;
 public class Context {
 
     private Stack<Scope> scopes;
-
-    private boolean protoDecl;
 
     private Method curMethod;
 
@@ -51,8 +49,7 @@ public class Context {
 
     public Context() {
         scopes = new Stack<Scope>();
-        protoDecl = false;
-        pushScope(""); //global scope
+        pushScope(StringUtils.EMPTY); //global scope
     }
 
     public String getName() {
@@ -73,18 +70,6 @@ public class Context {
         s.add(e);
     }
 
-    public void setProtoDecl() {
-        protoDecl = true;
-    }
-
-    public void unsetProtoDecl() {
-        protoDecl = false;
-    }
-
-    public boolean isProtoDecl() {
-        return protoDecl;
-    }
-
     public void setCurMethod(Method m) {
         curMethod = m;
     }
@@ -101,7 +86,7 @@ public class Context {
         return resolved;
     }
 
-    SemaElement find(String id) {
+    public SemaElement find(String id) {
         for (Scope s : scopes) {
             SemaElement e = s.find(id);
             if (e != null) {

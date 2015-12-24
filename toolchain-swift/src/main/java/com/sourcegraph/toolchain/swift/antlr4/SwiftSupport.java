@@ -98,7 +98,7 @@ public class SwiftSupport {
 	}
 
 	public static boolean isOperatorHead(int ttype) {
-		return operatorHead.get(ttype);
+		return ttype > 0 && operatorHead.get(ttype);
 	}
 
 	/*
@@ -144,12 +144,16 @@ public class SwiftSupport {
 			return -1;
 		}
 		i++;
-		if (i == tokens.size()) {
+		int size = tokens.size();
+		if (i == size) {
 			return -1;
 		}
 		lt = tokens.get(i);
 		while ( lt.getType()!=Token.EOF && isOperatorChar(lt.getType()) ) {
 			i++;
+			if (i == size) {
+				return -1;
+			}
 			lt = tokens.get(i);
 		}
 		int stop = i-1;

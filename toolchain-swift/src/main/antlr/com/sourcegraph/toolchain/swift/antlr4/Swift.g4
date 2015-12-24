@@ -191,7 +191,7 @@ availability_arguments : availability_argument (',' availability_argument)* ;
 /*
  * alexsaveliev: argument may be any idenfifier, we don't care
  */
-availability_argument : Identifier | '*' ;
+availability_argument : Identifier numeric_literal? | '*' ;
 
 fragment
 Platform_name

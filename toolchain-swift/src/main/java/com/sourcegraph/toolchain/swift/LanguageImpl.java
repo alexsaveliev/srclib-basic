@@ -9,7 +9,6 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.io.Charsets;
-import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 
@@ -49,12 +48,10 @@ public class LanguageImpl extends LanguageBase {
 
     @Override
     protected CharStream getCharStream(File sourceFile) throws IOException {
-        try (Reader r = new PreprocessorCleaner(
+        Reader r = new PreprocessorCleaner(
                 new InputStreamReader(
-                        new FileInputStream(sourceFile), Charsets.UTF_8))) {
-            String code = IOUtils.toString(r);
-            return new ANTLRInputStream(code);
-        }
+                        new FileInputStream(sourceFile), Charsets.UTF_8));
+        return new ANTLRInputStream(r);
     }
 
     private static class PreprocessorCleaner extends FilterReader {
@@ -82,7 +79,8 @@ public class LanguageImpl extends LanguageBase {
         public int read(char cbuf[], int off, int len) throws IOException {
             int l = super.read(cbuf, off, len);
             for (int i = 0; i < l; i++) {
-                cbuf[i] = (char) convert(cbuf[i]);
+                int pos = off + i;
+                cbuf[pos] = (char) convert(cbuf[pos]);
             }
             return l;
         }

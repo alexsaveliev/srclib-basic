@@ -7,12 +7,23 @@ import java.util.HashMap;
  */
 public class Prototype extends SemaElement {
 
+    /**
+     * elements of the prototype
+     */
     private HashMap<String, SemaElement> fields;
 
+    /**
+     * add element to this prototype
+     * @param elem element to be added
+     */
     public void addField(SemaElement elem) {
         fields.put(elem.getName(), elem);
     }
 
+    /**
+     * search for element with certain name
+     * @param name name of the element to be looked for
+     */
     public SemaElement getField(String name) {
         return fields.get(name);
     }

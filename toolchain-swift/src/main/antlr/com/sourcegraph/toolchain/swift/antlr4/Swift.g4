@@ -591,7 +591,7 @@ pattern
  | enum_case_pattern
  | optional_pattern
  | 'is' type
- | pattern 'as' type
+ | pattern As type
  | expression_pattern
  ;
 
@@ -698,9 +698,9 @@ conditional_operator : '?' try_operator? expression ':' ;
 
 type_casting_operator
   : 'is' type
-  | 'as' type
-  | 'as' '?' type
-  | 'as' '!' type
+  | As type
+  | As QUESTION type
+  | As '!' type
   ;
 
 // GRAMMAR OF A PRIMARY EXPRESSION
@@ -910,6 +910,8 @@ class_requirement : 'class' ;
 // GRAMMAR OF AN IDENTIFIER
 
 identifier : Identifier | context_sensitive_keyword ;
+
+As : 'as';
 
 Identifier
  : Identifier_head Identifier_characters?

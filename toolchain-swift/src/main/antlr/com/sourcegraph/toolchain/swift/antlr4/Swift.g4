@@ -362,23 +362,34 @@ variable_name : identifier  ;
 
 getter_setter_block : '{' getter_clause setter_clause?'}'  | '{' setter_clause getter_clause '}'  ;
 getter_clause : attributes? 'get' code_block  ;
-setter_clause : attributes? 'set' setter_name? code_block  ;
+/*
+ * alexsaveliev: added mutating_decl?
+ */
+setter_clause : attributes? mutating_decl? 'set' setter_name? code_block  ;
 setter_name : '(' identifier ')'  ;
 
 getter_setter_keyword_block : '{' getter_keyword_clause setter_keyword_clause?'}' | '{' setter_keyword_clause getter_keyword_clause '}'  ;
 getter_keyword_clause : attributes? 'get'  ;
-setter_keyword_clause : attributes? 'set'  ;
+/*
+ * alexsaveliev: added mutating_decl?
+ */
+setter_keyword_clause : attributes? mutating_decl? 'set'  ;
 
 willSet_didSet_block : '{' willSet_clause didSet_clause?'}' | '{' didSet_clause willSet_clause '}'  ;
 willSet_clause : attributes? 'willSet' setter_name? code_block  ;
 didSet_clause : attributes? 'didSet' setter_name? code_block  ;
+
+mutating_decl
+ : 'mutating'
+ | 'nonmutating'
+ ;
 
 // GRAMMAR OF A TYPE ALIAS DECLARATION
 
 typealias_declaration : typealias_head typealias_assignment  ;
 typealias_head : attributes? access_level_modifier? 'typealias' typealias_name  ;
 typealias_name : identifier  ;
-typealias_assignment : assignment_operator type  ;
+typealias_assignment : '=' type  ;
 
 // GRAMMAR OF A FUNCTION DECLARATION
 // NOTE: Swift Grammar Spec indicates that a function_body is optional
@@ -551,10 +562,15 @@ associativity_clause : 'associativity' associativity ;
 associativity : 'left' | 'right' | 'none' ;
 
 // GRAMMAR OF A DECLARATION MODIFIER
+/*
+ * alexsaveliev: moved weak/unowned... to unowned_specifier, combined with capture_specifier
+ */
 declaration_modifier
- : 'class' | 'convenience' | 'dynamic' | 'final' | 'infix' | 'lazy' | 'mutating' | 'nonmutating' | 'optional' | 'override' | 'postfix' | 'prefix' | 'required' | 'static' | 'unowned' | 'unowned' '(' 'safe' ')' | 'unowned' '(' 'unsafe' ')' | 'weak'
+ : 'class' | 'convenience' | 'dynamic' | 'final' | 'infix' | 'lazy' | 'mutating' | 'nonmutating' | 'optional' | 'override' | 'postfix' | 'prefix' | 'required' | 'static'
  | access_level_modifier
+ | unowned_specifier
  ;
+
 declaration_modifiers : declaration_modifier declaration_modifiers? ;
 
 access_level_modifier
@@ -752,9 +768,12 @@ closure_signature
 
 capture_list : '[' capture_list_items ']'  ;
 capture_list_items : capture_list_item (',' capture_list_item)* ;
-capture_list_item : capture_specifier? expression ;
+/*
+ * alexsaveliev: moved weak/unowned... to unowned_specifier, combined with capture_specifier
+ */
+capture_list_item : unowned_specifier? expression ;
 
-capture_specifier : 'weak' | 'unowned' | 'unowned(safe)' | 'unowned(unsafe)'  ;
+unowned_specifier : 'weak' | 'unowned' | 'unowned(safe)' | 'unowned(unsafe)'  ;
 
 // GRAMMAR OF A PARENTHESIZED EXPRESSION
 
@@ -933,7 +952,7 @@ context_sensitive_keyword :
  'fina' | 'get' | 'infix' | 'indirect' | 'lazy' | 'left' | 'mutating' | 'none' |
  'nonmutating' | 'optional' | 'operator' | 'override' |
  'postfix' | 'precedence' | 'prefix' | 'Protocol' | 'required' | 'right' |
- 'set' | 'Type' | 'unowned' | 'unowned' | 'weak' | 'willSet'
+ 'set' | 'Type' | 'unowned' | 'weak' | 'willSet'
  ;
 
 // GRAMMAR OF OPERATORS
@@ -1177,8 +1196,8 @@ fragment
 Escaped_character
   : '\\' [0\\tnr"']
   | '\\x' Hexadecimal_digit Hexadecimal_digit
-  | '\\u' '{' Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit '}'
-  | '\\u' '{' Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit Hexadecimal_digit '}'
+// alexsaveliev:  accepting any number of hex characters
+  | '\\u' '{' Hexadecimal_digit+ '}'
   ;
 
 Interpolated_string_literal : '"' Interpolated_text_item* '"' ;

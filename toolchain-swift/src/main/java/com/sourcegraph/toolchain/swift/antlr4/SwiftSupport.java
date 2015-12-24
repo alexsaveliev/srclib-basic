@@ -1,6 +1,5 @@
 package com.sourcegraph.toolchain.swift.antlr4;
 
-import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenStream;
 import org.antlr.v4.runtime.misc.Interval;
@@ -123,16 +122,6 @@ public class SwiftSupport {
 			ttype>=0xFE20 && ttype<=0xFE2F;
 	}
 
-	public static boolean isOpNext(TokenStream tokens) {
-		int start = tokens.index();
-		Token lt = tokens.get(start);
-		int stop = getLastOpTokenIndex(tokens);
-		if ( stop==-1 ) return false;
-		System.out.printf("isOpNext: i=%d t='%s'", start, lt.getText());
-		System.out.printf(", op='%s'\n", tokens.getText(Interval.of(start,stop)));
-		return true;
-	}
-
 	/** Find stop token index of next operator; return -1 if not operator. */
 	public static int getLastOpTokenIndex(TokenStream tokens) {
 		int i = tokens.index(); // current on-channel lookahead token index
@@ -181,10 +170,7 @@ public class SwiftSupport {
 		Token nextToken = tokens.get(stop+1);
 		boolean prevIsWS = isLeftOperatorWS(prevToken);
 		boolean nextIsWS = isRightOperatorWS(nextToken);
-		boolean result = prevIsWS && nextIsWS || (!prevIsWS && !nextIsWS);
-		String text = tokens.getText(Interval.of(start, stop));
-		//System.out.println("isBinaryOp: '"+prevToken+"','"+text+"','"+nextToken+"' is "+result);
-		return result;
+		return prevIsWS && nextIsWS || (!prevIsWS && !nextIsWS);
 	}
 
 	/**
@@ -201,10 +187,7 @@ public class SwiftSupport {
 		Token nextToken = tokens.get(stop+1);
 		boolean prevIsWS = isLeftOperatorWS(prevToken);
 		boolean nextIsWS = isRightOperatorWS(nextToken);
-		boolean result = prevIsWS && !nextIsWS;
-		String text = tokens.getText(Interval.of(start, stop));
-		//System.out.println("isPrefixOp: '"+prevToken+"','"+text+"','"+nextToken+"' is "+result);
-		return result;
+		return prevIsWS && !nextIsWS;
 	}
 
 	/**
@@ -226,12 +209,9 @@ public class SwiftSupport {
 		Token nextToken = tokens.get(stop+1);
 		boolean prevIsWS = isLeftOperatorWS(prevToken);
 		boolean nextIsWS = isRightOperatorWS(nextToken);
-		boolean result =
+		return
 			!prevIsWS && nextIsWS ||
 			!prevIsWS && nextToken.getType()==SwiftParser.DOT;
-		String text = tokens.getText(Interval.of(start, stop));
-		//System.out.println("isPostfixOp: '"+prevToken+"','"+text+"','"+nextToken+"' is "+result);
-		return result;
 	}
 
 	public static boolean isOperator(TokenStream tokens, String op) {
@@ -241,20 +221,6 @@ public class SwiftSupport {
 		int start = tokens.index();
 		String text = tokens.getText(Interval.of(start, stop));
 		return text.equals(op);
-	}
-
-	/** Return two booleans packed into lowest 2 bits for left (high) and right (low)
-	 *  whitespace.
-	 */
-	public static int getLeftRightWS(TokenStream tokens, ParserRuleContext ctx) {
-		int left = ctx.start.getTokenIndex();
-		int right = ctx.stop.getTokenIndex();
-		Token prevToken = tokens.get(left-1); // includes hidden-channel tokens
-		Token nextToken = tokens.get(right+1);
-		boolean prevIsWS = isLeftOperatorWS(prevToken);
-		boolean nextIsWS = isRightOperatorWS(nextToken);
-		int b = (prevIsWS ? 1 : 0) << 1 | (nextIsWS ? 1 : 0) ;
-		return b;
 	}
 
 	public static boolean isLeftOperatorWS(Token t) {

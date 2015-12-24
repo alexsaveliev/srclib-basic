@@ -97,7 +97,7 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
 
     @Override
     public void exitAssignmentExpression(JavaScriptParser.AssignmentExpressionContext ctx) {
-        ctxt.unsetPrototype();
+        ctxt.setPrototype(null);
     }
 
     @Override

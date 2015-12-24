@@ -4,17 +4,23 @@ import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.swift.antlr4.SwiftLexer;
 import com.sourcegraph.toolchain.swift.antlr4.SwiftParser;
+import org.antlr.v4.runtime.ANTLRInputStream;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
+import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
 
-import java.io.File;
+import java.io.*;
 
 public class LanguageImpl extends LanguageBase {
 
     @Override
     protected void parse(File sourceFile) throws ParseException {
         try {
-            GrammarConfiguration configuration = LanguageBase.createGrammarConfiguration(sourceFile,
+            GrammarConfiguration configuration = LanguageBase.createGrammarConfiguration(
+                    this,
+                    sourceFile,
                     SwiftLexer.class,
                     SwiftParser.class,
                     new DefaultErrorListener(sourceFile));
@@ -24,7 +30,6 @@ public class LanguageImpl extends LanguageBase {
         } catch (Exception e) {
             throw new ParseException(e);
         }
-
     }
 
     @Override
@@ -41,4 +46,65 @@ public class LanguageImpl extends LanguageBase {
     public DefKey resolve(DefKey source) {
         return null;
     }
+
+    @Override
+    protected CharStream getCharStream(File sourceFile) throws IOException {
+        try (Reader r = new PreprocessorCleaner(
+                new InputStreamReader(
+                        new FileInputStream(sourceFile), Charsets.UTF_8))) {
+            String code = IOUtils.toString(r);
+            return new ANTLRInputStream(code);
+        }
+    }
+
+    private static class PreprocessorCleaner extends FilterReader {
+
+        enum STATE {
+            START,
+            REGULAR,
+            EOL,
+            DIRECTIVE
+        }
+
+        private STATE state = STATE.START;
+
+        PreprocessorCleaner(Reader source) {
+            super(source);
+        }
+
+        @Override
+        public int read() throws IOException {
+            int c = super.read();
+            return convert(c);
+        }
+
+        @Override
+        public int read(char cbuf[], int off, int len) throws IOException {
+            int l = super.read(cbuf, off, len);
+            for (int i = 0; i < l; i++) {
+                cbuf[i] = (char) convert(cbuf[i]);
+            }
+            return l;
+        }
+
+        private int convert(int c) {
+            if (c == -1) {
+                return c;
+            }
+            if (c == '#') {
+                if (state == STATE.START || state == STATE.EOL) {
+                    // preprocessor directive starts
+                    state = STATE.DIRECTIVE;
+                }
+            } else if (c == '\r' || c == '\n') {
+                state = STATE.EOL;
+            } else {
+                if (state == STATE.START || state == STATE.EOL) {
+                    state = STATE.REGULAR;
+                }
+            }
+            return state == STATE.DIRECTIVE ? '/' : c;
+        }
+    }
+
 }

@@ -40,7 +40,7 @@ public class LanguageImpl extends LanguageBase {
 
     @Override
     protected FileCollector getFileCollector(File rootDir, String repoUri) {
-        return new ExtensionBasedFileCollector().extension(".js");
+        return new ExtensionBasedFileCollector().extension(".js", ".jsx");
     }
 
     @Override

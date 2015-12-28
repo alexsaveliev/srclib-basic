@@ -26,12 +26,12 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
         Token t = ctx.Identifier().getSymbol();
         String ident = t.getText();
         Def funcDef = support.def(t, "function");
-        funcDef.defKey = new DefKey(null, ctxt.getName() + "@" + ident);
+        funcDef.defKey = new DefKey(null, ctxt.getName() + '@' + ident);
         support.emit(funcDef);
         Prototype p = new Prototype(ident);
         p.setDef(funcDef);
         ctxt.addToCurrentScope(p);
-        ctxt.pushScope(ctxt.getName() + "@" + ident);
+        ctxt.pushScope(ctxt.getName() + '@' + ident);
         ctxt.setCurProtoDecl(p);
     }
 
@@ -40,7 +40,7 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
         List<TerminalNode> params = ctx.Identifier();
         for (TerminalNode param : params) {
             Def paramDef = support.def(param.getSymbol(), "param");
-            paramDef.defKey = new DefKey(null, ctxt.getName() + "@" + paramDef.name);
+            paramDef.defKey = new DefKey(null, ctxt.getName() + '@' + paramDef.name);
             support.emit(paramDef);
             Variable v = new Variable(param.getSymbol().getText());
             v.setDef(paramDef);
@@ -56,7 +56,7 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
         Token t = ctx.Identifier().getSymbol();
         String ident = t.getText();
         Def varDef = support.def(t, "var");
-        varDef.defKey = new DefKey(null, ctxt.getName() + "@" + varDef.name);
+        varDef.defKey = new DefKey(null, ctxt.getName() + '@' + varDef.name);
         support.emit(varDef);
         Variable v = new Variable(ident);
         v.setDef(varDef);
@@ -120,7 +120,7 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
                     el = new Variable(ident);
                     p.addField(el);
                     Def def = support.def(t, "var");
-                    def.defKey = new DefKey(null, p.getName() + "~" + def.name);
+                    def.defKey = new DefKey(null, p.getName() + '@' + def.name);
                     support.emit(def);
                     el.setDef(def);
                 }
@@ -135,13 +135,13 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
             Token t = ctx.Identifier().getSymbol();
             String funcname = t.getText();
             Def funcDef = support.def(t, "function");
-            funcDef.defKey = new DefKey(null, ctxt.getName() + "@" + funcDef.name);
+            funcDef.defKey = new DefKey(null, ctxt.getName() + '@' + funcDef.name);
             support.emit(funcDef);
             Method m = new Method(funcname);
             m.setDef(funcDef);
             //should we do this?
             //ctxt.addToCurrentScope(funcDef);
-            ctxt.pushScope(ctxt.getName() + "@" + funcname);
+            ctxt.pushScope(ctxt.getName() + '@' + funcname);
             ctxt.addToCurrentScope(m);
         } else {
             ctxt.pushScope(ctxt.makeAnonScope(ctxt.getName()));
@@ -150,7 +150,7 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
 
     @Override
     public void enterBlock(JavaScriptParser.BlockContext ctx) {
-        ctxt.pushScope(ctxt.getName() + "@");
+        ctxt.pushScope(ctxt.getName() + '@');
     }
 
     @Override

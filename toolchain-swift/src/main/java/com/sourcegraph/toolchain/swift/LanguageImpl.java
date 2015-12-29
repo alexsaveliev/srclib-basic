@@ -14,6 +14,8 @@ import java.io.*;
 
 public class LanguageImpl extends LanguageBase {
 
+    TypeInfos<String> infos = new TypeInfos<>();
+
     @Override
     protected void parse(File sourceFile) throws ParseException {
         try {

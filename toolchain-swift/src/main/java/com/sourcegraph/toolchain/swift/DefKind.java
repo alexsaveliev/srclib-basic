@@ -10,4 +10,5 @@ interface DefKind {
     public static final String PARAM = "param";
     public static final String LET = "let";
     public static final String VAR = "var";
+    public static final String CASE = "case";
 }

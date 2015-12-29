@@ -518,11 +518,23 @@ initializer_declaration
  | initializer_head generic_parameter_clause? parameter_clause 'rethrows' initializer_body
  ;
 
+/*
+ * alexsaveliev: replaced 'init' with init_kw to have token ref
+ */
 initializer_head
- : attributes? declaration_modifiers? 'init'
- | attributes? declaration_modifiers? 'init' '?'
- | attributes? declaration_modifiers? 'init' '!'
+ : attributes? declaration_modifiers? init_kw
+ | attributes? declaration_modifiers? init_kw '?'
+ | attributes? declaration_modifiers? init_kw '!'
  ;
+
+init_kw
+ : 'init'
+ ;
+
+self_kw
+ : 'self'
+ ;
+
 
 initializer_body : code_block  ;
 
@@ -742,10 +754,10 @@ dictionary_literal_item  : expression ':' expression  ;
 // GRAMMAR OF A SELF EXPRESSION
 
 self_expression
- : 'self'
- | 'self' '.' identifier
- | 'self' '[' expression_list ']'
- | 'self' '.' 'init'
+ : self_kw
+ | self_kw '.' identifier
+ | self_kw '[' expression_list ']'
+ | self_kw '.' init_kw
  ;
 
 // GRAMMAR OF A SUPERCLASS EXPRESSION
@@ -758,7 +770,7 @@ superclass_expression
 
 superclass_method_expression	  : 'super' '.' identifier  ;
 superclass_subscript_expression   : 'super' '[' expression ']'  ;
-superclass_initializer_expression : 'super' '.' 'init'  ;
+superclass_initializer_expression : 'super' '.' init_kw  ;
 
 // GRAMMAR OF A CLOSURE EXPRESSION
 
@@ -796,10 +808,10 @@ postfix_expression
  : postfix_expression postfix_operator                            # postfix_operation
  | postfix_expression parenthesized_expression                    # function_call_expression
  | postfix_expression parenthesized_expression? trailing_closure  # function_call_with_closure_expression
- | postfix_expression '.' 'init'                                  # initializer_expression
+ | postfix_expression '.' init_kw                                 # initializer_expression
  | postfix_expression '.' Pure_decimal_digits                     # explicit_member_expression1
  | postfix_expression '.' identifier generic_argument_clause?     # explicit_member_expression2
- | postfix_expression '.' 'self'                                  # postfix_self_expression
+ | postfix_expression '.' self_kw                                 # postfix_self_expression
  | postfix_expression '.' 'dynamicType'                           # dynamic_type_expression
  | postfix_expression '[' expression_list ']'                     # subscript_expression
 // ! is a postfix operator already

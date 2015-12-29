@@ -444,10 +444,11 @@ raw_value_assignment : assignment_operator raw_value_literal  ;
 raw_value_literal : numeric_literal | Static_string_literal | boolean_literal ;
 
 // GRAMMAR OF A STRUCTURE DECLARATION TODO did not update
-
-struct_declaration : attributes? access_level_modifier? 'struct' struct_name generic_parameter_clause? type_inheritance_clause? struct_body  ;
+/**
+ * alexsaveliev: combined struct_body, class_body, and extension_body
+ */
+struct_declaration : attributes? access_level_modifier? 'struct' struct_name generic_parameter_clause? type_inheritance_clause? '{' declarations?'}' ;
 struct_name : identifier  ;
-struct_body : '{' declarations?'}'  ;
 
 // GRAMMAR OF A CLASS DECLARATION
 
@@ -457,9 +458,12 @@ struct_body : '{' declarations?'}'  ;
  * "Prevenging Overrides" in
  * See https://developer.apple.com/library/mac/documentation/Swift/Conceptual/Swift_Programming_Language/Inheritance.html
  */
+/**
+ * alexsaveliev: combined struct_body, class_body, and extension_body
+ */
 class_declaration
  : attributes? class_modifiers? 'class' class_name
-   generic_parameter_clause? type_inheritance_clause? class_body
+   generic_parameter_clause? type_inheritance_clause? '{' declarations? '}'
  ;
 
 class_modifiers
@@ -470,7 +474,6 @@ class_modifiers
  ;
 
 class_name : identifier ;
-class_body : '{' declarations? '}'  ;
 
 // GRAMMAR OF A PROTOCOL DECLARATION
 
@@ -535,8 +538,10 @@ deinitializer_declaration : attributes? 'deinit' code_block  ;
  * see http://www.raywenderlich.com/109156/introducing-protocol-oriented-programming-in-swift-2
  * alexsaveliev: added attributes?
  */
-extension_declaration : attributes? access_level_modifier? 'extension' type_identifier requirement_clause? type_inheritance_clause? extension_body  ;
-extension_body : '{' declarations?'}'  ;
+/**
+ * alexsaveliev: combined struct_body, class_body, and extension_body
+ */
+extension_declaration : attributes? access_level_modifier? 'extension' type_identifier requirement_clause? type_inheritance_clause? '{' declarations?'}'  ;
 
 // GRAMMAR OF A SUBSCRIPT DECLARATION
 

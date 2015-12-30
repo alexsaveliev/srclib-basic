@@ -126,6 +126,13 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
                 }
                 ctxt.setResolved(el);
             }
+        } else {
+            SemaElement el = ctxt.find(ctx.identifierName().Identifier().getSymbol().getText());
+            if (el != null) {
+                Ref ref = support.ref(ctx.identifierName().Identifier().getSymbol());
+                ref.defKey = el.getDef().defKey;
+                support.emit(ref);
+            }
         }
     }
 
@@ -143,6 +150,18 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
             //ctxt.addToCurrentScope(funcDef);
             ctxt.pushScope(ctxt.getName() + '@' + funcname);
             ctxt.addToCurrentScope(m);
+        } else if (ctxt.getPropertyToken() != null) {
+            Def funcDef = support.def(ctxt.getPropertyToken(), "function");
+            funcDef.defKey = new DefKey(null, ctxt.getName() + "@" + ctxt.getPropertyToken().getText());
+            support.emit(funcDef);
+            Method m = new Method(ctxt.getPropertyToken().getText());
+            m.setDef(funcDef);
+            ctxt.addToCurrentScope(m);
+            ctxt.pushScope(ctxt.getName() + "@" + ctxt.getPropertyToken().getText());
+            Prototype p = ctxt.getPrototype();
+            if (p != null) {
+                p.addField(m);
+            }
         } else {
             ctxt.pushScope(ctxt.makeAnonScope(ctxt.getName()));
         }
@@ -172,6 +191,22 @@ class JavaScriptParseTreeListener extends JavaScriptBaseListener {
     @Override
     public void exitStatement(JavaScriptParser.StatementContext ctx) {
         ctxt.setResolved(null);
+    }
+
+    @Override
+    public void enterPropertyExpressionAssignment(JavaScriptParser.PropertyExpressionAssignmentContext ctx) {
+        if (ctx.propertyName() != null) {
+            if (ctx.propertyName().identifierName() != null) {
+                if (ctx.propertyName().identifierName().Identifier() != null) {
+                    ctxt.setPropertyToken(ctx.propertyName().identifierName().Identifier().getSymbol());
+                }
+            }
+        }
+    }
+
+    @Override
+    public void exitPropertyExpressionAssignment(JavaScriptParser.PropertyExpressionAssignmentContext ctx) {
+        ctxt.setPropertyToken(null);
     }
 
 

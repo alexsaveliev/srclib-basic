@@ -1,5 +1,6 @@
 package com.sourcegraph.toolchain.js;
 
+import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Stack;
@@ -39,6 +40,27 @@ public class Context {
      * counter for creating unique names for anonymous scopes
      */
     private int anonc;
+
+    /**
+     * holds the parser generated token for
+     * property assingment handling in semantic analysis
+     */
+    private Token propertyToken;
+
+    /**
+     * setter for property assignment token
+     */
+    public void setPropertyToken(Token t) {
+        propertyToken = t;
+    }
+
+    /**
+     * getter for property assignment token
+     */
+    public Token getPropertyToken() {
+        return propertyToken;
+    }
+
 
     /**
      * generate new unique name for anonymouse scope

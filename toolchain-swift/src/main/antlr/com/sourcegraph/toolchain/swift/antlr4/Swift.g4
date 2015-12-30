@@ -109,7 +109,7 @@ case_condition : 'case' pattern initializer where_clause? ;
 optional_binding_condition
  : optional_binding_head optional_binding_continuation_list? where_clause?
  ;
-optional_binding_head : 'let' pattern initializer | 'var' pattern initializer ;
+optional_binding_head : let pattern initializer | var pattern initializer ;
 optional_binding_continuation_list
  : ',' optional_binding_continuation (',' optional_binding_continuation)*
  ;
@@ -330,13 +330,13 @@ code_block : '{' statements? '}' ;
 // GRAMMAR OF AN IMPORT DECLARATION
 
 import_declaration : attributes? 'import' import_kind? import_path  ;
-import_kind : 'typealias' | 'struct' | 'class' | 'enum' | 'protocol' | 'var' | 'func'  ;
+import_kind : 'typealias' | 'struct' | 'class' | 'enum' | 'protocol' | var | 'func'  ;
 import_path : import_path_identifier | import_path_identifier '.' import_path  ;
 import_path_identifier : identifier | operator  ;
 
 // GRAMMAR OF A CONSTANT DECLARATION
 
-constant_declaration : attributes? declaration_modifiers? 'let' pattern_initializer_list  ;
+constant_declaration : attributes? declaration_modifiers? let pattern_initializer_list  ;
 pattern_initializer_list : pattern_initializer (',' pattern_initializer)* ;
 
 /** rule is ambiguous. can match "var x = 1" with x as pattern
@@ -357,7 +357,7 @@ variable_declaration
  | variable_declaration_head variable_name type_annotation type_annotation initializer? willSet_didSet_block
  ;
 
-variable_declaration_head : attributes? declaration_modifiers? 'var'  ;
+variable_declaration_head : attributes? declaration_modifiers? var  ;
 variable_name : identifier  ;
 
 getter_setter_block : '{' getter_clause setter_clause?'}'  | '{' setter_clause getter_clause '}'  ;
@@ -413,8 +413,8 @@ parameter_list : parameter (',' parameter)*  ;
  * alexsaveliev: added attributes?. Example: "func autoreleasepool(@noescape code: () -> Void) {"
  */
 parameter
- : 'let'? attributes? external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
- | 'var' attributes? external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
+ : let? attributes? external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
+ | var attributes? external_parameter_name? local_parameter_name type_annotation? default_argument_clause?
  | 'inout' attributes? external_parameter_name? local_parameter_name type_annotation
  |  attributes? external_parameter_name? local_parameter_name type_annotation range_operator
  ;
@@ -535,6 +535,13 @@ self_kw
  : 'self'
  ;
 
+let
+ : 'let'
+ ;
+
+var
+ : 'var'
+ ;
 
 initializer_body : code_block  ;
 
@@ -622,7 +629,7 @@ identifier_pattern : identifier ;
 
 // GRAMMAR OF A VALUE_BINDING PATTERN
 
-value_binding_pattern : 'var' pattern | 'let' pattern  ;
+value_binding_pattern : var pattern | let pattern  ;
 
 // GRAMMAR OF A TUPLE PATTERN
 

@@ -4,13 +4,19 @@ import com.sourcegraph.toolchain.core.objects.Def;
 import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
-import com.sourcegraph.toolchain.language.*;
+import com.sourcegraph.toolchain.language.Context;
+import com.sourcegraph.toolchain.language.LookupResult;
+import com.sourcegraph.toolchain.language.Scope;
+import com.sourcegraph.toolchain.language.TypeInfo;
 import com.sourcegraph.toolchain.swift.antlr4.SwiftBaseListener;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Stack;
 
 import static com.sourcegraph.toolchain.swift.antlr4.SwiftParser.*;
 
@@ -479,7 +485,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                 fnCallStack.pop();
                 return;
             }
-            processFnCallRef(props, signature, null);
+            processFnCallRef(props, signature, null, null);
             return;
         }
         // bar() or Bar() - function or ctor
@@ -488,7 +494,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         TypeInfo<Scope, String> props;
 
         if (fnCallNameCtx != null) {
-            props = support.infos.get(fnCallStack.peek().getText());
+            props = support.infos.get(fnCallNameCtx.getText());
         } else {
             props = null;
         }
@@ -499,7 +505,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             props = support.infos.getRoot();
             methodName = null;
         }
-        processFnCallRef(props, signature, methodName);
+        processFnCallRef(props, signature, methodName, currentClass);
     }
 
     @Override
@@ -508,7 +514,43 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         fnCallStack.empty();
     }
 
-    private void processFnCallRef(TypeInfo<Scope, String> props, String signature, String methodName) {
+    @Override
+    public void enterIf_statement(If_statementContext ctx) {
+        context.enterScope(new Scope<>(context.currentScope().nextId()));
+        processBindingConditions(ctx.condition_clause());
+    }
+
+    @Override
+    public void exitIf_statement(If_statementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterWhile_statement(While_statementContext ctx) {
+        context.enterScope(new Scope<>(context.currentScope().nextId()));
+        processBindingConditions(ctx.condition_clause());
+    }
+
+    @Override
+    public void exitWhile_statement(While_statementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterGuard_statement(Guard_statementContext ctx) {
+        context.enterScope(new Scope<>(context.currentScope().nextId()));
+        processBindingConditions(ctx.condition_clause());
+    }
+
+    @Override
+    public void exitGuard_statement(Guard_statementContext ctx) {
+        context.exitScope();
+    }
+
+    private void processFnCallRef(TypeInfo<Scope, String> props,
+                                  String signature,
+                                  String methodName,
+                                  String currentClass) {
         ParserRuleContext fnIdent = fnCallStack.pop();
         if (fnIdent == null) {
             // TODO(alexsaveliev) ".file(a, b)"
@@ -519,7 +561,22 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             methodName = fnIdent.getText();
         }
         String fnPath = methodName + '(' + signature + ')';
-        String type = props.getProperty(DefKind.FUNC, fnPath);
+
+        String type = null;
+
+        if (currentClass != null) {
+            // lookup in current class
+            TypeInfo<Scope, String> currentProps = support.infos.get(currentClass);
+            type = currentProps.getProperty(DefKind.FUNC, fnPath);
+            if (type != null) {
+                props = currentProps;
+            }
+        }
+
+        if (type == null) {
+            type = props.getProperty(DefKind.FUNC, fnPath);
+        }
+
         if (type != null) {
             Ref methodRef = support.ref(fnIdent);
             methodRef.defKey = new DefKey(null, props.getData().getPathTo(fnPath, PATH_SEPARATOR));
@@ -664,41 +721,51 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                                             String printableKind) {
         for (Pattern_initializerContext item : list) {
             PatternContext pattern = item.pattern();
-            Identifier_patternContext ident = pattern.identifier_pattern();
-            if (ident == null) {
-                // TODO (alexsaveliev) "case .PropertyList(let format, let options):"
-                continue;
-            }
-            Def def = support.def(ident, defKind);
-            def.defKey = new DefKey(null, context.currentScope().getPathTo(def.name, PATH_SEPARATOR));
-            Type_annotationContext typeAnnotationContext = pattern.type_annotation();
-            TypeContext typeContext;
-            if (typeAnnotationContext == null) {
-                typeContext = null;
-            } else {
-                typeContext = typeAnnotationContext.type();
-            }
-            Type_identifierContext type = extractTypeName(typeContext);
-            String typeName;
-            if (type == null) {
-                typeName = guessType(item.initializer());
-            } else {
-                emitGenericArgumentRefs(type.generic_argument_clause());
-                Type_nameContext typeNameContext = type.type_name();
-                Ref typeRef = support.ref(typeNameContext);
-                typeName = typeNameContext.getText();
-                typeRef.defKey = new DefKey(null, typeName);
-                emit(typeRef);
-            }
-            def.format(keyword,
-                    typeName,
-                    DefData.SEPARATOR_SPACE);
-            def.defData.setKind(printableKind);
-            emit(def);
-            context.currentScope().put(def.name, new Variable(typeName));
-            if (!isInFunction) {
-                support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VAR, def.name, typeName);
-            }
+            Type_annotationContext typeAnnotation = pattern.type_annotation();
+            InitializerContext initializer = item.initializer();
+            processVariableOrConstant(pattern, typeAnnotation, initializer, defKind, keyword, printableKind);
+        }
+    }
+
+    private void processVariableOrConstant(PatternContext pattern,
+                                           Type_annotationContext typeAnnotation,
+                                           InitializerContext initializer,
+                                           String defKind,
+                                           String keyword,
+                                           String printableKind) {
+        Identifier_patternContext ident = pattern.identifier_pattern();
+        if (ident == null) {
+            // TODO (alexsaveliev) "case .PropertyList(let format, let options):"
+            return;
+        }
+        Def def = support.def(ident, defKind);
+        def.defKey = new DefKey(null, context.currentScope().getPathTo(def.name, PATH_SEPARATOR));
+        TypeContext typeContext;
+        if (typeAnnotation == null) {
+            typeContext = null;
+        } else {
+            typeContext = typeAnnotation.type();
+        }
+        Type_identifierContext type = extractTypeName(typeContext);
+        String typeName;
+        if (type == null) {
+            typeName = guessType(initializer);
+        } else {
+            emitGenericArgumentRefs(type.generic_argument_clause());
+            Type_nameContext typeNameContext = type.type_name();
+            Ref typeRef = support.ref(typeNameContext);
+            typeName = typeNameContext.getText();
+            typeRef.defKey = new DefKey(null, typeName);
+            emit(typeRef);
+        }
+        def.format(keyword,
+                typeName,
+                DefData.SEPARATOR_SPACE);
+        def.defData.setKind(printableKind);
+        emit(def);
+        context.currentScope().put(def.name, new Variable(typeName));
+        if (!isInFunction) {
+            support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VAR, def.name, typeName);
         }
     }
 
@@ -855,6 +922,40 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     private void emit(Ref ref) {
         if (!support.firstPass) {
             support.emit(ref);
+        }
+    }
+
+    private void processBindingConditions(Condition_clauseContext ctx) {
+        Condition_listContext conditions = ctx.condition_list();
+        if (conditions == null) {
+            return;
+        }
+        for (ConditionContext condition : conditions.condition()) {
+            Optional_binding_conditionContext binding = condition.optional_binding_condition();
+            if (binding == null) {
+                continue;
+            }
+            Optional_binding_headContext head = binding.optional_binding_head();
+            PatternContext pattern = head.pattern();
+
+            String keyword;
+            String kind;
+            String printable;
+            if (head.let() != null) {
+                keyword = "let";
+                kind = DefKind.LET;
+                printable = "constant";
+            } else {
+                keyword = "var";
+                kind = DefKind.VAR;
+                printable = "variable";
+            }
+            processVariableOrConstant(pattern,
+                    pattern.type_annotation(),
+                    head.initializer(),
+                    kind,
+                    keyword,
+                    printable);
         }
     }
 

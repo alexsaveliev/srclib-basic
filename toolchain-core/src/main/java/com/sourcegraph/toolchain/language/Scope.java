@@ -16,6 +16,8 @@ public class Scope<E> {
 
     private Map<String, E> items = new HashMap<>();
 
+    private int counter;
+
     public Scope(String name) {
         this(name, StringUtils.EMPTY);
     }
@@ -66,11 +68,16 @@ public class Scope<E> {
         return root;
     }
 
+    public String nextId() {
+        return String.valueOf(++counter);
+    }
+
     static <E> Scope<E> root() {
         Scope<E> ret = new Scope<E>(StringUtils.EMPTY, StringUtils.EMPTY);
         ret.root = true;
         return ret;
     }
+
     @Override
     public String toString() {
         return getName();

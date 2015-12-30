@@ -9,13 +9,11 @@ import com.sourcegraph.toolchain.language.LookupResult;
 import com.sourcegraph.toolchain.language.Scope;
 import com.sourcegraph.toolchain.language.TypeInfo;
 import com.sourcegraph.toolchain.swift.antlr4.SwiftBaseListener;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Stack;
+import java.util.*;
 
 import static com.sourcegraph.toolchain.swift.antlr4.SwiftParser.*;
 
@@ -32,6 +30,10 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     private Stack<String> typeStack = new Stack<>();
 
+    private Stack<ParserRuleContext> fnCallStack = new Stack<>();
+
+    private String currentClass;
+
     SwiftParseTreeListener(LanguageImpl support) {
         this.support = support;
     }
@@ -39,44 +41,59 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     @Override
     public void enterProtocol_declaration(Protocol_declarationContext ctx) {
         // protocol Foo
+        String prefix = context.getPrefix(PATH_SEPARATOR);
+
         Def protoDef = support.def(ctx.protocol_name(), DefKind.PROTOCOL);
-        protoDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + protoDef.name);
+        protoDef.defKey = new DefKey(null, prefix + protoDef.name);
         protoDef.format("protocol", "protocol", DefData.SEPARATOR_SPACE);
         support.emit(protoDef);
         // protocol Foo: Bar, Baz
         emitParentTypeRefs(ctx.type_inheritance_clause());
 
-        context.enterScope(new Scope(protoDef.name));
+        context.enterScope(new Scope(protoDef.name, prefix));
+        support.infos.put(protoDef.name,
+                new TypeInfo<Scope, String>().setData(new Scope(protoDef.name, prefix)));
+
+        currentClass = protoDef.name;
     }
 
     @Override
     public void exitProtocol_declaration(Protocol_declarationContext ctx) {
         context.exitScope();
+        currentClass = null;
     }
 
     @Override
     public void enterExtension_declaration(Extension_declarationContext ctx) {
         // extension Foo
+        String prefix = context.getPrefix(PATH_SEPARATOR);
+
+
         Type_nameContext typeName = ctx.type_identifier().type_name();
         Ref extensionRef = support.ref(typeName);
-        extensionRef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + typeName.getText());
+        extensionRef.defKey = new DefKey(null, prefix + typeName.getText());
         support.emit(extensionRef);
         // extension Foo: Bar, Baz
         emitParentTypeRefs(ctx.type_inheritance_clause());
 
-        context.enterScope(new Scope(typeName.getText()));
+        context.enterScope(new Scope(typeName.getText(), prefix));
+
+        currentClass = typeName.getText();
     }
 
     @Override
     public void exitExtension_declaration(Extension_declarationContext ctx) {
         context.exitScope();
+        currentClass = null;
     }
 
     @Override
     public void enterClass_declaration(Class_declarationContext ctx) {
         // class Foo
+        String prefix = context.getPrefix(PATH_SEPARATOR);
+
         Def classDef = support.def(ctx.class_name(), DefKind.CLASS);
-        classDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + classDef.name);
+        classDef.defKey = new DefKey(null, prefix + classDef.name);
         classDef.format("class", "class", DefData.SEPARATOR_SPACE);
         support.emit(classDef);
         // class Foo: Bar, Baz
@@ -84,20 +101,26 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         // class Foo<Bar>
         emitGenericParameterRefs(ctx.generic_parameter_clause());
 
-        context.enterScope(new Scope(classDef.name));
-        support.infos.put(classDef.name, new TypeInfo<>());
+        context.enterScope(new Scope(classDef.name, prefix));
+        support.infos.put(classDef.name,
+                new TypeInfo<Scope, String>().setData(new Scope(classDef.name, prefix)));
+
+        currentClass = classDef.name;
     }
 
     @Override
     public void exitClass_declaration(Class_declarationContext ctx) {
         context.exitScope();
+        currentClass = null;
     }
 
     @Override
     public void enterStruct_declaration(Struct_declarationContext ctx) {
         // struct Foo
+        String prefix = context.getPrefix(PATH_SEPARATOR);
+
         Def structDef = support.def(ctx.struct_name(), DefKind.STRUCT);
-        structDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + structDef.name);
+        structDef.defKey = new DefKey(null, prefix + structDef.name);
         structDef.format("struct", "struct", DefData.SEPARATOR_SPACE);
         support.emit(structDef);
         // struct Foo: Bar, Baz
@@ -105,17 +128,23 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         // struct Foo<Bar>
         emitGenericParameterRefs(ctx.generic_parameter_clause());
 
-        context.enterScope(new Scope(structDef.name));
-        support.infos.put(structDef.name, new TypeInfo<>());
+        context.enterScope(new Scope(structDef.name, prefix));
+        support.infos.put(structDef.name,
+                new TypeInfo<Scope, String>().setData(new Scope(structDef.name, prefix)));
+
+        currentClass = structDef.name;
     }
 
     @Override
     public void exitStruct_declaration(Struct_declarationContext ctx) {
         context.exitScope();
+        currentClass = null;
     }
 
     @Override
     public void enterEnum_declaration(Enum_declarationContext ctx) {
+
+        String prefix = context.getPrefix(PATH_SEPARATOR);
 
         Def enumDef;
         Raw_value_style_enumContext rawValueEnum = ctx.raw_value_style_enum();
@@ -130,16 +159,21 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             enumDef = support.def(unionEnum.enum_name(), DefKind.ENUM);
         }
 
-        enumDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + enumDef.name);
+        enumDef.defKey = new DefKey(null, prefix + enumDef.name);
         enumDef.format("enum", "enum", DefData.SEPARATOR_SPACE);
 
         support.emit(enumDef);
-        context.enterScope(new Scope(enumDef.name));
+        context.enterScope(new Scope(enumDef.name, prefix));
+        support.infos.put(enumDef.name,
+                new TypeInfo<Scope, String>().setData(new Scope(enumDef.name, prefix)));
+
+        currentClass = enumDef.name;
     }
 
     @Override
     public void exitEnum_declaration(Enum_declarationContext ctx) {
         context.exitScope();
+        currentClass = null;
     }
 
     @Override
@@ -153,15 +187,17 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         }
         Def fnDef = support.def(nameCtx, DefKind.FUNC);
 
-        String path = context.getPath(PATH_SEPARATOR);
-        fnDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + fnDef.name);
+        String prefix = context.getPrefix(PATH_SEPARATOR);
 
-        context.enterScope(new Scope(fnDef.name));
+        String path = context.getPath(PATH_SEPARATOR);
+
+        context.enterScope(new Scope(fnDef.name, prefix));
 
         Function_signatureContext signatureContext = ctx.function_signature();
         Function_resultContext resultContext = signatureContext.function_result();
         Collection<String> paramRepr = new LinkedList<>();
-        processFunctionParameters(signatureContext.parameter_clauses(), paramRepr);
+        Collection<String> signature = new LinkedList<>();
+        processFunctionParameters(signatureContext.parameter_clauses(), signature, paramRepr);
         String type;
         if (resultContext != null) {
             Type_identifierContext typeNameCtx = extractTypeName(resultContext.type());
@@ -176,14 +212,18 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         } else {
             type = VOID;
         }
-        StringBuilder signature = new StringBuilder().append('(').append(StringUtils.join(paramRepr, ", ")).append(')');
-        signature.append(' ').append(type);
+        StringBuilder repr = new StringBuilder().append('(').append(StringUtils.join(paramRepr, ", ")).append(')');
+        repr.append(' ').append(type);
+
+
+        String fnPath = fnDef.name + '(' + StringUtils.join(signature, ',') + ')';
+        fnDef.defKey = new DefKey(null, prefix + fnPath);
         fnDef.format("func",
-                signature.toString(),
+                repr.toString(),
                 DefData.SEPARATOR_EMPTY);
 
         support.emit(fnDef);
-        support.infos.get(path).addProperty(DefKind.FUNC, fnDef.name, type);
+        support.infos.get(path).addProperty(DefKind.FUNC, fnPath, type);
     }
 
     @Override
@@ -200,23 +240,30 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     @Override
     public void enterInitializer_declaration(Initializer_declarationContext ctx) {
 
+        String prefix = context.getPrefix(PATH_SEPARATOR);
+
         emitGenericParameterRefs(ctx.generic_parameter_clause());
 
         Def fnDef = support.def(ctx.initializer_head().init_kw(), DefKind.FUNC);
-        fnDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + fnDef.name);
 
-        context.enterScope(new Scope(fnDef.name));
+        String path = context.getPath(PATH_SEPARATOR);
+        String type = context.currentScope().getName();
+
+        context.enterScope(new Scope(fnDef.name, prefix));
 
         Collection<String> paramRepr = new LinkedList<>();
-        processFunctionParameters(ctx.parameter_clause(), paramRepr);
-        String type = context.currentScope().getName();
-        StringBuilder signature = new StringBuilder().append('(').append(StringUtils.join(paramRepr, ", ")).append(')');
-        signature.append(' ').append(type);
-        fnDef.format("func",
-                signature.toString(),
+        Collection<String> signature = new LinkedList<>();
+        processFunctionParameters(ctx.parameter_clause(), signature, paramRepr);
+        fnDef.format(StringUtils.EMPTY,
+                type + '(' + StringUtils.join(paramRepr, ", ") + ')',
                 DefData.SEPARATOR_EMPTY);
 
+        String fnPath = "init(" + StringUtils.join(signature, ',') + ')';
+        fnDef.defKey = new DefKey(null, prefix + fnPath);
+
         support.emit(fnDef);
+
+        support.infos.get(path).addProperty(DefKind.FUNC, fnPath, type);
     }
 
     @Override
@@ -239,7 +286,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                     DefKind.VAR, "var", "variable");
         } else {
             Def varDef = support.def(ctx.variable_name(), DefKind.VAR);
-            varDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + varDef.name);
+            varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
             Type_annotationContext typeAnnotationContext = ctx.type_annotation(0);
             Type_identifierContext typeNameCtx = extractTypeName(typeAnnotationContext.type());
             String typeName;
@@ -265,7 +312,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             return;
         }
         Def enumCaseDef = support.def(ctx, DefKind.CASE);
-        enumCaseDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + enumCaseDef.name);
+        enumCaseDef.defKey = new DefKey(null, context.currentScope().getPathTo(enumCaseDef.name, PATH_SEPARATOR));
         support.emit(enumCaseDef);
     }
 
@@ -283,10 +330,27 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     @Override
     public void exitPrimary_expression(Primary_expressionContext ctx) {
-        // foo
+
+        // foo or foo()
         IdentifierContext ident = ctx.identifier();
+        if (ctx.getParent().getParent() instanceof Function_call_expressionContext) {
+            fnCallStack.push(ident);
+        }
+
         if (ident == null) {
-            typeStack.push(UNKNOWN);
+            Self_expressionContext selfExpr = ctx.self_expression();
+            if (selfExpr != null) {
+                // self or self.foo
+                processSelfExpression(selfExpr);
+                return;
+            }
+            Superclass_expressionContext superclassExpr = ctx.superclass_expression();
+            if (superclassExpr != null) {
+                // super.foo
+                processSuperclassExpression(superclassExpr);
+                return;
+            }
+            // may be literal, closure etc - not supported for now
             return;
         }
         String varName = ident.getText();
@@ -297,7 +361,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         } else {
             type = lookup.getValue();
             Ref identRef = support.ref(ident);
-            identRef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR, lookup.getDepth()) + varName);
+            identRef.defKey = new DefKey(null, lookup.getScope().getPathTo(varName, PATH_SEPARATOR));
             support.emit(identRef);
         }
         typeStack.push(type);
@@ -305,18 +369,34 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     @Override
     public void exitExplicit_member_expression2(Explicit_member_expression2Context ctx) {
-        // foo.bar
+        // foo.bar and foo.bar()
+        boolean isFnCall = (ctx.getParent() instanceof Function_call_expressionContext);
+        IdentifierContext ident = ctx.identifier();
+
         String parent = typeStack.pop();
         if (parent == UNKNOWN) {
+            if (isFnCall) {
+                fnCallStack.push(ident);
+            }
             typeStack.push(UNKNOWN);
             return;
         }
-        TypeInfo<String> props = support.infos.get(parent);
+        TypeInfo<Scope, String> props = support.infos.get(parent);
         if (props == null) {
+            if (isFnCall) {
+                fnCallStack.push(ident);
+            }
             typeStack.push(UNKNOWN);
             return;
         }
-        IdentifierContext ident = ctx.identifier();
+
+        if (isFnCall) {
+            // will deal later
+            fnCallStack.push(ident);
+            typeStack.push(parent);
+            return;
+        }
+
         String type = props.getProperty(DefKind.VAR, ident.getText());
         if (type == null) {
             type = UNKNOWN;
@@ -329,26 +409,6 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     }
 
     @Override
-    public void exitInitializer_expression(Initializer_expressionContext ctx) {
-        // foo.init
-        String parent = typeStack.pop();
-        if (parent == UNKNOWN) {
-            typeStack.push(UNKNOWN);
-            return;
-        }
-        TypeInfo<String> props = support.infos.get(parent);
-        if (props == null) {
-            typeStack.push(UNKNOWN);
-            return;
-        }
-        Init_kwContext ident = ctx.init_kw();
-        Ref propRef = support.ref(ident);
-        propRef.defKey = new DefKey(null, parent + PATH_SEPARATOR + ident.getText()); // TODO
-        support.emit(propRef);
-        typeStack.push(parent);
-    }
-
-    @Override
     public void exitPostfix_self_expression(Postfix_self_expressionContext ctx) {
         // foo.self
         String parent = typeStack.pop();
@@ -356,7 +416,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             typeStack.push(UNKNOWN);
             return;
         }
-        TypeInfo<String> props = support.infos.get(parent);
+        TypeInfo<Scope, String> props = support.infos.get(parent);
         if (props == null) {
             typeStack.push(UNKNOWN);
             return;
@@ -370,19 +430,54 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     @Override
     public void exitFunction_call_expression(Function_call_expressionContext ctx) {
-        // foo.bar()
-        String parent = typeStack.pop();
-        if (parent == UNKNOWN) {
-            typeStack.push(UNKNOWN);
+
+        String signature = signature(ctx.parenthesized_expression());
+
+        if (!(ctx.postfix_expression() instanceof PrimaryContext)) {
+            // foo.bar()
+            String parent = typeStack.pop();
+            if (parent == UNKNOWN) {
+                typeStack.push(UNKNOWN);
+                fnCallStack.pop();
+                return;
+            }
+            TypeInfo<Scope, String> props = support.infos.get(parent);
+            if (props == null) {
+                typeStack.push(UNKNOWN);
+                fnCallStack.pop();
+                return;
+            }
+            processFnCallRef(props, signature, null);
             return;
         }
-        TypeInfo<String> props = support.infos.get(parent);
-        if (props == null) {
-            typeStack.push(UNKNOWN);
-            return;
+        // bar() or Bar() - function or ctor
+        TypeInfo<Scope, String> props = support.infos.get(fnCallStack.peek().getText());
+        String methodName;
+        if (props != null) {
+            methodName = "init";
+        } else {
+            props = support.infos.getRoot();
+            methodName = null;
         }
-        // TODO
-        typeStack.push(UNKNOWN);
+        processFnCallRef(props, signature, methodName);
+    }
+
+    private void processFnCallRef(TypeInfo<Scope, String> props, String signature, String methodName) {
+        ParserRuleContext fnIdent = fnCallStack.pop();
+        // looking for matching function
+        if (methodName == null) {
+            methodName = fnIdent.getText();
+        }
+        String fnPath = methodName + '(' + signature + ')';
+        String type = props.getProperty(DefKind.FUNC, fnPath);
+        if (type != null) {
+            Ref methodRef = support.ref(fnIdent);
+            methodRef.defKey = new DefKey(null, props.getData().getPathTo(fnPath, PATH_SEPARATOR));
+            support.emit(methodRef);
+            typeStack.push(type);
+        } else {
+            typeStack.push(UNKNOWN);
+        }
     }
 
     /**
@@ -441,15 +536,19 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         }
     }
 
-    private void processFunctionParameters(Parameter_clausesContext ctx, Collection<String> repr) {
+    private void processFunctionParameters(Parameter_clausesContext ctx,
+                                           Collection<String> signature,
+                                           Collection<String> repr) {
         if (ctx == null) {
             return;
         }
-        processFunctionParameters(ctx.parameter_clause(), repr);
-        processFunctionParameters(ctx.parameter_clauses(), repr);
+        processFunctionParameters(ctx.parameter_clause(), signature, repr);
+        processFunctionParameters(ctx.parameter_clauses(), signature, repr);
     }
 
-    private void processFunctionParameters(Parameter_clauseContext paramClause, Collection<String> repr) {
+    private void processFunctionParameters(Parameter_clauseContext paramClause,
+                                           Collection<String> signature,
+                                           Collection<String> repr) {
         if (paramClause != null) {
             Parameter_listContext paramList = paramClause.parameter_list();
             if (paramList != null) {
@@ -458,8 +557,13 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                     for (ParameterContext param : params) {
                         Local_parameter_nameContext localParameterName = param.local_parameter_name();
                         External_parameter_nameContext externalParameterName = param.external_parameter_name();
+                        if (externalParameterName == null) {
+                            signature.add("_");
+                        } else {
+                            signature.add(externalParameterName.getText());
+                        }
                         Def paramDef = support.def(localParameterName, DefKind.PARAM);
-                        paramDef.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + paramDef.name);
+                        paramDef.defKey = new DefKey(null, context.currentScope().getPathTo(paramDef.name, PATH_SEPARATOR));
                         Type_identifierContext typeNameCtx = extractTypeName(param.type_annotation().type());
                         String typeName;
                         if (typeNameCtx != null) {
@@ -501,7 +605,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             PatternContext pattern = item.pattern();
             Identifier_patternContext ident = pattern.identifier_pattern();
             Def def = support.def(ident, defKind);
-            def.defKey = new DefKey(null, context.getPrefix(PATH_SEPARATOR) + def.name);
+            def.defKey = new DefKey(null, context.currentScope().getPathTo(def.name, PATH_SEPARATOR));
             Type_annotationContext typeAnnotationContext = pattern.type_annotation();
             TypeContext typeContext;
             if (typeAnnotationContext == null) {
@@ -586,5 +690,93 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         return UNKNOWN;
     }
 
+    /**
+     * Handles self and self.foo expressions
+     */
+    private void processSelfExpression(Self_expressionContext ctx) {
+        IdentifierContext ident = ctx.identifier();
+        if (ident != null) {
+            // self.foo
+            // is it a method call or property access?
+            if (ctx.getParent().getParent() instanceof Function_call_expressionContext) {
+                // method call, will deal with it later
+                fnCallStack.push(ident);
+                typeStack.push(currentClass == null ? UNKNOWN : currentClass);
+            } else {
+                // property access
+                String propertyName = ident.getText();
+                TypeInfo<Scope, String> typeInfo = support.infos.get(currentClass);
+                if (typeInfo == null) {
+                    typeStack.push(UNKNOWN);
+                    return;
+                }
+                String type = typeInfo.getProperty(DefKind.VAR, propertyName);
+                typeStack.push(type == null ? UNKNOWN : type);
+                Ref propertyRef = support.ref(ident);
+                propertyRef.defKey = new DefKey(null, typeInfo.getData().getPathTo(propertyName, PATH_SEPARATOR));
+                support.emit(propertyRef);
+            }
+            return;
+        }
+        Init_kwContext initKwContext = ctx.init_kw();
+        if (initKwContext != null) {
+            // self.init, will deal with it later
+            fnCallStack.push(initKwContext);
+            typeStack.push(currentClass == null ? UNKNOWN : currentClass);
+            return;
+        }
+        // self or self[]
+        typeStack.push(currentClass == null ? UNKNOWN : currentClass);
+    }
+
+    /**
+     * Handles super.foo, super.init, and super[]
+     */
+    private void processSuperclassExpression(Superclass_expressionContext ctx) {
+        Superclass_method_expressionContext superMethodExpr = ctx.superclass_method_expression();
+        if (superMethodExpr != null) {
+            // super.foo() will deal with it later
+            fnCallStack.push(superMethodExpr.identifier());
+            typeStack.push(currentClass == null ? UNKNOWN : currentClass);
+            return;
+        }
+        Superclass_initializer_expressionContext superInitExpr = ctx.superclass_initializer_expression();
+        if (superInitExpr != null) {
+            // super.init, will deal with it later
+            fnCallStack.push(superInitExpr.init_kw());
+            typeStack.push(currentClass == null ? UNKNOWN : currentClass);
+            return;
+        }
+        // super[]
+        typeStack.push(currentClass == null ? UNKNOWN : currentClass);
+    }
+
+    private String signature(Parenthesized_expressionContext ctx) {
+        if (ctx == null) {
+            return StringUtils.EMPTY;
+        }
+        Expression_element_listContext elList = ctx.expression_element_list();
+        if (elList == null) {
+            return StringUtils.EMPTY;
+        }
+        List<Expression_elementContext> elements = elList.expression_element();
+        if (elements == null) {
+            return StringUtils.EMPTY;
+        }
+        Collection<String> params = new LinkedList<>();
+
+        for (Expression_elementContext element : elements) {
+
+            String name;
+            IdentifierContext ident = element.identifier();
+            if (ident == null) {
+                name = "_";
+            } else {
+                name = ident.getText();
+            }
+            params.add(name);
+        }
+        return StringUtils.join(params, ',');
+    }
 
 }

@@ -9,12 +9,18 @@ import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.commons.io.Charsets;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
 
 public class LanguageImpl extends LanguageBase {
 
-    TypeInfos<String> infos = new TypeInfos<>();
+    TypeInfos<Scope, String> infos = new TypeInfos<>();
+
+    public LanguageImpl() {
+        super();
+        infos.getRoot().setData(new Scope(StringUtils.EMPTY, StringUtils.EMPTY));
+    }
 
     @Override
     protected void parse(File sourceFile) throws ParseException {

@@ -1,5 +1,7 @@
 package com.sourcegraph.toolchain.language;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,13 +10,20 @@ import java.util.Map;
  */
 public class Scope {
 
-    static final Scope ROOT = new Scope(null);
+    static final Scope ROOT = new Scope(StringUtils.EMPTY);
 
     private String name;
+    private String prefix;
+
     private Map<String, String> items = new HashMap<>();
 
     public Scope(String name) {
+        this(name, StringUtils.EMPTY);
+    }
+
+    public Scope(String name, String prefix) {
         this.name = name;
+        this.prefix = prefix;
     }
 
     /**
@@ -36,6 +45,22 @@ public class Scope {
 
     public String getName() {
         return name;
+    }
+
+    public String getPrefix() {
+        return prefix;
+    }
+
+    public String getPath() {
+        return prefix + name;
+    }
+
+    public String getPathTo(String id, char separator) {
+        String ret = getPath();
+        if (!ret.isEmpty()) {
+            ret += separator;
+        }
+        return ret + id;
     }
 
     @Override

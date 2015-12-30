@@ -109,9 +109,10 @@ public class Context {
     public LookupResult lookup(String name) {
         int index = scopes.size() - 1;
         while (index >= 0) {
-            String type = scopes.get(index).get(name);
+            Scope s = scopes.get(index);
+            String type = s.get(name);
             if (type != null) {
-                return new LookupResult(type, index);
+                return new LookupResult(type, s, index);
             }
             index--;
         }

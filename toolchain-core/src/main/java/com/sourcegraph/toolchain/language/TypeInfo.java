@@ -1,14 +1,18 @@
 package com.sourcegraph.toolchain.language;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TypeInfo<E> {
+public class TypeInfo<K, V> {
 
-    private Map<String, Map<String, E>> props = new HashMap<>();
+    private K data;
 
-    public void addProperty(String category, String name, E data) {
-        Map<String, E> categoryProps = props.get(category);
+    private Map<String, Map<String, V>> props = new HashMap<>();
+
+    public void addProperty(String category, String name, V data) {
+        Map<String, V> categoryProps = props.get(category);
         if (categoryProps == null) {
             categoryProps = new HashMap<>();
             props.put(category, categoryProps);
@@ -16,11 +20,28 @@ public class TypeInfo<E> {
         categoryProps.put(name, data);
     }
 
-    public E getProperty(String category, String name) {
-        Map<String, E> categoryProps = props.get(category);
+    public V getProperty(String category, String name) {
+        Map<String, V> categoryProps = props.get(category);
         if (categoryProps == null) {
             return null;
         }
         return categoryProps.get(name);
+    }
+
+    public Collection<String> getPropertyNames(String category) {
+        Map<String, V> categoryProps = props.get(category);
+        if (categoryProps == null) {
+            return Collections.emptyList();
+        }
+        return categoryProps.keySet();
+    }
+
+    public K getData() {
+        return data;
+    }
+
+    public TypeInfo<K, V> setData(K data) {
+        this.data = data;
+        return this;
     }
 }

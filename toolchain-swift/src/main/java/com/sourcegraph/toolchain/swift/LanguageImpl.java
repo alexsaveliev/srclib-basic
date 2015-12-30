@@ -62,6 +62,7 @@ public class LanguageImpl extends LanguageBase {
             ParseTree tree = ((SwiftParser) configuration.parser).top_level();
             ParseTreeWalker walker = new ParseTreeWalker();
             walker.walk(new SwiftParseTreeListener(this), tree);
+            trees.put(sourceFile, tree);
         } catch (Exception e) {
             throw new ParseException(e);
         }

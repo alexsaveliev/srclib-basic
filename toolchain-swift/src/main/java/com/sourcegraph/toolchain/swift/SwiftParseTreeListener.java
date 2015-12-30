@@ -4,10 +4,7 @@ import com.sourcegraph.toolchain.core.objects.Def;
 import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
-import com.sourcegraph.toolchain.language.Context;
-import com.sourcegraph.toolchain.language.LookupResult;
-import com.sourcegraph.toolchain.language.Scope;
-import com.sourcegraph.toolchain.language.TypeInfo;
+import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.swift.antlr4.SwiftBaseListener;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ParseTree;
@@ -199,10 +196,8 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         Function_signatureContext signatureContext = ctx.function_signature();
         Function_resultContext resultContext = signatureContext.function_result();
-        Collection<String> paramRepr = new LinkedList<>();
-        Collection<String> signature = new LinkedList<>();
-        Collection<Def> defs = new LinkedList<>();
-        processFunctionParameters(signatureContext.parameter_clauses(), defs, signature, paramRepr);
+        FunctionParameters params = new FunctionParameters();
+        processFunctionParameters(signatureContext.parameter_clauses(), params);
         String type;
         if (resultContext != null) {
             Type_identifierContext typeNameCtx = extractTypeName(resultContext.type());
@@ -217,20 +212,21 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         } else {
             type = VOID;
         }
-        StringBuilder repr = new StringBuilder().append('(').append(StringUtils.join(paramRepr, ", ")).append(')');
+        StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
         repr.append(' ').append(type);
 
 
-        String fnPath = fnDef.name + '(' + StringUtils.join(signature, ',') + ')';
+        String fnPath = fnDef.name + '(' + params.getSignature() + ')';
         fnDef.defKey = new DefKey(null, prefix + fnPath);
         fnDef.format("func",
                 repr.toString(),
                 DefData.SEPARATOR_EMPTY);
         context.enterScope(new Scope<>(fnPath, prefix));
         emit(fnDef);
-        for (Def paramDef : defs) {
-            paramDef.defKey = new DefKey(null, context.currentScope().getPathTo(paramDef.name, PATH_SEPARATOR));
-            emit(paramDef);
+        for (FunctionParameter param : params.params) {
+            param.def.defKey = new DefKey(null, context.currentScope().getPathTo(param.def.name, PATH_SEPARATOR));
+            emit(param.def);
+            context.currentScope().put(param.name, new Variable(param.type));
         }
         support.infos.setProperty(path, DefKind.FUNC, fnPath, type);
     }
@@ -260,24 +256,23 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         String path = context.getPath(PATH_SEPARATOR);
         String type = context.currentScope().getName();
 
-        Collection<String> paramRepr = new LinkedList<>();
-        Collection<String> signature = new LinkedList<>();
-        Collection<Def> defs = new LinkedList<>();
+        FunctionParameters params = new FunctionParameters();
 
-        processFunctionParameters(ctx.parameter_clause(), defs, signature, paramRepr);
+        processFunctionParameters(ctx.parameter_clause(), params);
         fnDef.format(StringUtils.EMPTY,
-                type + '(' + StringUtils.join(paramRepr, ", ") + ')',
+                type + '(' + params.getRepresentation() + ')',
                 DefData.SEPARATOR_EMPTY);
 
-        String fnPath = "init(" + StringUtils.join(signature, ',') + ')';
+        String fnPath = "init(" + params.getSignature() + ')';
         fnDef.defKey = new DefKey(null, prefix + fnPath);
 
         emit(fnDef);
         context.enterScope(new Scope<>(fnPath, prefix));
 
-        for (Def paramDef : defs) {
-            paramDef.defKey = new DefKey(null, context.currentScope().getPathTo(paramDef.name, PATH_SEPARATOR));
-            emit(paramDef);
+        for (FunctionParameter param : params.params) {
+            param.def.defKey = new DefKey(null, context.currentScope().getPathTo(param.def.name, PATH_SEPARATOR));
+            emit(param.def);
+            context.currentScope().put(param.name, new Variable(param.type));
         }
 
         support.infos.setProperty(path, DefKind.FUNC, fnPath, type);
@@ -592,38 +587,37 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     }
 
     private void processFunctionParameters(Parameter_clausesContext ctx,
-                                           Collection<Def> defs,
-                                           Collection<String> signature,
-                                           Collection<String> repr) {
+                                           FunctionParameters params) {
         if (ctx == null) {
             return;
         }
-        processFunctionParameters(ctx.parameter_clause(), defs, signature, repr);
-        processFunctionParameters(ctx.parameter_clauses(), defs, signature, repr);
+        processFunctionParameters(ctx.parameter_clause(), params);
+        processFunctionParameters(ctx.parameter_clauses(), params);
     }
 
     private void processFunctionParameters(Parameter_clauseContext paramClause,
-                                           Collection<Def> defs,
-                                           Collection<String> signature,
-                                           Collection<String> repr) {
+                                           FunctionParameters params) {
         if (paramClause != null) {
             Parameter_listContext paramList = paramClause.parameter_list();
             if (paramList != null) {
-                List<ParameterContext> params = paramList.parameter();
-                if (params != null) {
+                List<ParameterContext> paramz = paramList.parameter();
+                if (paramz != null) {
+
+                    String signature;
+
                     int counter = 0;
-                    for (ParameterContext param : params) {
+                    for (ParameterContext param : paramz) {
                         Local_parameter_nameContext localParameterName = param.local_parameter_name();
                         External_parameter_nameContext externalParameterName = param.external_parameter_name();
                         if (externalParameterName == null) {
                             if (counter == 0) {
                                 // fist parameter may be _
-                                signature.add("_");
+                                signature = "_";
                             } else {
-                                signature.add(localParameterName.getText());
+                                signature = localParameterName.getText();
                             }
                         } else {
-                            signature.add(externalParameterName.getText());
+                            signature = externalParameterName.getText();
                         }
                         Def paramDef = support.def(localParameterName, DefKind.PARAM);
                         Type_identifierContext typeNameCtx = extractTypeName(param.type_annotation().type());
@@ -640,9 +634,12 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                         paramDef.defData.setKind("argument");
                         String argName = localParameterName.getText();
                         context.currentScope().put(argName, new Variable(typeName));
-                        repr.add(argName + ": " + typeName);
-                        paramDef.defKey = new DefKey(null, context.currentScope().getPathTo(paramDef.name, PATH_SEPARATOR));
-                        defs.add(paramDef);
+                        String representation = argName + ": " + typeName;
+                        params.params.add(new FunctionParameter(argName,
+                                typeName,
+                                representation,
+                                signature,
+                                paramDef));
                         counter++;
                     }
                 }
@@ -858,6 +855,56 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     private void emit(Ref ref) {
         if (!support.firstPass) {
             support.emit(ref);
+        }
+    }
+
+    private static class FunctionParameters {
+        Collection<FunctionParameter> params = new LinkedList<>();
+
+        String getRepresentation() {
+            StringBuilder ret = new StringBuilder();
+            boolean first = true;
+            for (FunctionParameter param : params) {
+                if (!first) {
+                    ret.append(", ");
+                } else {
+                    first = false;
+                }
+                ret.append(param.repr);
+            }
+            return ret.toString();
+        }
+
+        String getSignature() {
+            StringBuilder ret = new StringBuilder();
+            boolean first = true;
+            for (FunctionParameter param : params) {
+                if (!first) {
+                    ret.append(',');
+                } else {
+                    first = false;
+                }
+                ret.append(param.signature);
+            }
+            return ret.toString();
+        }
+
+    }
+
+    private static class FunctionParameter {
+
+        String name;
+        String type;
+        String repr;
+        String signature;
+        Def def;
+
+        FunctionParameter(String name, String type, String repr, String signature, Def def) {
+            this.name = name;
+            this.type = type;
+            this.repr = repr;
+            this.signature = signature;
+            this.def = def;
         }
     }
 

@@ -1,5 +1,6 @@
 package com.sourcegraph.toolchain.swift;
 
+import com.sourcegraph.toolchain.core.PathUtil;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.swift.antlr4.SwiftLexer;
@@ -12,14 +13,41 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LanguageImpl extends LanguageBase {
 
     TypeInfos<Scope, String> infos = new TypeInfos<>();
 
+    boolean firstPass = true;
+
+    private Map<File, ParseTree> trees = new HashMap<>();
+
     public LanguageImpl() {
         super();
         infos.getRoot().setData(new Scope(StringUtils.EMPTY, StringUtils.EMPTY));
+    }
+
+    @Override
+    public void graph() {
+        // first pass to extract defs
+        super.graph();
+
+        // second pass to extract refs
+        firstPass = false;
+        for (Map.Entry<File, ParseTree> entry : trees.entrySet()) {
+            processingPath.push(PathUtil.relativizeCwd(entry.getKey().toPath()));
+            LOGGER.info("Extracting refs from {}", getCurrentFile());
+            try {
+                ParseTreeWalker walker = new ParseTreeWalker();
+                walker.walk(new SwiftParseTreeListener(this), entry.getValue());
+            } catch (Exception e) {
+                LOGGER.error("Failed to process {} - unexpected error", getCurrentFile(), e);
+            } finally {
+                processingPath.pop();
+            }
+        }
     }
 
     @Override

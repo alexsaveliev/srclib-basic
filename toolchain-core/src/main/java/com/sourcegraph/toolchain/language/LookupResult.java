@@ -1,18 +1,18 @@
 package com.sourcegraph.toolchain.language;
 
-public class LookupResult {
+public class LookupResult<E> {
 
-    private String value;
+    private E value;
     private Scope scope;
     private int depth;
 
-    public LookupResult(String value, Scope scope, int depth) {
+    public LookupResult(E value, Scope scope, int depth) {
         this.value = value;
         this.scope = scope;
         this.depth = depth;
     }
 
-    public String getValue() {
+    public E getValue() {
         return value;
     }
 

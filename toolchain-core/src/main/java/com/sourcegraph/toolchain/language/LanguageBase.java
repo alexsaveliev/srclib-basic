@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  */
 public abstract class LanguageBase implements com.sourcegraph.toolchain.language.Language {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LanguageBase.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(LanguageBase.class);
 
     /**
      * Contains processing path to current file (for example B was scheduled for processing from C scheduled from A)
@@ -41,12 +41,12 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
     /**
      * List of files that were already visited during current session
      */
-    private Set<File> visited = new HashSet<>();
+    protected Set<File> visited = new HashSet<>();
 
     /**
      * List of files to process converted to set for fast lookup purposes
      */
-    private  Set<File> files;
+    protected Set<File> files;
 
     @Override
     public void setSourceUnit(SourceUnit unit) {

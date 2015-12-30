@@ -930,9 +930,17 @@ identifier : Identifier | context_sensitive_keyword ;
 
 As : 'as';
 
+/**
+ * alexsaveliev: removed the following condition
+ * "_ MUST be followed by something. _ is not a valid Identifier. it's a pattern"
+ * test case
+ *            request.delegate.taskNeedNewBodyStream = { _, _ in
+ *                return HTTPBodyStream
+ *            }
+ */
 Identifier
  : Identifier_head Identifier_characters?
- | '_' Identifier_characters // _ MUST be followed by something. _ is not a valid Identifier. it's a pattern
+ | '_' Identifier_characters?
  | '`' (Identifier_head|'_') Identifier_characters? '`'
  | Implicit_parameter_name
  ;

@@ -11,7 +11,7 @@ public class TypeInfo<K, V> {
 
     private Map<String, Map<String, V>> props = new HashMap<>();
 
-    public void addProperty(String category, String name, V data) {
+    public void setProperty(String category, String name, V data) {
         Map<String, V> categoryProps = props.get(category);
         if (categoryProps == null) {
             categoryProps = new HashMap<>();

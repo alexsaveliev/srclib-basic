@@ -11,19 +11,31 @@ public class TypeInfos<K, V> {
 
     public TypeInfos() {
         infos = new HashMap<>();
-        put(StringUtils.EMPTY, new TypeInfo<>());
     }
 
     public TypeInfo<K, V> getRoot() {
-        return infos.get(StringUtils.EMPTY);
+        return get(StringUtils.EMPTY);
+    }
+
+    public void setData(String name, K data) {
+        get(name).setData(data);
     }
 
     public TypeInfo<K, V> get(String name) {
-        return infos.get(name);
+        TypeInfo<K, V> ret = infos.get(name);
+        if (ret == null) {
+            ret = new TypeInfo<>();
+            infos.put(name, ret);
+        }
+        return ret;
     }
 
-    public void put(String name, TypeInfo<K, V> info) {
-        infos.put(name, info);
+    public V getProperty(String typeName, String category, String propertyName) {
+        return get(typeName).getProperty(category, propertyName);
+    }
+
+    public void setProperty(String typeName, String category, String propertyName, V value) {
+        get(typeName).setProperty(category, propertyName, value);
     }
 
 }

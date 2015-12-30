@@ -5,20 +5,20 @@ import java.util.Stack;
 /**
  * Parse context. Keeps stack of scopes
  */
-public class Context {
+public class Context<E> {
 
-    private Stack<Scope> scopes;
+    private Stack<Scope<E>> scopes;
 
     public Context() {
         scopes = new Stack<>();
-        scopes.push(Scope.ROOT);
+        scopes.push(Scope.root());
     }
 
     /**
      * Adds new scope into the stack
      * @param scope scope to add
      */
-    public void enterScope(Scope scope) {
+    public void enterScope(Scope<E> scope) {
         scopes.push(scope);
     }
 
@@ -26,14 +26,14 @@ public class Context {
      * Removes scope from the stack
      * @return removed scope
      */
-    public Scope exitScope() {
+    public Scope<E> exitScope() {
         return scopes.pop();
     }
 
     /**
      * @return current scope
      */
-    public Scope currentScope() {
+    public Scope<E> currentScope() {
         return scopes.peek();
     }
 
@@ -84,7 +84,7 @@ public class Context {
         boolean empty = true;
         int currentDepth = 0;
         for (Scope scope : scopes) {
-            if (scope == Scope.ROOT) {
+            if (scope.isRoot()) {
                 continue;
             }
             currentDepth++;
@@ -106,13 +106,13 @@ public class Context {
      * @param name variable name
      * @return variable type or null
      */
-    public LookupResult lookup(String name) {
+    public LookupResult<E> lookup(String name) {
         int index = scopes.size() - 1;
         while (index >= 0) {
-            Scope s = scopes.get(index);
-            String type = s.get(name);
-            if (type != null) {
-                return new LookupResult(type, s, index);
+            Scope<E> s = scopes.get(index);
+            E value = s.get(name);
+            if (value != null) {
+                return new LookupResult<>(value, s, index);
             }
             index--;
         }

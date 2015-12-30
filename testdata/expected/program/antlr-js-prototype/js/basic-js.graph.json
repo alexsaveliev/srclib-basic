@@ -1,0 +1,162 @@
+{
+  "Defs": [
+    {
+      "Path": "@Animal",
+      "Name": "Animal",
+      "Kind": "function",
+      "File": "animal.js",
+      "DefStart": 82,
+      "DefEnd": 88,
+      "Data": {},
+      "TreePath": "@Animal"
+    },
+    {
+      "Path": "@Animal@name",
+      "Name": "name",
+      "Kind": "param",
+      "File": "animal.js",
+      "DefStart": 89,
+      "DefEnd": 93,
+      "Data": {},
+      "TreePath": "@Animal@name"
+    },
+    {
+      "Path": "Animal@makeNoise",
+      "Name": "makeNoise",
+      "Kind": "var",
+      "File": "animal.js",
+      "DefStart": 303,
+      "DefEnd": 312,
+      "Data": {},
+      "TreePath": "Animal@makeNoise"
+    },
+    {
+      "Path": "Animal@name",
+      "Name": "name",
+      "Kind": "var",
+      "File": "animal.js",
+      "DefStart": 104,
+      "DefEnd": 108,
+      "Data": {},
+      "TreePath": "Animal@name"
+    },
+    {
+      "Path": "Animal@noise",
+      "Name": "noise",
+      "Kind": "var",
+      "File": "animal.js",
+      "DefStart": 342,
+      "DefEnd": 347,
+      "Data": {},
+      "TreePath": "Animal@noise"
+    },
+    {
+      "Path": "Animal@sayHello",
+      "Name": "sayHello",
+      "Kind": "var",
+      "File": "animal.js",
+      "DefStart": 168,
+      "DefEnd": 176,
+      "Data": {},
+      "TreePath": "Animal@sayHello"
+    }
+  ],
+  "Refs": [
+    {
+      "DefPath": "@Animal@name",
+      "File": "animal.js",
+      "Start": 111,
+      "End": 115
+    },
+    {
+      "DefPath": "@Animal@name",
+      "Def": true,
+      "File": "animal.js",
+      "Start": 89,
+      "End": 93
+    },
+    {
+      "DefPath": "@Animal",
+      "File": "animal.js",
+      "Start": 151,
+      "End": 157
+    },
+    {
+      "DefPath": "@Animal",
+      "File": "animal.js",
+      "Start": 158,
+      "End": 167
+    },
+    {
+      "DefPath": "@Animal",
+      "File": "animal.js",
+      "Start": 217,
+      "End": 221
+    },
+    {
+      "DefPath": "@Animal",
+      "File": "animal.js",
+      "Start": 286,
+      "End": 292
+    },
+    {
+      "DefPath": "@Animal",
+      "File": "animal.js",
+      "Start": 293,
+      "End": 302
+    },
+    {
+      "DefPath": "@Animal",
+      "File": "animal.js",
+      "Start": 337,
+      "End": 341
+    },
+    {
+      "DefPath": "@Animal",
+      "Def": true,
+      "File": "animal.js",
+      "Start": 82,
+      "End": 88
+    },
+    {
+      "DefPath": "@Animal",
+      "File": "animal.js",
+      "Start": 99,
+      "End": 103
+    },
+    {
+      "DefPath": "Animal@makeNoise",
+      "Def": true,
+      "File": "animal.js",
+      "Start": 303,
+      "End": 312
+    },
+    {
+      "DefPath": "Animal@name",
+      "Def": true,
+      "File": "animal.js",
+      "Start": 104,
+      "End": 108
+    },
+    {
+      "DefPath": "Animal@name",
+      "File": "animal.js",
+      "Start": 222,
+      "End": 226
+    },
+    {
+      "DefPath": "Animal@noise",
+      "Def": true,
+      "File": "animal.js",
+      "Start": 342,
+      "End": 347
+    },
+    {
+      "DefPath": "Animal@sayHello",
+      "Def": true,
+      "File": "animal.js",
+      "Start": 168,
+      "End": 176
+    }
+  ]
+}

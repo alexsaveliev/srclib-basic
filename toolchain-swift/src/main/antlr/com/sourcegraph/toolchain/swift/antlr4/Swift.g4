@@ -263,8 +263,8 @@ build_configuration : platform_testing_function
  * alexsaveliev: replaced operating_system with Identifier and architecture with Identifier
  * "Linux" is valid OS name
  */
-platform_testing_function : 'os' '(' Identifier ')'
- | 'arch' '(' Identifier ')'
+platform_testing_function : Os '(' Identifier ')'
+ | Arch '(' Identifier ')'
  ;
 
 /**
@@ -951,8 +951,10 @@ class_requirement : 'class' ;
 
 // GRAMMAR OF AN IDENTIFIER
 
-identifier : Identifier | context_sensitive_keyword ;
+identifier : Os | Arch | Identifier | context_sensitive_keyword ;
 
+Os : 'os';
+Arch : 'arch';
 As : 'as';
 
 /**

@@ -133,11 +133,27 @@ branch_statement : if_statement
 // GRAMMAR OF AN IF STATEMENT
 
 if_statement : 'if' condition_clause code_block else_clause? ;
-else_clause : 'else' code_block | 'else' if_statement  ;
+
+/**
+ * alexsaveliev: split else_clause to else_statement and else_if_statement
+ */
+else_clause
+ : else_statement
+ | else_if_statement
+ ;
+
+else_statement
+ : 'else' code_block;
+
+else_if_statement
+ : 'else' if_statement  ;
 
 // GRAMMAR OF A GUARD STATEMENT
 
-guard_statement : 'guard' condition_clause 'else' code_block ;
+/**
+ * alexsaveliev: put "else_statement" here
+ */
+guard_statement : 'guard' condition_clause else_statement;
 
 // GRAMMAR OF A SWITCH STATEMENT
 

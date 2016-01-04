@@ -55,7 +55,7 @@ public class TypeInfos<K, V> {
 
     /**
      * Sets data associated with the given name in the given category of type name's properties
-     * @param typeName tyoe name
+     * @param typeName type name
      * @param category category name
      * @param propertyName property name
      * @param value data to set

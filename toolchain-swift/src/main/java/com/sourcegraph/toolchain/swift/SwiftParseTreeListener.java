@@ -482,11 +482,14 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         TypeInfo<Scope, String> props;
 
-        String className = fnCallNameCtx.getText();
+        String className;
+
         if (fnCallNameCtx != null) {
+            className = fnCallNameCtx.getText();
             props = support.infos.get(className);
         } else {
             props = null;
+            className = null;
         }
         String methodName;
 
@@ -508,7 +511,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     @Override
     public void enterIf_statement(If_statementContext ctx) {
-        context.enterScope(new Scope<>(context.currentScope().nextId()));
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
         processBindingConditions(ctx.condition_clause());
     }
 
@@ -519,7 +522,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     @Override
     public void enterWhile_statement(While_statementContext ctx) {
-        context.enterScope(new Scope<>(context.currentScope().nextId()));
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
         processBindingConditions(ctx.condition_clause());
     }
 
@@ -529,13 +532,73 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     }
 
     @Override
+    public void enterRepeat_while_statement(Repeat_while_statementContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitRepeat_while_statement(Repeat_while_statementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterDo_statement(Do_statementContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitDo_statement(Do_statementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterDefer_statement(Defer_statementContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitDefer_statement(Defer_statementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterElse_statement(Else_statementContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitElse_statement(Else_statementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterCatch_clause(Catch_clauseContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitCatch_clause(Catch_clauseContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
     public void enterGuard_statement(Guard_statementContext ctx) {
-        context.enterScope(new Scope<>(context.currentScope().nextId()));
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
         processBindingConditions(ctx.condition_clause());
     }
 
     @Override
     public void exitGuard_statement(Guard_statementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterSwitch_case(Switch_caseContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitSwitch_case(Switch_caseContext ctx) {
         context.exitScope();
     }
 
@@ -575,8 +638,11 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         if (type != null) {
             Ref methodRef = support.ref(fnIdent);
-            methodRef.defKey = new DefKey(null, props.getData().getPathTo(fnPath, PATH_SEPARATOR));
-            emit(methodRef);
+            Scope scope = props.getData();
+            if (scope != null) {
+                methodRef.defKey = new DefKey(null, scope.getPathTo(fnPath, PATH_SEPARATOR));
+                emit(methodRef);
+            }
             typeStack.push(type);
         } else {
             typeStack.push(UNKNOWN);
@@ -850,7 +916,10 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                 String type = typeInfo.getProperty(DefKind.VAR, propertyName);
                 typeStack.push(type == null ? UNKNOWN : type);
                 Ref propertyRef = support.ref(ident);
-                propertyRef.defKey = new DefKey(null, typeInfo.getData().getPathTo(propertyName, PATH_SEPARATOR));
+                Scope scope = typeInfo.getData();
+                if (scope != null) {
+                    propertyRef.defKey = new DefKey(null, scope.getPathTo(propertyName, PATH_SEPARATOR));
+                }
                 emit(propertyRef);
             }
             return;

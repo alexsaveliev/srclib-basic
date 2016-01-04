@@ -113,13 +113,6 @@ public class Scope<E> {
     }
 
     /**
-     * @return next ID that may be used to distinguish unnamed blocks ({}) in the current scope
-     */
-    public String nextId() {
-        return String.valueOf(++counter);
-    }
-
-    /**
      * @return new root scope
      */
     static <E> Scope<E> root() {
@@ -128,10 +121,17 @@ public class Scope<E> {
         return ret;
     }
 
+    /**
+     * @return next scope for unnamed block ({})
+     */
+    public Scope<E> next(char separator) {
+        String id = String.valueOf(++counter);
+        return new Scope<E>(id, getPathTo(id, separator));
+    }
+
     @Override
     public String toString() {
         return getName();
     }
-
 
 }

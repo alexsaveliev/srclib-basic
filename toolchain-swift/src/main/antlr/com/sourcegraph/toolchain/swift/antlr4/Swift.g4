@@ -683,6 +683,7 @@ attributes : attribute+ ;
 /*
  * alexsaveliev: added comma-separate tokens to support
  * @available(*, unavailable, message="Please wrap your tuple argument in parentheses: 'print((...))'")
+ * alexsaveliev: multiple identiiers/literals in a row to support "@available(iOS 9.0, OSX 10.11, *)"
  */
 balanced_tokens
  : balanced_token+
@@ -691,7 +692,8 @@ balanced_token
  : '('  balanced_tokens? ')'
  | '[' balanced_tokens? ']'
  | '{' balanced_tokens? '}'
- | identifier | expression | context_sensitive_keyword | literal | operator
+ | (identifier | context_sensitive_keyword | literal | operator)+
+ | expression
 // | Any punctuation except ( ,  ')' , '[' , ']' , { , or } TODO add?
  ;
 
@@ -819,7 +821,7 @@ unowned_specifier : 'weak' | 'unowned' | 'unowned(safe)' | 'unowned(unsafe)'  ;
 
 parenthesized_expression : '(' expression_element_list? ')'  ;
 expression_element_list : expression_element (',' expression_element)* ;
-expression_element : expression | identifier ':' expression  ;
+expression_element : expression | identifier ':' expression | operator ;
 
 // GRAMMAR OF A WILDCARD EXPRESSION
 

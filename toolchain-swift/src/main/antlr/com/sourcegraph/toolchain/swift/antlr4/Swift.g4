@@ -706,9 +706,12 @@ expression_list : expression (',' expression)* ;
 
 // GRAMMAR OF A PREFIX EXPRESSION
 
+/**
+ * alexsaveliev: changed "postfix_expression" to "try_operator? postfix_expression" to support "a = try b"
+ */
 prefix_expression
   : prefix_operator postfix_expression
-  | postfix_expression
+  | try_operator? postfix_expression
   | in_out_expression
   ;
 

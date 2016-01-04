@@ -364,6 +364,8 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                 return;
             }
             // may be literal, closure etc - not supported for now
+            typeStack.push(UNKNOWN);
+            fnCallStack.push(null);
             return;
         }
         String varName = ident.getText();

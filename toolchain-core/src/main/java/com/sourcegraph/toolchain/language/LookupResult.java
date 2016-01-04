@@ -1,5 +1,9 @@
 package com.sourcegraph.toolchain.language;
 
+/**
+ * Lookup result, holds found value, scope, and scope's depth
+ * @param <E>
+ */
 public class LookupResult<E> {
 
     private E value;

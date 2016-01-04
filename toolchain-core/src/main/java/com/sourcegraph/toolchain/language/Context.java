@@ -3,19 +3,23 @@ package com.sourcegraph.toolchain.language;
 import java.util.Stack;
 
 /**
- * Parse context. Keeps stack of scopes
+ * Parse context. Holds stack of scopes, wher scope may represent class, function or block
  */
 public class Context<E> {
 
     private Stack<Scope<E>> scopes;
 
+    /**
+     * Makes new context, adds new global scope
+     */
     public Context() {
         scopes = new Stack<>();
         scopes.push(Scope.root());
     }
 
     /**
-     * Adds new scope into the stack
+     * Adds new scope into the stack.
+     * Example - entered new function
      * @param scope scope to add
      */
     public void enterScope(Scope<E> scope) {
@@ -24,6 +28,7 @@ public class Context<E> {
 
     /**
      * Removes scope from the stack
+     * Example - done with function processing
      * @return removed scope
      */
     public Scope<E> exitScope() {
@@ -102,9 +107,10 @@ public class Context<E> {
     }
 
     /**
-     * Tries to resolve variable type
-     * @param name variable name
-     * @return variable type or null
+     * Lookups for data associated with the given name.
+     * Searches in all the scopes until found
+     * @param name data key
+     * @return found data or null
      */
     public LookupResult<E> lookup(String name) {
         int index = scopes.size() - 1;

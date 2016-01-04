@@ -24,6 +24,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     private static final String VOID = "Void";
     private static final String UNKNOWN = "?";
+    private static final String CTOR = "init";
 
     private static final char PATH_SEPARATOR = '.';
 
@@ -291,13 +292,13 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
 
     @Override
-    public void enterConstant_declaration(Constant_declarationContext ctx) {
+    public void exitConstant_declaration(Constant_declarationContext ctx) {
         processVariableOrConstants(ctx.pattern_initializer_list().pattern_initializer(),
                 DefKind.LET, "let", "constant");
     }
 
     @Override
-    public void enterVariable_declaration(Variable_declarationContext ctx) {
+    public void exitVariable_declaration(Variable_declarationContext ctx) {
         Pattern_initializer_listContext list = ctx.pattern_initializer_list();
         if (list != null) {
             processVariableOrConstants(list.pattern_initializer(),
@@ -334,18 +335,6 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         Def enumCaseDef = support.def(ctx, DefKind.CASE);
         enumCaseDef.defKey = new DefKey(null, context.currentScope().getPathTo(enumCaseDef.name, PATH_SEPARATOR));
         emit(enumCaseDef);
-    }
-
-    @Override
-    public void enterBinary_expression(Binary_expressionContext ctx) {
-        // handling a = b case only
-        Binary_operatorContext op = ctx.binary_operator();
-        if (op == null) {
-            return;
-        }
-        if (!"=".equals(op.getText())) {
-            return;
-        }
     }
 
     @Override
@@ -493,19 +482,22 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         TypeInfo<Scope, String> props;
 
+        String className = fnCallNameCtx.getText();
         if (fnCallNameCtx != null) {
-            props = support.infos.get(fnCallNameCtx.getText());
+            props = support.infos.get(className);
         } else {
             props = null;
         }
         String methodName;
+
         if (props != null) {
-            methodName = "init";
+            methodName = CTOR;
         } else {
             props = support.infos.getRoot();
             methodName = null;
+            className = currentClass;
         }
-        processFnCallRef(props, signature, methodName, currentClass);
+        processFnCallRef(props, signature, methodName, className);
     }
 
     @Override
@@ -574,7 +566,11 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         }
 
         if (type == null) {
-            type = props.getProperty(DefKind.FUNC, fnPath);
+            if (CTOR.equals(methodName)) {
+                type = currentClass;
+            } else {
+                type = props.getProperty(DefKind.FUNC, fnPath);
+            }
         }
 
         if (type != null) {
@@ -770,6 +766,13 @@ class SwiftParseTreeListener extends SwiftBaseListener {
     }
 
     private String guessType(InitializerContext ctx) {
+
+        if (!typeStack.empty()) {
+            String ret = typeStack.peek();
+            if (ret != UNKNOWN) {
+                return ret;
+            }
+        }
         if (ctx == null) {
             return UNKNOWN;
         }

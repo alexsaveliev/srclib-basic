@@ -716,7 +716,7 @@ in_out_expression : '&' identifier ;
 
 // GRAMMAR OF A TRY EXPRESSION
 
-try_operator : 'try' | 'try' '?' | 'try' '!' ;
+try_operator : Try operator_character?;
 
 // GRAMMAR OF A BINARY EXPRESSION
 
@@ -957,6 +957,7 @@ Os : 'os';
 Arch : 'arch';
 As : 'as';
 
+Try : 'try';
 /**
  * alexsaveliev: removed the following condition
  * "_ MUST be followed by something. _ is not a valid Identifier. it's a pattern"

@@ -6,7 +6,8 @@
       "SourceUnitTypes": [
         "basic-php",
         "basic-objc",
-        "basic-swift"
+        "basic-swift",
+        "basic-cpp"
       ]
     },
     {
@@ -15,7 +16,8 @@
       "SourceUnitTypes": [
         "basic-php",
         "basic-objc",
-        "basic-swift"
+        "basic-swift",
+        "basic-cpp"
       ]
     },
     {
@@ -24,7 +26,8 @@
       "SourceUnitTypes": [
         "basic-php",
         "basic-objc",
-        "basic-swift"
+        "basic-swift",
+        "basic-cpp"
       ]
     }
   ],
@@ -46,6 +49,7 @@
       ".bin/toolchain-php-0.0.1.jar",
       ".bin/toolchain-objc-0.0.1.jar",
       ".bin/toolchain-swift-0.0.1.jar"
+      ".bin/toolchain-cpp-0.0.1.jar"
     ],
     "Commands": [
       "make install"

@@ -1,15 +1,15 @@
-package com.sourcegraph.toolchain.swift;
+package com.sourcegraph.toolchain.language;
 
-class Variable {
+public class Variable {
 
     private String type;
     private String path;
 
-    Variable(String type) {
+    public Variable(String type) {
         this(type, null);
     }
 
-    Variable(String type, String path) {
+    public Variable(String type, String path) {
         this.type = type;
         this.path = path;
     }

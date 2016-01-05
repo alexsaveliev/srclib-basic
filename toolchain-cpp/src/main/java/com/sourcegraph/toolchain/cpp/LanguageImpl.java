@@ -1,22 +1,19 @@
 package com.sourcegraph.toolchain.cpp;
 
-import com.sourcegraph.toolchain.core.GraphWriter;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.objc.antlr4.CPP14Lexer;
 import com.sourcegraph.toolchain.objc.antlr4.CPP14Parser;
+import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.io.IOException;
 
 public class LanguageImpl extends LanguageBase {
+
+    TypeInfos<Scope, String> infos = new TypeInfos<>();
 
     @Override
     protected void parse(File sourceFile) throws ParseException {
@@ -37,7 +34,9 @@ public class LanguageImpl extends LanguageBase {
 
     @Override
     protected FileCollector getFileCollector(File rootDir, String repoUri) {
-        return new ExtensionBasedFileCollector().extension(".h", ".m", ".mm");
+        return new ExtensionBasedFileCollector().extension(
+                ".C", ".cc", ".cpp", ".CPP", ".c++", ".cp", ".cxx",
+                ".H", ".hh", ".hpp", ".HPP", ".h++", ".hp", ".hxx");
     }
 
     @Override
@@ -49,5 +48,13 @@ public class LanguageImpl extends LanguageBase {
     public DefKey resolve(DefKey source) {
         // TODO (alexsaveliev)
         return null;
+    }
+
+    /**
+     * Changed visibility for dev purposes
+     */
+    @Override
+    public CharStream getCharStream(File sourceFile) throws IOException {
+        return super.getCharStream(sourceFile);
     }
 }

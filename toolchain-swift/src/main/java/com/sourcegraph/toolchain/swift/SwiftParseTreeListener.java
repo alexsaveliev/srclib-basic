@@ -380,7 +380,23 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         LookupResult<Variable> lookup = context.lookup(varName);
         String type;
         if (lookup == null) {
-            type = UNKNOWN;
+            // type name? Like "Foo" in Foo.instance.bar()
+            if (support.infos.get(varName) != null) {
+                type = varName;
+                Ref typeRef = support.ref(ident);
+                typeRef.defKey = new DefKey(null, type);
+                emit(typeRef);
+            } else {
+                varName = context.currentScope().getPathTo(varName, PATH_SEPARATOR);
+                if (support.infos.get(varName) == null) {
+                    type = UNKNOWN;
+                } else {
+                    type = varName;
+                    Ref typeRef = support.ref(ident);
+                    typeRef.defKey = new DefKey(null, type);
+                    emit(typeRef);
+                }
+            }
         } else {
             type = lookup.getValue().getType();
             Ref identRef = support.ref(ident);

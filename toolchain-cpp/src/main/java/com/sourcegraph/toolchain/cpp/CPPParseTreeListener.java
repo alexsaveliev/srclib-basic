@@ -13,6 +13,8 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Stack;
 
 import static com.sourcegraph.toolchain.objc.antlr4.CPP14Parser.*;
@@ -107,6 +109,55 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     }
 
+    @Override
+    public void enterFunctiondefinition(FunctiondefinitionContext ctx) {
+        TypespecifierContext typeCtx = getDeclTypeSpecifier(ctx.declspecifierseq());
+        String returnType;
+        if (typeCtx != null) {
+            returnType = processTypeSpecifier(typeCtx);
+        } else {
+            // ctor?
+            returnType = context.currentScope().getPath();
+        }
+
+        String path = context.currentScope().getPath();
+
+        FunctionParameters params = new FunctionParameters();
+        ParametersandqualifiersContext paramsCtx = ctx.declarator().parametersandqualifiers();
+        if (paramsCtx != null) {
+            processFunctionParameters(
+                    paramsCtx.parameterdeclarationclause().parameterdeclarationlist(),
+                    params);
+        }
+
+        ParserRuleContext ident = getIdentifier(ctx.declarator());
+        Def fnDef = support.def(ident, DefKind.FUNCTION);
+
+        String fnPath = fnDef.name + '(' + params.getSignature() + ')';
+        context.enterScope(new Scope<>(fnPath, context.currentScope().getPrefix()));
+
+        fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+
+        StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
+        repr.append(' ').append(returnType);
+        fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
+        fnDef.defData.setKind(DefKind.FUNCTION);
+        support.emit(fnDef);
+
+        for (FunctionParameter param : params.params) {
+            param.def.defKey = new DefKey(null, context.currentScope().getPathTo(param.def.name, PATH_SEPARATOR));
+            support.emit(param.def);
+            context.currentScope().put(param.name, new Variable(param.type));
+        }
+        support.infos.setProperty(path, DefKind.FUNCTION, fnPath, returnType);
+
+    }
+
+    @Override
+    public void exitFunctiondefinition(FunctiondefinitionContext ctx) {
+        context.exitScope();
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */
@@ -126,11 +177,32 @@ class CPPParseTreeListener extends CPP14BaseListener {
      * Handles type part of simple declaration
      */
     private String processDeclarationType(SimpledeclarationContext ctx) {
-        DeclspecifierContext spec = ctx.declspecifierseq().declspecifier();
-        TypespecifierContext typeSpec = spec.typespecifier();
+        TypespecifierContext typeSpec = getDeclTypeSpecifier(ctx.declspecifierseq());
         if (typeSpec == null) {
             return null;
         }
+        return processTypeSpecifier(typeSpec);
+    }
+
+    private TypespecifierContext getDeclTypeSpecifier(DeclspecifierseqContext ctx) {
+        if (ctx == null) {
+            return null;
+        }
+        DeclspecifierContext spec = ctx.declspecifier();
+        if (spec == null) {
+            return null;
+        }
+        TypespecifierContext typeSpec = spec.typespecifier();
+        if (typeSpec != null) {
+            return typeSpec;
+        }
+        return getDeclTypeSpecifier(ctx.declspecifierseq());
+    }
+
+    /**
+     * Handles type specifier
+     */
+    private String processTypeSpecifier(TypespecifierContext typeSpec) {
         TrailingtypespecifierContext trailingTypeSpec = typeSpec.trailingtypespecifier();
         if (trailingTypeSpec == null) {
             return null;
@@ -200,25 +272,124 @@ class CPPParseTreeListener extends CPP14BaseListener {
      * Handles single variable in "foo bar,baz" statements
      */
     private void processDeclarationVariable(InitdeclaratorContext var, String typeName) {
-        DeclaratorContext decl = var.declarator();
-        PtrdeclaratorContext ptr = decl.ptrdeclarator();
-        if (ptr == null) {
+        ParserRuleContext ident = getIdentifier(var.declarator());
+        if (ident == null) {
             return;
         }
-        NoptrdeclaratorContext noPtr = ptr.noptrdeclarator();
-        if (noPtr == null) {
-            return;
-        }
-        DeclaratoridContext declId = noPtr.declaratorid();
-        if (declId == null) {
-            return;
-        }
-        Def varDef = support.def(declId.idexpression(), DefKind.VARIABLE);
+        Def varDef = support.def(ident, DefKind.VARIABLE);
         varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
         varDef.format(StringUtils.EMPTY, typeName == null ? StringUtils.EMPTY : typeName, DefData.SEPARATOR_SPACE);
         varDef.defData.setKind(DefKind.VARIABLE);
         context.currentScope().put(varDef.name, new Variable(varDef.name, typeName));
         support.emit(varDef);
+    }
+
+    /**
+     * Extracts identifier information
+     */
+    private ParserRuleContext getIdentifier(DeclaratorContext ctx) {
+
+        NoptrdeclaratorContext noPtr = ctx.noptrdeclarator();
+        if (noPtr != null) {
+            return getIdentifier(noPtr);
+        }
+        return getIdentifier(ctx.ptrdeclarator());
+    }
+
+    /**
+     * Extracts identifier information
+     */
+    private ParserRuleContext getIdentifier(PtrdeclaratorContext ctx) {
+        if (ctx == null) {
+            return null;
+        }
+        NoptrdeclaratorContext noPtr = ctx.noptrdeclarator();
+        if (noPtr != null) {
+            return getIdentifier(noPtr);
+        }
+        return getIdentifier(ctx.ptrdeclarator());
+    }
+
+    /**
+     * Extracts identifier information
+     */
+    private ParserRuleContext getIdentifier(NoptrdeclaratorContext ctx) {
+        if (ctx == null) {
+            return null;
+        }
+        DeclaratoridContext declId = ctx.declaratorid();
+        if (declId != null) {
+            return declId.idexpression();
+        }
+        NoptrdeclaratorContext noPtr = ctx.noptrdeclarator();
+        if (noPtr != null) {
+            return getIdentifier(noPtr);
+        }
+        return getIdentifier(ctx.ptrdeclarator());
+    }
+
+    private static class FunctionParameters {
+        Collection<FunctionParameter> params = new LinkedList<>();
+
+        String getRepresentation() {
+            StringBuilder ret = new StringBuilder();
+            boolean first = true;
+            for (FunctionParameter param : params) {
+                if (!first) {
+                    ret.append(", ");
+                } else {
+                    first = false;
+                }
+                ret.append(param.repr);
+            }
+            return ret.toString();
+        }
+
+        String getSignature() {
+            StringBuilder ret = new StringBuilder();
+            boolean first = true;
+            for (FunctionParameter param : params) {
+                if (!first) {
+                    ret.append(',');
+                } else {
+                    first = false;
+                }
+                ret.append(param.signature);
+            }
+            return ret.toString();
+        }
+
+    }
+
+    private static class FunctionParameter {
+
+        String name;
+        String type;
+        String repr;
+        String signature;
+        Def def;
+
+        FunctionParameter(String name, String type, String repr, String signature, Def def) {
+            this.name = name;
+            this.type = type;
+            this.repr = repr;
+            this.signature = signature;
+            this.def = def;
+        }
+    }
+
+    private void processFunctionParameters(ParameterdeclarationlistContext ctx,
+                                           FunctionParameters params) {
+        if (ctx == null) {
+            return;
+        }
+        processFunctionParameters(ctx.parameterdeclaration(), params);
+        processFunctionParameters(ctx.parameterdeclarationlist(), params);
+    }
+
+    private void processFunctionParameters(ParameterdeclarationContext param,
+                                           FunctionParameters params) {
+
     }
 
 }

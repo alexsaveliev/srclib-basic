@@ -59,9 +59,11 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         Scope<Variable> scope = new Scope<>(protoDef.name, prefix);
         context.enterScope(scope);
-        support.infos.setData(protoDef.name, scope);
 
-        currentClass = protoDef.name;
+        String path = context.getPath(PATH_SEPARATOR);
+        support.infos.setData(path, scope);
+
+        currentClass = path;
     }
 
     @Override
@@ -110,9 +112,10 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         Scope<Variable> scope = new Scope<>(classDef.name, prefix);
         context.enterScope(scope);
-        support.infos.setData(classDef.name, scope);
 
-        currentClass = classDef.name;
+        String path = context.getPath(PATH_SEPARATOR);
+        support.infos.setData(path, scope);
+        currentClass = path;
     }
 
     @Override
@@ -137,9 +140,11 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         Scope<Variable> scope = new Scope<>(structDef.name, prefix);
         context.enterScope(scope);
-        support.infos.setData(structDef.name, scope);
 
-        currentClass = structDef.name;
+        String path = context.getPath(PATH_SEPARATOR);
+        support.infos.setData(path, scope);
+
+        currentClass = path;
     }
 
     @Override
@@ -173,9 +178,11 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         Scope<Variable> scope = new Scope<>(enumDef.name, prefix);
         context.enterScope(scope);
-        support.infos.setData(enumDef.name, scope);
 
-        currentClass = enumDef.name;
+        String path = context.getPath(PATH_SEPARATOR);
+        support.infos.setData(path, scope);
+
+        currentClass = path;
     }
 
     @Override
@@ -211,7 +218,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             if (typeNameCtx != null) {
                 type = typeNameCtx.getText();
                 Ref typeRef = support.ref(typeNameCtx);
-                typeRef.defKey = new DefKey(null, type);
+                typeRef.defKey = new DefKey(null, typePath(type));
                 emit(typeRef);
             } else {
                 type = VOID;
@@ -312,7 +319,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             if (typeNameCtx != null) {
                 typeName = typeNameCtx.getText();
                 Ref typeRef = support.ref(typeNameCtx);
-                typeRef.defKey = new DefKey(null, typeName);
+                typeRef.defKey = new DefKey(null, typePath(typeName));
                 emit(typeRef);
             } else {
                 typeName = guessType(ctx.initializer());
@@ -348,6 +355,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         IdentifierContext ident = ctx.identifier();
         if (ctx.getParent().getParent() instanceof Function_call_expressionContext) {
             fnCallStack.push(ident);
+            return;
         }
 
         if (ident == null) {
@@ -489,6 +497,11 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         if (fnCallNameCtx != null) {
             className = fnCallNameCtx.getText();
             props = support.infos.get(className);
+            if (props == null) {
+                // maybe inner class?
+                className = context.currentScope().getPathTo(className, PATH_SEPARATOR);
+                props = support.infos.get(className);
+            }
         } else {
             props = null;
             className = null;
@@ -604,6 +617,11 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         context.exitScope();
     }
 
+    @Override
+    public void enterType_casting_operator(Type_casting_operatorContext ctx) {
+        emitTypeRef(ctx.type());
+    }
+
     private void processFnCallRef(TypeInfo<Scope, String> props,
                                   String signature,
                                   String methodName,
@@ -672,7 +690,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         if (type != null) {
             Type_nameContext typeName = type.type_name();
             Ref typeRef = support.ref(typeName);
-            typeRef.defKey = new DefKey(null, typeName.getText());
+            typeRef.defKey = new DefKey(null, typePath(typeName.getText()));
             emit(typeRef);
             emitParentTypeRefs(ctx.type_inheritance_list());
         }
@@ -688,7 +706,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         for (Generic_parameterContext param : ctx.generic_parameter_list().generic_parameter()) {
             Type_nameContext typeName = param.type_name();
             Ref typeRef = support.ref(typeName);
-            typeRef.defKey = new DefKey(null, typeName.getText());
+            typeRef.defKey = new DefKey(null, typePath(typeName.getText()));
             emit(typeRef);
         }
     }
@@ -702,7 +720,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         }
         for (Generic_argumentContext argument : ctx.generic_argument_list().generic_argument()) {
             Ref typeRef = support.ref(argument);
-            typeRef.defKey = new DefKey(null, argument.getText());
+            typeRef.defKey = new DefKey(null, typePath(argument.getText()));
             emit(typeRef);
         }
     }
@@ -746,7 +764,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                         if (typeNameCtx != null) {
                             typeName = typeNameCtx.getText();
                             Ref typeRef = support.ref(typeNameCtx);
-                            typeRef.defKey = new DefKey(null, typeName);
+                            typeRef.defKey = new DefKey(null, typePath(typeName));
                             emit(typeRef);
                         } else {
                             typeName = VOID;
@@ -819,7 +837,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             Type_nameContext typeNameContext = type.type_name();
             Ref typeRef = support.ref(typeNameContext);
             typeName = typeNameContext.getText();
-            typeRef.defKey = new DefKey(null, typeName);
+            typeRef.defKey = new DefKey(null, typePath(typeName));
             emit(typeRef);
         }
         def.format(keyword,
@@ -1030,6 +1048,42 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                     kind,
                     keyword,
                     printable);
+        }
+    }
+
+    /**
+     * Tries to resolve type name. It might refer to inner class
+     * @param typeName
+     * @return
+     */
+    private String typePath(String typeName) {
+        String fqn = context.currentScope().getPathTo(typeName, PATH_SEPARATOR);
+        if(support.infos.get(fqn) != null) {
+            return fqn;
+        }
+        return typeName;
+    }
+
+    private void emitTypeRef(TypeContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+        Type_identifierContext ident = ctx.type_identifier();
+        if (ident != null) {
+            Type_nameContext typeName = ident.type_name();
+            if (typeName != null) {
+                Ref typeRef = support.ref(typeName);
+                typeRef.defKey = new DefKey(null, typePath(typeName.getText()));
+                emit(typeRef);
+            }
+            emitGenericArgumentRefs(ident.generic_argument_clause());
+        }
+        List<TypeContext> types = ctx.type();
+        if (types == null) {
+            return;
+        }
+        for (TypeContext t : types) {
+            emitTypeRef(t);
         }
     }
 

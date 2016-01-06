@@ -124,4 +124,12 @@ public class Context<E> {
         }
         return null;
     }
+
+    /**
+     * @return root scope
+     */
+    public Scope<E> getRoot() {
+        return scopes.get(0);
+    }
+
 }

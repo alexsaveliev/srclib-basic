@@ -48,7 +48,7 @@
 grammar CPP14;
 
 @header {
-    package com.sourcegraph.toolchain.objc.antlr4;
+    package com.sourcegraph.toolchain.cpp.antlr4;
 }
 
 /*Basic concepts*/

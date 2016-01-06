@@ -4,8 +4,8 @@ import com.sourcegraph.toolchain.core.objects.Def;
 import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
+import com.sourcegraph.toolchain.cpp.antlr4.CPP14BaseListener;
 import com.sourcegraph.toolchain.language.*;
-import com.sourcegraph.toolchain.objc.antlr4.CPP14BaseListener;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -15,7 +15,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Stack;
 
-import static com.sourcegraph.toolchain.objc.antlr4.CPP14Parser.*;
+import static com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser.*;
 
 class CPPParseTreeListener extends CPP14BaseListener {
 
@@ -103,6 +103,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
     @Override
     public void exitClassspecifier(ClassspecifierContext ctx) {
         context.exitScope();
+        currentClass = null;
     }
 
     @Override
@@ -165,8 +166,15 @@ class CPPParseTreeListener extends CPP14BaseListener {
     @Override
     public void exitPrimarypostfixexpression(PrimarypostfixexpressionContext ctx) {
 
-        // foo
         PrimaryexpressionContext ident = ctx.primaryexpression();
+        IdexpressionContext idexpr = ident.idexpression();
+
+        // foo or foo()
+        if (ctx.getParent() instanceof FuncallexpressionContext) {
+            fnCallStack.push(idexpr == null ? ident : idexpr);
+            return;
+        }
+
 
         if (ident.This() != null) {
             // TODO (alexsaveliev) - should "this" refer to type?
@@ -175,7 +183,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
             return;
         }
 
-        IdexpressionContext idexpr = ident.idexpression();
         if (idexpr == null) {
             typeStack.push(UNKNOWN);
             fnCallStack.push(null);
@@ -722,10 +729,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
         if (type != null) {
             Ref methodRef = support.ref(fnIdent);
             Scope scope = props.getData();
-            if (scope != null) {
-                methodRef.defKey = new DefKey(null, scope.getPathTo(fnPath, PATH_SEPARATOR));
-                support.emit(methodRef);
+            if (scope == null) {
+                scope = context.getRoot();
             }
+            methodRef.defKey = new DefKey(null, scope.getPathTo(fnPath, PATH_SEPARATOR));
+            support.emit(methodRef);
             typeStack.push(type);
         } else {
             typeStack.push(UNKNOWN);

@@ -2,8 +2,8 @@ package com.sourcegraph.toolchain.cpp;
 
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.language.*;
-import com.sourcegraph.toolchain.objc.antlr4.CPP14Lexer;
-import com.sourcegraph.toolchain.objc.antlr4.CPP14Parser;
+import com.sourcegraph.toolchain.cpp.antlr4.CPP14Lexer;
+import com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;

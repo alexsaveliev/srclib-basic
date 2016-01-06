@@ -23,6 +23,7 @@ public class LanguageImpl extends LanguageBase {
                     CPP14Lexer.class,
                     CPP14Parser.class,
                     new DefaultErrorListener(sourceFile));
+            ((CPP14Lexer) configuration.lexer).setSupport(this);
             ParseTree tree = ((CPP14Parser) configuration.parser).translationunit();
             ParseTreeWalker walker = new ParseTreeWalker();
             walker.walk(new CPPParseTreeListener(this), tree);

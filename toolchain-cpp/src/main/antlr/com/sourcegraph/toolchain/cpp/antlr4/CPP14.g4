@@ -49,6 +49,41 @@ grammar CPP14;
 
 @header {
     package com.sourcegraph.toolchain.cpp.antlr4;
+
+    import com.sourcegraph.toolchain.language.LanguageBase;
+    import java.io.File;
+    import java.util.regex.*;
+}
+
+@lexer::members {
+
+	private static final Pattern INCLUDE = Pattern.compile("^#include\\s+\"([^\"]+?)\"");
+	private LanguageBase support;
+
+	public void setSupport(LanguageBase support) {
+		this.support = support;
+	}
+
+  	@Override
+  	public Token nextToken() {
+  		Token token = super.nextToken();
+  		if (token.getType() == Directive) {
+  			handleDirective(token.getText());
+  			return nextToken();
+  		}
+  		return token;
+	}
+
+	private void handleDirective(String directive) {
+		if (support == null) {
+			return;
+		}
+		Matcher m = INCLUDE.matcher(directive);
+		if (m.matches()) {
+			File current = new File(support.getCurrentFile()).getParentFile();
+			support.process(new File(current, m.group(1)));
+		}
+	}
 }
 
 /*Basic concepts*/
@@ -1320,7 +1355,7 @@ noexceptspecification
 /*Preprocessing directives*/
 Directive
 :
-	'#' ~[\r\n]* -> skip
+	'#' ~[\r\n]*
 ;
 
 /*Lexer*/

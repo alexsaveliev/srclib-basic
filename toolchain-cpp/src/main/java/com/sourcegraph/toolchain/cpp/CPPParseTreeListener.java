@@ -400,6 +400,36 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
     }
 
+    @Override
+    public void enterCompoundstatement(CompoundstatementContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitCompoundstatement(CompoundstatementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterIterationstatement(IterationstatementContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitIterationstatement(IterationstatementContext ctx) {
+        context.exitScope();
+    }
+
+    @Override
+    public void enterHandler(HandlerContext ctx) {
+        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+    }
+
+    @Override
+    public void exitHandler(HandlerContext ctx) {
+        context.exitScope();
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */

@@ -126,7 +126,7 @@ public class Scope<E> {
      */
     public Scope<E> next(char separator) {
         String id = String.valueOf(++counter);
-        return new Scope<E>(id, getPathTo(id, separator));
+        return new Scope<E>(id, getPathTo(StringUtils.EMPTY, separator));
     }
 
     @Override

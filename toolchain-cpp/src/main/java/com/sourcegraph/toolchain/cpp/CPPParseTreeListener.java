@@ -4,10 +4,7 @@ import com.sourcegraph.toolchain.core.objects.Def;
 import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
-import com.sourcegraph.toolchain.language.Context;
-import com.sourcegraph.toolchain.language.LookupResult;
-import com.sourcegraph.toolchain.language.Scope;
-import com.sourcegraph.toolchain.language.Variable;
+import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.objc.antlr4.CPP14BaseListener;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -213,6 +210,50 @@ class CPPParseTreeListener extends CPP14BaseListener {
             Ref identRef = support.ref(idexpr);
             identRef.defKey = new DefKey(null, lookup.getScope().getPathTo(varName, PATH_SEPARATOR));
             support.emit(identRef);
+        }
+        typeStack.push(type);
+    }
+
+    @Override
+    public void exitMemberaccessexpression(MemberaccessexpressionContext ctx) {
+
+        // foo.bar, foo.bar(), foo->bar, and foo->bar()
+        boolean isFnCall = ctx.getParent() instanceof FuncallexpressionContext;
+        IdexpressionContext ident = ctx.idexpression();
+
+        String parent = typeStack.pop();
+        if (parent == UNKNOWN) {
+            // cannot resolve parent
+            if (isFnCall) {
+                fnCallStack.push(ident);
+            }
+            typeStack.push(UNKNOWN);
+            return;
+        }
+        TypeInfo<Scope, String> props = support.infos.get(parent);
+        if (props == null) {
+            if (isFnCall) {
+                fnCallStack.push(ident);
+            }
+            typeStack.push(UNKNOWN);
+            return;
+        }
+
+        if (isFnCall) {
+            // will deal later
+            fnCallStack.push(ident);
+            typeStack.push(parent);
+            return;
+        }
+
+        String varOrPropName = ident.getText();
+        String type = props.getProperty(DefKind.VARIABLE, varOrPropName);
+        if (type == null) {
+            type = UNKNOWN;
+        } else {
+            Ref propRef = support.ref(ident);
+            propRef.defKey = new DefKey(null, props.getData().getPathTo(varOrPropName, PATH_SEPARATOR));
+            support.emit(propRef);
         }
         typeStack.push(type);
     }
@@ -513,6 +554,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         support.emit(memberDef);
         Variable variable = new Variable(type);
         context.currentScope().put(name, variable);
+        support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VARIABLE, name, type);
     }
 
     private static class FunctionParameters {

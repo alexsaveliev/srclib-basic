@@ -159,6 +159,16 @@ class CPPParseTreeListener extends CPP14BaseListener {
         context.exitScope();
     }
 
+    @Override
+    public void enterMemberdeclaration(MemberdeclarationContext ctx) {
+        TypespecifierContext typeCtx = getDeclTypeSpecifier(ctx.declspecifierseq());
+        String type = null;
+        if (typeCtx != null) {
+            type = processTypeSpecifier(typeCtx);
+        }
+        processMembers(ctx.memberdeclaratorlist(), type);
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */
@@ -402,6 +412,38 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 "_",
                 paramDef);
         params.params.add(fp);
+    }
+
+    /**
+     * Handles class members
+     */
+    private void processMembers(MemberdeclaratorlistContext members, String type) {
+        if (members == null) {
+            return;
+        }
+        MemberdeclaratorContext member = members.memberdeclarator();
+        if (member != null) {
+            processMember(member, type);
+        }
+        processMembers(members.memberdeclaratorlist(), type);
+    }
+
+    /**
+     * Handles single class member
+     */
+    private void processMember(MemberdeclaratorContext member, String type) {
+        ParserRuleContext ident = getIdentifier(member.declarator());
+        if (ident == null) {
+            return;
+        }
+        String name = ident.getText();
+        Def memberDef = support.def(ident, DefKind.MEMBER);
+        memberDef.defKey = new DefKey(null, context.currentScope().getPathTo(name, PATH_SEPARATOR));
+        memberDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
+        memberDef.defData.setKind(DefKind.MEMBER);
+        support.emit(memberDef);
+        Variable variable = new Variable(name, type);
+        context.currentScope().put(name, variable);
     }
 
     private static class FunctionParameters {

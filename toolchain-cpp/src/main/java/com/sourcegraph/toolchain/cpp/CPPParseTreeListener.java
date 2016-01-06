@@ -123,7 +123,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         String path = context.currentScope().getPath();
 
         FunctionParameters params = new FunctionParameters();
-        ParametersandqualifiersContext paramsCtx = ctx.declarator().parametersandqualifiers();
+        ParametersandqualifiersContext paramsCtx = getParametersAndQualifiers(ctx.declarator());
         if (paramsCtx != null) {
             processFunctionParameters(
                     paramsCtx.parameterdeclarationclause().parameterdeclarationlist(),
@@ -134,9 +134,10 @@ class CPPParseTreeListener extends CPP14BaseListener {
         Def fnDef = support.def(ident, DefKind.FUNCTION);
 
         String fnPath = fnDef.name + '(' + params.getSignature() + ')';
+        fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+
         context.enterScope(new Scope<>(fnPath, context.currentScope().getPrefix()));
 
-        fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
 
         StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
         repr.append(' ').append(returnType);
@@ -328,6 +329,81 @@ class CPPParseTreeListener extends CPP14BaseListener {
         return getIdentifier(ctx.ptrdeclarator());
     }
 
+    /**
+     * Extracts parameters information
+     */
+    private ParametersandqualifiersContext getParametersAndQualifiers(DeclaratorContext ctx) {
+        NoptrdeclaratorContext noPtr = ctx.noptrdeclarator();
+        if (noPtr != null) {
+            return getParametersAndQualifiers(noPtr);
+        }
+        return getParametersAndQualifiers(ctx.ptrdeclarator());
+    }
+
+    /**
+     * Extracts parameters information
+     */
+    private ParametersandqualifiersContext getParametersAndQualifiers(PtrdeclaratorContext ctx) {
+        if (ctx == null) {
+            return null;
+        }
+        NoptrdeclaratorContext noPtr = ctx.noptrdeclarator();
+        if (noPtr != null) {
+            return getParametersAndQualifiers(noPtr);
+        }
+        return getParametersAndQualifiers(ctx.ptrdeclarator());
+    }
+
+    /**
+     * Extracts parameters information
+     */
+    private ParametersandqualifiersContext getParametersAndQualifiers(NoptrdeclaratorContext ctx) {
+        if (ctx == null) {
+            return null;
+        }
+        ParametersandqualifiersContext params = ctx.parametersandqualifiers();
+        if (params != null) {
+            return params;
+        }
+        NoptrdeclaratorContext noPtr = ctx.noptrdeclarator();
+        if (noPtr != null) {
+            return getParametersAndQualifiers(noPtr);
+        }
+        return getParametersAndQualifiers(ctx.ptrdeclarator());
+    }
+
+    /**
+     * Collects function parameters
+     */
+    private void processFunctionParameters(ParameterdeclarationlistContext ctx,
+                                           FunctionParameters params) {
+        if (ctx == null) {
+            return;
+        }
+        processFunctionParameters(ctx.parameterdeclaration(), params);
+        processFunctionParameters(ctx.parameterdeclarationlist(), params);
+    }
+
+    /**
+     * Collects function parameters. Handles single parameter
+     */
+    private void processFunctionParameters(ParameterdeclarationContext param,
+                                           FunctionParameters params) {
+        ParserRuleContext paramNameCtx = getIdentifier(param.declarator());
+        TypespecifierContext paramTypeCtx = getDeclTypeSpecifier(param.declspecifierseq());
+        // TODOL: namespaces
+        String paramType = processTypeSpecifier(paramTypeCtx);
+        Def paramDef = support.def(paramNameCtx, DefKind.ARGUMENT);
+        paramDef.format(StringUtils.EMPTY, paramType, DefData.SEPARATOR_SPACE);
+        paramDef.defData.setKind(DefKind.ARGUMENT);
+        FunctionParameter fp = new FunctionParameter(paramDef.name,
+                paramType,
+                paramType + ' ' + paramDef.name,
+                "_",
+                paramDef);
+        params.params.add(fp);
+    }
+
     private static class FunctionParameters {
         Collection<FunctionParameter> params = new LinkedList<>();
 
@@ -376,20 +452,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
             this.signature = signature;
             this.def = def;
         }
-    }
-
-    private void processFunctionParameters(ParameterdeclarationlistContext ctx,
-                                           FunctionParameters params) {
-        if (ctx == null) {
-            return;
-        }
-        processFunctionParameters(ctx.parameterdeclaration(), params);
-        processFunctionParameters(ctx.parameterdeclarationlist(), params);
-    }
-
-    private void processFunctionParameters(ParameterdeclarationContext param,
-                                           FunctionParameters params) {
-
     }
 
 }

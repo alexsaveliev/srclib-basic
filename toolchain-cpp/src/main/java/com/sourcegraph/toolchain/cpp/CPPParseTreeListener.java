@@ -8,11 +8,13 @@ import com.sourcegraph.toolchain.cpp.antlr4.CPP14BaseListener;
 import com.sourcegraph.toolchain.language.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 
 import static com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser.*;
@@ -137,20 +139,53 @@ class CPPParseTreeListener extends CPP14BaseListener {
                     params);
         }
 
-        ParserRuleContext ident = getIdentifier(ctx.declarator());
-        Def fnDef = support.def(ident, DefKind.FUNCTION);
+        IdexpressionContext ident = getIdentifier(ctx.declarator());
+        String fnPath;
 
-        String fnPath = fnDef.name + '(' + params.getSignature() + ')';
-        fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+        if (ident.unqualifiedid() != null) {
 
-        context.enterScope(new Scope<>(fnPath, context.currentScope().getPrefix()));
+            Def fnDef = support.def(ident, DefKind.FUNCTION);
+            fnPath = fnDef.name + '(' + params.getSignature() + ')';
+            fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
 
+            context.enterScope(new Scope<>(fnPath, context.currentScope().getPrefix()));
 
-        StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
-        repr.append(' ').append(returnType);
-        fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
-        fnDef.defData.setKind(DefKind.FUNCTION);
-        support.emit(fnDef);
+            StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
+            repr.append(' ').append(returnType);
+            fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
+            fnDef.defData.setKind(DefKind.FUNCTION);
+            support.emit(fnDef);
+
+        } else {
+            // class method definition foo::bar
+
+            List<TerminalNode> pathElements = getNestedComponents(ident.qualifiedid().nestednamespecifier());
+            StringBuilder typePathBuilder = new StringBuilder();
+            TerminalNode typeNode = null;
+            for (TerminalNode pathElement : pathElements) {
+                if (typeNode != null) {
+                    typePathBuilder.append(PATH_SEPARATOR);
+                }
+                typeNode = pathElement;
+                typePathBuilder.append(pathElement.getText());
+            }
+            // TODO namespace?
+            if (typeNode != null) {
+                Ref typeRef = support.ref(typeNode.getSymbol());
+                typeRef.defKey = new DefKey(null, typePathBuilder.toString());
+                support.emit(typeRef);
+            }
+
+            ParserRuleContext fnIdentCtx = ident.qualifiedid().unqualifiedid();
+            Ref methodRef = support.ref(fnIdentCtx);
+            fnPath = fnIdentCtx.getText() + '(' + params.getSignature() + ')';
+            methodRef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+            support.emit(methodRef);
+
+            context.enterScope(new Scope<>(fnPath, context.currentScope().getPrefix()));
+
+        }
+
 
         for (FunctionParameter param : params.params) {
             param.def.defKey = new DefKey(null, context.currentScope().getPathTo(param.def.name, PATH_SEPARATOR));
@@ -492,7 +527,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
     /**
      * Extracts identifier information
      */
-    private ParserRuleContext getIdentifier(DeclaratorContext ctx) {
+    private IdexpressionContext getIdentifier(DeclaratorContext ctx) {
 
         NoptrdeclaratorContext noPtr = ctx.noptrdeclarator();
         if (noPtr != null) {
@@ -504,7 +539,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
     /**
      * Extracts identifier information
      */
-    private ParserRuleContext getIdentifier(PtrdeclaratorContext ctx) {
+    private IdexpressionContext getIdentifier(PtrdeclaratorContext ctx) {
         if (ctx == null) {
             return null;
         }
@@ -518,7 +553,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
     /**
      * Extracts identifier information
      */
-    private ParserRuleContext getIdentifier(NoptrdeclaratorContext ctx) {
+    private IdexpressionContext getIdentifier(NoptrdeclaratorContext ctx) {
         if (ctx == null) {
             return null;
         }
@@ -775,6 +810,33 @@ class CPPParseTreeListener extends CPP14BaseListener {
             typeStack.push(type);
         } else {
             typeStack.push(UNKNOWN);
+        }
+    }
+
+    /**
+     * Extracts nested components (identiiers) (foo, bar, baz from foo::bar::baz)
+     */
+    private List<TerminalNode> getNestedComponents(ParserRuleContext ctx) {
+        List<TerminalNode> ret = new LinkedList<>();
+        collectNestedComponents(ctx, ret);
+        return ret;
+    }
+
+    /**
+     * Extracts nested components (identiiers) (foo, bar, baz from foo::bar::baz)
+     */
+    private void collectNestedComponents(ParseTree ctx, List<TerminalNode> ret) {
+        int count = ctx.getChildCount();
+        for (int i = 0; i < count; i++) {
+            ParseTree child = ctx.getChild(i);
+            if (child instanceof TerminalNode) {
+                TerminalNode terminalNode = (TerminalNode) child;
+                if (terminalNode.getSymbol().getType() == Identifier) {
+                    ret.add(terminalNode);
+                }
+            } else {
+                collectNestedComponents(child, ret);
+            }
         }
     }
 

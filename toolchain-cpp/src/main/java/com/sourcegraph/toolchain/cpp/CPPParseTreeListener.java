@@ -123,6 +123,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
             // ctor?
             returnType = context.currentScope().getPath();
         }
+        if (returnType == null && currentClass != null) {
+            returnType = currentClass;
+        }
 
         String path = context.currentScope().getPath();
 
@@ -644,19 +647,51 @@ class CPPParseTreeListener extends CPP14BaseListener {
      * Handles single class member
      */
     private void processMember(MemberdeclaratorContext member, String type) {
-        ParserRuleContext ident = getIdentifier(member.declarator());
+
+        DeclaratorContext decl = member.declarator();
+        ParserRuleContext ident = getIdentifier(decl);
         if (ident == null) {
             return;
         }
         String name = ident.getText();
-        Def memberDef = support.def(ident, DefKind.MEMBER);
-        memberDef.defKey = new DefKey(null, context.currentScope().getPathTo(name, PATH_SEPARATOR));
-        memberDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
-        memberDef.defData.setKind(DefKind.MEMBER);
-        support.emit(memberDef);
-        Variable variable = new Variable(type);
-        context.currentScope().put(name, variable);
-        support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VARIABLE, name, type);
+
+        ParametersandqualifiersContext paramsAndQualifiers = getParametersAndQualifiers(decl);
+        if (paramsAndQualifiers == null) {
+            // int foo;
+            Def memberDef = support.def(ident, DefKind.MEMBER);
+            memberDef.defKey = new DefKey(null, context.currentScope().getPathTo(name, PATH_SEPARATOR));
+            memberDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
+            memberDef.defData.setKind(DefKind.MEMBER);
+            support.emit(memberDef);
+            Variable variable = new Variable(type);
+            context.currentScope().put(name, variable);
+            support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VARIABLE, name, type);
+        } else {
+            // int foo();
+            if (type == null) {
+                type = currentClass;
+            }
+
+            String path = context.currentScope().getPath();
+
+            FunctionParameters params = new FunctionParameters();
+            processFunctionParameters(
+                    paramsAndQualifiers.parameterdeclarationclause().parameterdeclarationlist(),
+                    params);
+
+            Def fnDef = support.def(ident, DefKind.FUNCTION);
+
+            String fnPath = fnDef.name + '(' + params.getSignature() + ')';
+            fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+
+            StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
+            repr.append(' ').append(type);
+            fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
+            fnDef.defData.setKind(DefKind.FUNCTION);
+            support.emit(fnDef);
+
+            support.infos.setProperty(path, DefKind.FUNCTION, fnPath, type);
+        }
     }
 
     /**
@@ -684,6 +719,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
         processSignature(ctx.initializerlist(), params);
     }
 
+    /**
+     * Emits function ref
+     */
     private void processFnCallRef(TypeInfo<Scope, String> props,
                                   String signature,
                                   boolean isCtor,

@@ -5,6 +5,7 @@ import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
 import com.sourcegraph.toolchain.language.Context;
+import com.sourcegraph.toolchain.language.LookupResult;
 import com.sourcegraph.toolchain.language.Scope;
 import com.sourcegraph.toolchain.language.Variable;
 import com.sourcegraph.toolchain.objc.antlr4.CPP14BaseListener;
@@ -22,6 +23,8 @@ import static com.sourcegraph.toolchain.objc.antlr4.CPP14Parser.*;
 class CPPParseTreeListener extends CPP14BaseListener {
 
     private static final char PATH_SEPARATOR = '.';
+
+    private static final String UNKNOWN = "?";
 
     private LanguageImpl support;
 
@@ -95,6 +98,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
         support.infos.setData(path, scope);
         currentClass = path;
 
+        // we should handle members here instead of enterMemberdeclaration()
+        // because they may appear after method declaration while we need to know this info
+        processMembers(ctx.memberspecification());
     }
 
     @Override
@@ -160,13 +166,55 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     @Override
-    public void enterMemberdeclaration(MemberdeclarationContext ctx) {
-        TypespecifierContext typeCtx = getDeclTypeSpecifier(ctx.declspecifierseq());
-        String type = null;
-        if (typeCtx != null) {
-            type = processTypeSpecifier(typeCtx);
+    public void exitPrimarypostfixexpression(PrimarypostfixexpressionContext ctx) {
+
+        // foo
+        PrimaryexpressionContext ident = ctx.primaryexpression();
+
+        if (ident.This() != null) {
+            // TODO (alexsaveliev) - should "this" refer to type?
+            typeStack.push(currentClass == null ? UNKNOWN : currentClass);
+            fnCallStack.push(null);
+            return;
         }
-        processMembers(ctx.memberdeclaratorlist(), type);
+
+        IdexpressionContext idexpr = ident.idexpression();
+        if (idexpr == null) {
+            typeStack.push(UNKNOWN);
+            fnCallStack.push(null);
+            return;
+        }
+
+        String varName = idexpr.getText();
+        LookupResult<Variable> lookup = context.lookup(varName);
+        String type;
+        if (lookup == null) {
+            // TODO: namespaces
+            if (support.infos.get(varName) != null) {
+                // type name like "Foo" in Foo.instance.bar()
+                type = varName;
+                Ref typeRef = support.ref(ident);
+                typeRef.defKey = new DefKey(null, type);
+                support.emit(typeRef);
+            } else {
+                // shorthand member notation
+                varName = context.currentScope().getPathTo(varName, PATH_SEPARATOR);
+                if (support.infos.get(varName) == null) {
+                    type = UNKNOWN;
+                } else {
+                    type = varName;
+                    Ref typeRef = support.ref(ident);
+                    typeRef.defKey = new DefKey(null, type);
+                    support.emit(typeRef);
+                }
+            }
+        } else {
+            type = lookup.getValue().getType();
+            Ref identRef = support.ref(idexpr);
+            identRef.defKey = new DefKey(null, lookup.getScope().getPathTo(varName, PATH_SEPARATOR));
+            support.emit(identRef);
+        }
+        typeStack.push(type);
     }
 
     /**
@@ -291,7 +339,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
         varDef.format(StringUtils.EMPTY, typeName == null ? StringUtils.EMPTY : typeName, DefData.SEPARATOR_SPACE);
         varDef.defData.setKind(DefKind.VARIABLE);
-        context.currentScope().put(varDef.name, new Variable(varDef.name, typeName));
+        context.currentScope().put(varDef.name, new Variable(typeName));
         support.emit(varDef);
     }
 
@@ -417,6 +465,27 @@ class CPPParseTreeListener extends CPP14BaseListener {
     /**
      * Handles class members
      */
+    private void processMembers(MemberspecificationContext ctx) {
+        if (ctx == null) {
+            return;
+        }
+        // head
+        MemberdeclarationContext member = ctx.memberdeclaration();
+        if (member != null) {
+            TypespecifierContext typeCtx = getDeclTypeSpecifier(member.declspecifierseq());
+            String type = null;
+            if (typeCtx != null) {
+                type = processTypeSpecifier(typeCtx);
+            }
+            processMembers(member.memberdeclaratorlist(), type);
+        }
+        // tail
+        processMembers(ctx.memberspecification());
+    }
+
+    /**
+     * Handles class members
+     */
     private void processMembers(MemberdeclaratorlistContext members, String type) {
         if (members == null) {
             return;
@@ -442,7 +511,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         memberDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
         memberDef.defData.setKind(DefKind.MEMBER);
         support.emit(memberDef);
-        Variable variable = new Variable(name, type);
+        Variable variable = new Variable(type);
         context.currentScope().put(name, variable);
     }
 

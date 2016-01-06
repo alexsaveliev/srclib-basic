@@ -155,26 +155,26 @@ lambdadeclarator
 
 postfixexpression
 :
-	primaryexpression
-	| postfixexpression '[' expression ']'
-	| postfixexpression '[' bracedinitlist ']'
-	| postfixexpression '(' expressionlist? ')'
-	| simpletypespecifier '(' expressionlist? ')'
-	| typenamespecifier '(' expressionlist? ')'
-	| simpletypespecifier bracedinitlist
-	| typenamespecifier bracedinitlist
-	| postfixexpression '.' Template? idexpression
-	| postfixexpression '->' Template? idexpression
-	| postfixexpression '.' pseudodestructorname
-	| postfixexpression '->' pseudodestructorname
-	| postfixexpression '++'
-	| postfixexpression '--'
-	| Dynamic_cast '<' typeid '>' '(' expression ')'
-	| Static_cast '<' typeid '>' '(' expression ')'
-	| Reinterpret_cast '<' typeid '>' '(' expression ')'
-	| Const_cast '<' typeid '>' '(' expression ')'
-	| Typeid '(' expression ')'
-	| Typeid '(' typeid ')'
+	primaryexpression                                     #primarypostfixexpression
+	| postfixexpression '[' expression ']'                #subscriptexpression
+	| postfixexpression '[' bracedinitlist ']'			  #subscriptexpression
+	| postfixexpression '(' expressionlist? ')'           #funcallexpression
+	| simpletypespecifier '(' expressionlist? ')'		  #explicittypeconversionexpression
+	| typenamespecifier '(' expressionlist? ')'			  #explicittypeconversionexpression
+	| simpletypespecifier bracedinitlist                  #explicittypeconversionexpression
+	| typenamespecifier bracedinitlist                    #explicittypeconversionexpression
+	| postfixexpression '.' Template? idexpression        #memberaccessexpression
+	| postfixexpression '->' Template? idexpression       #memberaccessexpression
+	| postfixexpression '.' pseudodestructorname          #pseudodestructorcallexpression
+	| postfixexpression '->' pseudodestructorname         #pseudodestructorcallexpression
+	| postfixexpression '++'                              #incrementexpression
+	| postfixexpression '--'                              #decrementexpression
+	| Dynamic_cast '<' typeid '>' '(' expression ')'      #dynamiccastexpression
+	| Static_cast '<' typeid '>' '(' expression ')'       #staticcastexpression
+	| Reinterpret_cast '<' typeid '>' '(' expression ')'  #reinterpretcastexpression
+	| Const_cast '<' typeid '>' '(' expression ')'        #constcastexpression
+	| Typeid '(' expression ')'                           #typeidexpression
+	| Typeid '(' typeid ')'                               #typeidexpression
 ;
 
 expressionlist

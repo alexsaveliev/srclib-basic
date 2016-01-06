@@ -37,7 +37,7 @@ public class LanguageImpl extends LanguageBase {
     protected FileCollector getFileCollector(File rootDir, String repoUri) {
         return new ExtensionBasedFileCollector().extension(
                 ".C", ".cc", ".cpp", ".CPP", ".c++", ".cp", ".cxx",
-                ".H", ".hh", ".hpp", ".HPP", ".h++", ".hp", ".hxx");
+                ".h", ".H", ".hh", ".hpp", ".HPP", ".h++", ".hp", ".hxx");
     }
 
     @Override

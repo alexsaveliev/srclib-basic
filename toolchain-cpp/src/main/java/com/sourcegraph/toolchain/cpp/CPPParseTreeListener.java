@@ -380,6 +380,26 @@ class CPPParseTreeListener extends CPP14BaseListener {
         processFnCallRef(props, signature, isCtor, className);
     }
 
+    @Override
+    public void enterMeminitializerid(MeminitializeridContext ctx) {
+        String ident = ctx.getText();
+        // TODO: namespaces?
+        TypeInfo<Scope, String> info = support.infos.get(ident);
+        if (info != null) {
+            Ref typeRef = support.ref(ctx);
+            typeRef.defKey = new DefKey(null, info.getData().getPath());
+            support.emit(typeRef);
+        } else {
+            // TODO: inheritance
+            LookupResult result = context.lookup(ident);
+            if (result != null) {
+                Ref memberRef = support.ref(ctx);
+                memberRef.defKey = new DefKey(null, result.getScope().getPathTo(ident, PATH_SEPARATOR));
+                support.emit(memberRef);
+            }
+        }
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */

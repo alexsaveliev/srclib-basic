@@ -169,10 +169,10 @@ postfixexpression
 	| postfixexpression '->' pseudodestructorname         #pseudodestructorcallexpression
 	| postfixexpression '++'                              #incrementexpression
 	| postfixexpression '--'                              #decrementexpression
-	| Dynamic_cast '<' typeid '>' '(' expression ')'      #dynamiccastexpression
-	| Static_cast '<' typeid '>' '(' expression ')'       #staticcastexpression
-	| Reinterpret_cast '<' typeid '>' '(' expression ')'  #reinterpretcastexpression
-	| Const_cast '<' typeid '>' '(' expression ')'        #constcastexpression
+	| Dynamic_cast '<' typeid '>' '(' expression ')'      #castpostfixexpression
+	| Static_cast '<' typeid '>' '(' expression ')'       #castpostfixexpression
+	| Reinterpret_cast '<' typeid '>' '(' expression ')'  #castpostfixexpression
+	| Const_cast '<' typeid '>' '(' expression ')'        #castpostfixexpression
 	| Typeid '(' expression ')'                           #typeidexpression
 	| Typeid '(' typeid ')'                               #typeidexpression
 ;

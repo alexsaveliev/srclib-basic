@@ -258,6 +258,83 @@ class CPPParseTreeListener extends CPP14BaseListener {
         typeStack.push(type);
     }
 
+    @Override
+    public void exitCastpostfixexpression(CastpostfixexpressionContext ctx) {
+        TypespecifierContext typeCtx = getTypeSpecifier(ctx.typeid().typespecifierseq());
+        if (typeCtx == null) {
+            typeStack.push(UNKNOWN);
+            return;
+        }
+        // TODO: namespaces
+        typeStack.push(processTypeSpecifier(typeCtx));
+    }
+
+    @Override
+    public void exitExplicittypeconversionexpression(ExplicittypeconversionexpressionContext ctx) {
+        SimpletypespecifierContext simpleTypeCtx = ctx.simpletypespecifier();
+        if (simpleTypeCtx != null) {
+            TypenameContext typeNameSpec = simpleTypeCtx.typename();
+            if (typeNameSpec == null) {
+                // basic types
+                typeStack.push(simpleTypeCtx.getText());
+            } else {
+                // TODO: namespaces
+                typeStack.push(processDeclarationType(typeNameSpec));
+            }
+        }
+    }
+
+    @Override
+    public void exitFuncallexpression(FuncallexpressionContext ctx) {
+        String signature = signature(ctx.expressionlist());
+
+        if (!(ctx.postfixexpression() instanceof PrimarypostfixexpressionContext)) {
+            // foo.bar()
+            String parent = typeStack.pop();
+            if (parent == UNKNOWN) {
+                typeStack.push(UNKNOWN);
+                fnCallStack.pop();
+                return;
+            }
+            TypeInfo<Scope, String> props = support.infos.get(parent);
+            if (props == null) {
+                typeStack.push(UNKNOWN);
+                fnCallStack.pop();
+                return;
+            }
+            processFnCallRef(props, signature, false, null);
+            return;
+        }
+        // bar() or Bar() - function or ctor
+        ParserRuleContext fnCallNameCtx = fnCallStack.peek();
+
+        TypeInfo<Scope, String> props;
+
+        String className;
+        boolean isCtor = false;
+
+        if (fnCallNameCtx != null) {
+            isCtor = true;
+            className = fnCallNameCtx.getText();
+            props = support.infos.get(className);
+            if (props == null) {
+                // maybe inner class?
+                className = context.currentScope().getPathTo(className, PATH_SEPARATOR);
+                props = support.infos.get(className);
+            }
+        } else {
+            props = null;
+            className = null;
+        }
+
+        if (props == null) {
+            props = support.infos.getRoot();
+            isCtor = false;
+            className = currentClass;
+        }
+        processFnCallRef(props, signature, isCtor, className);
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */
@@ -284,6 +361,23 @@ class CPPParseTreeListener extends CPP14BaseListener {
         return processTypeSpecifier(typeSpec);
     }
 
+    /**
+     * Extracts type specifier from type specifier sequence
+     */
+    private TypespecifierContext getTypeSpecifier(TypespecifierseqContext ctx) {
+        if (ctx == null) {
+            return null;
+        }
+        TypespecifierContext typeSpec = ctx.typespecifier();
+        if (typeSpec != null) {
+            return typeSpec;
+        }
+        return getTypeSpecifier(ctx.typespecifierseq());
+    }
+
+    /**
+     * Extracts type specifier from type specifier sequence
+     */
     private TypespecifierContext getDeclTypeSpecifier(DeclspecifierseqContext ctx) {
         if (ctx == null) {
             return null;
@@ -298,6 +392,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
         return getDeclTypeSpecifier(ctx.declspecifierseq());
     }
+
 
     /**
      * Handles type specifier
@@ -555,6 +650,86 @@ class CPPParseTreeListener extends CPP14BaseListener {
         Variable variable = new Variable(type);
         context.currentScope().put(name, variable);
         support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VARIABLE, name, type);
+    }
+
+    /**
+     * Constructs function signature based on parameters
+     */
+    private String signature(ExpressionlistContext ctx) {
+        if (ctx == null) {
+            return StringUtils.EMPTY;
+        }
+        Collection<String> params = new LinkedList<>();
+        processSignature(ctx.initializerlist(), params);
+        return StringUtils.join(params, ',');
+    }
+
+    /**
+     * Recursively processes function call arguments to build a signature
+     */
+    private void processSignature(InitializerlistContext ctx, Collection<String> params) {
+        if (ctx == null) {
+            return;
+        }
+        if (ctx.initializerclause() != null) {
+            params.add("_");
+        }
+        processSignature(ctx.initializerlist(), params);
+    }
+
+    private void processFnCallRef(TypeInfo<Scope, String> props,
+                                  String signature,
+                                  boolean isCtor,
+                                  String className) {
+        ParserRuleContext fnIdent = fnCallStack.pop();
+        if (fnIdent == null) {
+            return;
+        }
+
+        String methodName;
+        if (isCtor) {
+            int pos = className.lastIndexOf(PATH_SEPARATOR);
+            if (pos >= 0) {
+                methodName = className.substring(pos + 1);
+            } else {
+                methodName = className;
+            }
+        } else {
+            methodName = fnIdent.getText();
+        }
+        // looking for matching function
+        String fnPath = methodName + '(' + signature + ')';
+
+        String type = null;
+
+        if (className != null) {
+            // lookup in current class
+            TypeInfo<Scope, String> currentProps = support.infos.get(className);
+            type = currentProps.getProperty(DefKind.FUNCTION, fnPath);
+            if (type != null) {
+                props = currentProps;
+            }
+        }
+
+        if (type == null) {
+            if (isCtor) {
+                type = className;
+            } else {
+                type = props.getProperty(DefKind.FUNCTION, fnPath);
+            }
+        }
+
+        if (type != null) {
+            Ref methodRef = support.ref(fnIdent);
+            Scope scope = props.getData();
+            if (scope != null) {
+                methodRef.defKey = new DefKey(null, scope.getPathTo(fnPath, PATH_SEPARATOR));
+                support.emit(methodRef);
+            }
+            typeStack.push(type);
+        } else {
+            typeStack.push(UNKNOWN);
+        }
     }
 
     private static class FunctionParameters {

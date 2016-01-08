@@ -65,7 +65,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     @Override
     public void enterUnnamednamespacedefinition(UnnamednamespacedefinitionContext ctx) {
-        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+        context.enterScope(context.currentScope().uniq(PATH_SEPARATOR));
     }
 
     @Override
@@ -665,13 +665,26 @@ class CPPParseTreeListener extends CPP14BaseListener {
      */
     private void processVarOrFunction(InitdeclaratorContext var, String typeName) {
         DeclaratorContext decl = var.declarator();
-        ParserRuleContext ident = getIdentifier(decl);
+        IdexpressionContext ident = getIdentifier(decl);
         if (ident == null) {
             return;
         }
         ParametersandqualifiersContext paramsAndQualifiers = getParametersAndQualifiers(decl);
         if (paramsAndQualifiers == null) {
             // variable
+            processVar(typeName, ident);
+        } else {
+            processFunctionOrMethod(ident, paramsAndQualifiers, typeName);
+        }
+    }
+
+    /**
+     * Handles single variable from declaration
+     */
+    private void processVar(String typeName, IdexpressionContext ident) {
+        String varName = ident.getText();
+        LookupResult<ObjectInfo> info = context.lookup(varName);
+        if (info == null) {
             Def varDef = support.def(ident, DefKind.VARIABLE);
             varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
             varDef.format(StringUtils.EMPTY, typeName == null ? StringUtils.EMPTY : typeName, DefData.SEPARATOR_SPACE);
@@ -679,7 +692,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
             context.currentScope().put(varDef.name, new ObjectInfo(typeName));
             support.emit(varDef);
         } else {
-            processFunctionOrMethod(ident, paramsAndQualifiers, typeName);
+            Ref varRef = support.ref(ident);
+            varRef.defKey = new DefKey(null, getPath(info, varName));
+            support.emit(varRef);
         }
     }
 

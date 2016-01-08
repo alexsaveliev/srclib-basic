@@ -36,6 +36,12 @@ public class Scope<E> {
     private int counter;
 
     /**
+     * Generates unique scope identifiers (e.g. for global scopes such as unnamed namespaces)
+     */
+    private static int uCounter;
+
+
+    /**
      * Makes new scope with the given name
      * @param name scope name
      */
@@ -116,7 +122,7 @@ public class Scope<E> {
      * @return new root scope
      */
     static <E> Scope<E> root() {
-        Scope<E> ret = new Scope<E>(StringUtils.EMPTY, StringUtils.EMPTY);
+        Scope<E> ret = new Scope<>(StringUtils.EMPTY, StringUtils.EMPTY);
         ret.root = true;
         return ret;
     }
@@ -126,7 +132,15 @@ public class Scope<E> {
      */
     public Scope<E> next(char separator) {
         String id = String.valueOf(++counter);
-        return new Scope<E>(id, getPathTo(StringUtils.EMPTY, separator));
+        return new Scope<>(id, getPathTo(StringUtils.EMPTY, separator));
+    }
+
+    /**
+     * @return scope with unique id
+     */
+    public Scope<E> uniq(char separator) {
+        String id = "*" + String.valueOf(++uCounter);
+        return new Scope<>(id, getPathTo(id, separator));
     }
 
     @Override

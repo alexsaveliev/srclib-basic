@@ -146,22 +146,35 @@ class CPPParseTreeListener extends CPP14BaseListener {
         IdexpressionContext ident = getIdentifier(ctx.declarator());
         String fnPath;
 
+        boolean isRef = false;
+
         if (ident.unqualifiedid() != null) {
 
-            Def fnDef = support.def(ident, DefKind.FUNCTION);
-            fnPath = fnDef.name + '(' + params.getSignature() + ')';
-            fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+            String functionName = ident.getText();
+            fnPath = functionName + '(' + params.getSignature() + ')';
 
+            ObjectInfo inherited = support.infos.getProperty(currentClass, DefKind.FUNCTION, fnPath);
+            if (inherited != null) {
+                Ref methodRef = support.ref(ident);
+                String defPath = getPath(inherited, context.currentScope(), fnPath);
+                methodRef.defKey = new DefKey(null, defPath);
+                support.emit(methodRef);
+            } else {
+                Def fnDef = support.def(ident, DefKind.FUNCTION);
+                fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+                StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
+                repr.append(' ').append(returnType);
+                fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
+                fnDef.defData.setKind(DefKind.FUNCTION);
+                support.emit(fnDef);
+            }
             context.enterScope(new Scope<>(fnPath, context.currentScope().getPrefix()));
 
-            StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
-            repr.append(' ').append(returnType);
-            fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
-            fnDef.defData.setKind(DefKind.FUNCTION);
-            support.emit(fnDef);
 
         } else {
             // class method definition foo::bar
+
+            isRef = true;
 
             List<TerminalNode> pathElements = getNestedComponents(ident.qualifiedid().nestednamespecifier());
             StringBuilder typePathBuilder = new StringBuilder();
@@ -176,9 +189,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
             // TODO namespace?
             String typeName = null;
             typeName = typePathBuilder.toString();
-            Ref typeRef = support.ref(typeNode.getSymbol());
-            typeRef.defKey = new DefKey(null, typeName);
-            support.emit(typeRef);
+            if (typeNode != null) {
+                Ref typeRef = support.ref(typeNode.getSymbol());
+                typeRef.defKey = new DefKey(null, typeName);
+                support.emit(typeRef);
+            }
 
             currentClass = typeName;
             context.enterScope(new Scope<>(typeName, context.currentScope().getPrefix()));
@@ -186,7 +201,10 @@ class CPPParseTreeListener extends CPP14BaseListener {
             ParserRuleContext fnIdentCtx = ident.qualifiedid().unqualifiedid();
             Ref methodRef = support.ref(fnIdentCtx);
             fnPath = fnIdentCtx.getText() + '(' + params.getSignature() + ')';
-            methodRef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+
+            ObjectInfo inherited = support.infos.getProperty(currentClass, DefKind.FUNCTION, fnPath);
+            String defPath = getPath(inherited, context.currentScope(), fnPath);
+            methodRef.defKey = new DefKey(null, defPath);
             support.emit(methodRef);
 
             Scope<ObjectInfo> scope = new Scope<>(fnPath, context.currentScope().getPrefix());
@@ -201,7 +219,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
             support.emit(param.def);
             context.currentScope().put(param.name, new ObjectInfo(param.type));
         }
-        support.infos.setProperty(path, DefKind.FUNCTION, fnPath, new ObjectInfo(returnType));
+        if (!isRef) {
+            support.infos.setProperty(path, DefKind.FUNCTION, fnPath, new ObjectInfo(returnType));
+        }
 
     }
 
@@ -949,6 +969,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
      * Makes path to object taking into account that it might be defined in a base class
      */
     private String getPath(ObjectInfo info, Scope scope, String id) {
+
+        if (info == null) {
+            return scope.getPathTo(id, PATH_SEPARATOR);
+        }
+
         String prefix = info.getPrefix();
         if (prefix == null) {
             return scope.getPathTo(id, PATH_SEPARATOR);

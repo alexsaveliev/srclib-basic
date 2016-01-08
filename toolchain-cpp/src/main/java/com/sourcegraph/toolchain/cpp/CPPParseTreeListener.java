@@ -120,7 +120,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     @Override
     public void enterSimpledeclaration(SimpledeclarationContext ctx) {
-        processDeclarationVariables(ctx.initdeclaratorlist(),
+        processVarsAndFunctions(ctx.initdeclaratorlist(),
                 processDeclarationType(ctx));
 
     }
@@ -159,10 +159,12 @@ class CPPParseTreeListener extends CPP14BaseListener {
             String functionName = ident.getText();
             fnPath = functionName + '(' + params.getSignature() + ')';
 
-            ObjectInfo inherited = support.infos.getProperty(currentClass, DefKind.FUNCTION, fnPath);
-            if (inherited != null) {
+            ObjectInfo declared = support.infos.getProperty(currentClass == null ? StringUtils.EMPTY : currentClass,
+                    DefKind.FUNCTION,
+                    fnPath);
+            if (declared != null) {
                 Ref methodRef = support.ref(ident);
-                String defPath = getPath(inherited, context.currentScope(), fnPath);
+                String defPath = getPath(declared, context.currentScope(), fnPath);
                 methodRef.defKey = new DefKey(null, defPath);
                 support.emit(methodRef);
             } else {
@@ -199,7 +201,10 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 Ref typeRef = support.ref(typeNode.getSymbol());
                 typeRef.defKey = new DefKey(null, typeName);
                 support.emit(typeRef);
+            } else {
+                typeName = returnType; // foo::foo() case
             }
+
 
             currentClass = typeName;
             context.enterScope(new Scope<>(typeName, context.currentScope().getPrefix()));
@@ -632,30 +637,37 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     /**
-     * Handles variables in "foo bar,baz" statements
+     * Handles variables and functions in "foo bar,baz" or "foo bar();" statements
      */
-    private void processDeclarationVariables(InitdeclaratorlistContext variables, String typeName) {
+    private void processVarsAndFunctions(InitdeclaratorlistContext variables, String typeName) {
         if (variables == null) {
             return;
         }
-        processDeclarationVariable(variables.initdeclarator(), typeName);
-        processDeclarationVariables(variables.initdeclaratorlist(), typeName);
+        processVarOrFunction(variables.initdeclarator(), typeName);
+        processVarsAndFunctions(variables.initdeclaratorlist(), typeName);
     }
 
     /**
-     * Handles single variable in "foo bar,baz" statements
+     * Handles single variable or function in "foo bar,baz" or "foo bar();" statements
      */
-    private void processDeclarationVariable(InitdeclaratorContext var, String typeName) {
-        ParserRuleContext ident = getIdentifier(var.declarator());
+    private void processVarOrFunction(InitdeclaratorContext var, String typeName) {
+        DeclaratorContext decl = var.declarator();
+        ParserRuleContext ident = getIdentifier(decl);
         if (ident == null) {
             return;
         }
-        Def varDef = support.def(ident, DefKind.VARIABLE);
-        varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
-        varDef.format(StringUtils.EMPTY, typeName == null ? StringUtils.EMPTY : typeName, DefData.SEPARATOR_SPACE);
-        varDef.defData.setKind(DefKind.VARIABLE);
-        context.currentScope().put(varDef.name, new ObjectInfo(typeName));
-        support.emit(varDef);
+        ParametersandqualifiersContext paramsAndQualifiers = getParametersAndQualifiers(decl);
+        if (paramsAndQualifiers == null) {
+            // variable
+            Def varDef = support.def(ident, DefKind.VARIABLE);
+            varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
+            varDef.format(StringUtils.EMPTY, typeName == null ? StringUtils.EMPTY : typeName, DefData.SEPARATOR_SPACE);
+            varDef.defData.setKind(DefKind.VARIABLE);
+            context.currentScope().put(varDef.name, new ObjectInfo(typeName));
+            support.emit(varDef);
+        } else {
+            processFunctionOrMethod(ident, paramsAndQualifiers, typeName);
+        }
     }
 
     /**
@@ -821,17 +833,36 @@ class CPPParseTreeListener extends CPP14BaseListener {
      */
     private void processMember(MemberdeclaratorContext member, String type) {
 
-        DeclaratorContext decl = member.declarator();
-        ParserRuleContext ident = getIdentifier(decl);
-        if (ident == null) {
-            return;
-        }
-        String name = ident.getText();
+        ParserRuleContext ident = null;
+        Token identToken = null;
+        String name;
+        ParametersandqualifiersContext paramsAndQualifiers;
 
-        ParametersandqualifiersContext paramsAndQualifiers = getParametersAndQualifiers(decl);
+        DeclaratorContext decl = member.declarator();
+        if (decl == null) {
+            // unsigned char Version : 3;
+            identToken = member.Identifier().getSymbol();
+            name = identToken.getText();
+            paramsAndQualifiers = null;
+        } else {
+            // "foo bar;" or "foo bar();"
+            ident = getIdentifier(decl);
+            if (ident == null) {
+                return;
+            }
+            name = ident.getText();
+            paramsAndQualifiers = getParametersAndQualifiers(decl);
+        }
+
+
         if (paramsAndQualifiers == null) {
             // int foo;
-            Def memberDef = support.def(ident, DefKind.MEMBER);
+            Def memberDef;
+            if (ident != null) {
+                memberDef = support.def(ident, DefKind.MEMBER);
+            } else {
+                memberDef = support.def(identToken, DefKind.MEMBER);
+            }
             memberDef.defKey = new DefKey(null, context.currentScope().getPathTo(name, PATH_SEPARATOR));
             memberDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
             memberDef.defData.setKind(DefKind.MEMBER);
@@ -845,25 +876,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 type = currentClass;
             }
 
-            String path = context.currentScope().getPath();
-
-            FunctionParameters params = new FunctionParameters();
-            processFunctionParameters(
-                    paramsAndQualifiers.parameterdeclarationclause().parameterdeclarationlist(),
-                    params);
-
-            Def fnDef = support.def(ident, DefKind.FUNCTION);
-
-            String fnPath = fnDef.name + '(' + params.getSignature() + ')';
-            fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
-
-            StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
-            repr.append(' ').append(type);
-            fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
-            fnDef.defData.setKind(DefKind.FUNCTION);
-            support.emit(fnDef);
-
-            support.infos.setProperty(path, DefKind.FUNCTION, fnPath, new ObjectInfo(type));
+            processFunctionOrMethod(ident, paramsAndQualifiers, type);
         }
     }
 
@@ -1003,6 +1016,34 @@ class CPPParseTreeListener extends CPP14BaseListener {
             return id;
         }
         return prefix + id;
+    }
+
+    /**
+     * Handles function or method definition
+     */
+    private void processFunctionOrMethod(ParserRuleContext ident,
+                                         ParametersandqualifiersContext paramsAndQualifiers,
+                                         String typeName) {
+        FunctionParameters params = new FunctionParameters();
+        processFunctionParameters(
+                paramsAndQualifiers.parameterdeclarationclause().parameterdeclarationlist(),
+                params);
+
+        String path = context.currentScope().getPath();
+
+        Def fnDef;
+        fnDef = support.def(ident, DefKind.FUNCTION);
+
+        String fnPath = fnDef.name + '(' + params.getSignature() + ')';
+        fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
+
+        StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
+        repr.append(' ').append(typeName);
+        fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
+        fnDef.defData.setKind(DefKind.FUNCTION);
+        support.emit(fnDef);
+
+        support.infos.setProperty(path, DefKind.FUNCTION, fnPath, new ObjectInfo(typeName));
     }
 
     private static class FunctionParameters {

@@ -29,7 +29,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     private Context<Variable> context = new Context<>();
 
-    private Stack<String> typeStack = new Stack<>();
+    private Stack<Stack<String>> typeStack = new Stack<>();
 
     private Stack<ParserRuleContext> fnCallStack = new Stack<>();
 
@@ -216,14 +216,12 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         if (ident.This() != null) {
             // TODO (alexsaveliev) - should "this" refer to type?
-            typeStack.push(currentClass == null ? UNKNOWN : currentClass);
-            fnCallStack.push(null);
+            typeStack.peek().push(currentClass == null ? UNKNOWN : currentClass);
             return;
         }
 
         if (idexpr == null) {
-            typeStack.push(UNKNOWN);
-            fnCallStack.push(null);
+            typeStack.peek().push(UNKNOWN);
             return;
         }
 
@@ -256,7 +254,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
             identRef.defKey = new DefKey(null, lookup.getScope().getPathTo(varName, PATH_SEPARATOR));
             support.emit(identRef);
         }
-        typeStack.push(type);
+        typeStack.peek().push(type);
     }
 
     @Override
@@ -266,13 +264,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
         boolean isFnCall = ctx.getParent() instanceof FuncallexpressionContext;
         IdexpressionContext ident = ctx.idexpression();
 
-        String parent = typeStack.pop();
+        String parent = typeStack.peek().pop();
         if (parent == UNKNOWN) {
             // cannot resolve parent
             if (isFnCall) {
                 fnCallStack.push(ident);
             }
-            typeStack.push(UNKNOWN);
+            typeStack.peek().push(UNKNOWN);
             return;
         }
         TypeInfo<Scope, String> props = support.infos.get(parent);
@@ -280,14 +278,14 @@ class CPPParseTreeListener extends CPP14BaseListener {
             if (isFnCall) {
                 fnCallStack.push(ident);
             }
-            typeStack.push(UNKNOWN);
+            typeStack.peek().push(UNKNOWN);
             return;
         }
 
         if (isFnCall) {
             // will deal later
             fnCallStack.push(ident);
-            typeStack.push(parent);
+            typeStack.peek().push(parent);
             return;
         }
 
@@ -300,18 +298,18 @@ class CPPParseTreeListener extends CPP14BaseListener {
             propRef.defKey = new DefKey(null, props.getData().getPathTo(varOrPropName, PATH_SEPARATOR));
             support.emit(propRef);
         }
-        typeStack.push(type);
+        typeStack.peek().push(type);
     }
 
     @Override
     public void exitCastpostfixexpression(CastpostfixexpressionContext ctx) {
         TypespecifierContext typeCtx = getTypeSpecifier(ctx.typeid().typespecifierseq());
         if (typeCtx == null) {
-            typeStack.push(UNKNOWN);
+            typeStack.peek().push(UNKNOWN);
             return;
         }
         // TODO: namespaces
-        typeStack.push(processTypeSpecifier(typeCtx));
+        typeStack.peek().push(processTypeSpecifier(typeCtx));
     }
 
     @Override
@@ -321,10 +319,10 @@ class CPPParseTreeListener extends CPP14BaseListener {
             TypenameContext typeNameSpec = simpleTypeCtx.typename();
             if (typeNameSpec == null) {
                 // basic types
-                typeStack.push(simpleTypeCtx.getText());
+                typeStack.peek().push(simpleTypeCtx.getText());
             } else {
                 // TODO: namespaces
-                typeStack.push(processDeclarationType(typeNameSpec));
+                typeStack.peek().push(processDeclarationType(typeNameSpec));
             }
         }
     }
@@ -335,23 +333,21 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         if (!(ctx.postfixexpression() instanceof PrimarypostfixexpressionContext)) {
             // foo.bar()
-            String parent = typeStack.pop();
+            String parent = typeStack.peek().pop();
             if (parent == UNKNOWN) {
-                typeStack.push(UNKNOWN);
-                fnCallStack.pop();
+                typeStack.peek().push(UNKNOWN);
                 return;
             }
             TypeInfo<Scope, String> props = support.infos.get(parent);
             if (props == null) {
-                typeStack.push(UNKNOWN);
-                fnCallStack.pop();
+                typeStack.peek().push(UNKNOWN);
                 return;
             }
             processFnCallRef(props, signature, false, null);
             return;
         }
         // bar() or Bar() - function or ctor
-        ParserRuleContext fnCallNameCtx = fnCallStack.peek();
+        ParserRuleContext fnCallNameCtx = fnCallStack.isEmpty() ? null : fnCallStack.peek();
 
         TypeInfo<Scope, String> props;
 
@@ -428,6 +424,20 @@ class CPPParseTreeListener extends CPP14BaseListener {
     @Override
     public void exitHandler(HandlerContext ctx) {
         context.exitScope();
+    }
+
+    @Override
+    public void enterUnaryexpression(UnaryexpressionContext ctx) {
+        // unary expression may contain a chain like foo.bar->baz().qux...
+        // preparing new stack for it
+        typeStack.push(new Stack<>());
+    }
+
+    @Override
+    public void exitUnaryexpression(UnaryexpressionContext ctx) {
+        // clearing current stack, no longer needed
+        typeStack.pop();
+        fnCallStack.empty();
     }
 
     /**
@@ -811,10 +821,10 @@ class CPPParseTreeListener extends CPP14BaseListener {
                                   String signature,
                                   boolean isCtor,
                                   String className) {
-        ParserRuleContext fnIdent = fnCallStack.pop();
-        if (fnIdent == null) {
+        if (fnCallStack.isEmpty()) {
             return;
         }
+        ParserRuleContext fnIdent = fnCallStack.pop();
 
         String methodName;
         if (isCtor) {
@@ -857,14 +867,14 @@ class CPPParseTreeListener extends CPP14BaseListener {
             }
             methodRef.defKey = new DefKey(null, scope.getPathTo(fnPath, PATH_SEPARATOR));
             support.emit(methodRef);
-            typeStack.push(type);
+            typeStack.peek().push(type);
         } else {
-            typeStack.push(UNKNOWN);
+            typeStack.peek().push(UNKNOWN);
         }
     }
 
     /**
-     * Extracts nested components (identiiers) (foo, bar, baz from foo::bar::baz)
+     * Extracts nested components (identifiers) (foo, bar, baz from foo::bar::baz)
      */
     private List<TerminalNode> getNestedComponents(ParserRuleContext ctx) {
         List<TerminalNode> ret = new LinkedList<>();

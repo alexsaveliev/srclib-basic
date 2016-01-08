@@ -13,7 +13,7 @@ import java.io.IOException;
 
 public class LanguageImpl extends LanguageBase {
 
-    TypeInfos<Scope, String> infos = new TypeInfos<>();
+    TypeInfos<Scope, ObjectInfo> infos = new TypeInfos<>();
 
     @Override
     protected void parse(File sourceFile) throws ParseException {

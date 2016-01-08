@@ -27,7 +27,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
     private LanguageImpl support;
 
-    private Context<Variable> context = new Context<>();
+    private Context<ObjectInfo> context = new Context<>();
 
     private Stack<String> typeStack = new Stack<>();
 
@@ -54,7 +54,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         emitParentTypeRefs(ctx.type_inheritance_clause());
 
 
-        Scope<Variable> scope = new Scope<>(protoDef.name, prefix);
+        Scope<ObjectInfo> scope = new Scope<>(protoDef.name, prefix);
         context.enterScope(scope);
 
         String path = context.getPath(PATH_SEPARATOR);
@@ -107,7 +107,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         // class Foo<Bar>
         emitGenericParameterRefs(ctx.generic_parameter_clause());
 
-        Scope<Variable> scope = new Scope<>(classDef.name, prefix);
+        Scope<ObjectInfo> scope = new Scope<>(classDef.name, prefix);
         context.enterScope(scope);
 
         String path = context.getPath(PATH_SEPARATOR);
@@ -135,7 +135,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         // struct Foo<Bar>
         emitGenericParameterRefs(ctx.generic_parameter_clause());
 
-        Scope<Variable> scope = new Scope<>(structDef.name, prefix);
+        Scope<ObjectInfo> scope = new Scope<>(structDef.name, prefix);
         context.enterScope(scope);
 
         String path = context.getPath(PATH_SEPARATOR);
@@ -173,7 +173,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
 
         emit(enumDef);
 
-        Scope<Variable> scope = new Scope<>(enumDef.name, prefix);
+        Scope<ObjectInfo> scope = new Scope<>(enumDef.name, prefix);
         context.enterScope(scope);
 
         String path = context.getPath(PATH_SEPARATOR);
@@ -237,7 +237,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         for (FunctionParameter param : params.params) {
             param.def.defKey = new DefKey(null, context.currentScope().getPathTo(param.def.name, PATH_SEPARATOR));
             emit(param.def);
-            context.currentScope().put(param.name, new Variable(param.type));
+            context.currentScope().put(param.name, new ObjectInfo(param.type));
         }
         support.infos.setProperty(path, DefKind.FUNC, fnPath, type);
     }
@@ -283,7 +283,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
         for (FunctionParameter param : params.params) {
             param.def.defKey = new DefKey(null, context.currentScope().getPathTo(param.def.name, PATH_SEPARATOR));
             emit(param.def);
-            context.currentScope().put(param.name, new Variable(param.type));
+            context.currentScope().put(param.name, new ObjectInfo(param.type));
         }
 
         support.infos.setProperty(path, DefKind.FUNC, fnPath, type);
@@ -324,7 +324,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             varDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
             varDef.defData.setKind("variable");
             emit(varDef);
-            context.currentScope().put(varDef.name, new Variable(typeName));
+            context.currentScope().put(varDef.name, new ObjectInfo(typeName));
             if (!isInFunction) {
                 support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VAR, varDef.name, typeName);
             }
@@ -374,7 +374,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
             return;
         }
         String varName = ident.getText();
-        LookupResult<Variable> lookup = context.lookup(varName);
+        LookupResult<ObjectInfo> lookup = context.lookup(varName);
         String type;
         if (lookup == null) {
             // type name? Like "Foo" in Foo.instance.bar()
@@ -785,7 +785,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                         paramDef.format(StringUtils.EMPTY, typeName, DefData.SEPARATOR_SPACE);
                         paramDef.defData.setKind("argument");
                         String argName = localParameterName.getText();
-                        context.currentScope().put(argName, new Variable(typeName));
+                        context.currentScope().put(argName, new ObjectInfo(typeName));
                         String representation = argName + ": " + typeName;
                         params.params.add(new FunctionParameter(argName,
                                 typeName,
@@ -858,7 +858,7 @@ class SwiftParseTreeListener extends SwiftBaseListener {
                 DefData.SEPARATOR_SPACE);
         def.defData.setKind(printableKind);
         emit(def);
-        context.currentScope().put(def.name, new Variable(typeName));
+        context.currentScope().put(def.name, new ObjectInfo(typeName));
         if (!isInFunction) {
             support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VAR, def.name, typeName);
         }

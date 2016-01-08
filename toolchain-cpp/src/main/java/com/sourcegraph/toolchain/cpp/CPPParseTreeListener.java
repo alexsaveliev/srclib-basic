@@ -25,9 +25,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     private static final String UNKNOWN = "?";
 
+    private static final String BASE_CLASS = "baseClass";
+
     private LanguageImpl support;
 
-    private Context<Variable> context = new Context<>();
+    private Context<ObjectInfo> context = new Context<>();
 
     private Stack<Stack<String>> typeStack = new Stack<>();
 
@@ -78,7 +80,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         ParserRuleContext name = head.classheadname().classname();
         String className = name.getText();
 
-        Scope<Variable> scope = new Scope<>(className, context.getPrefix(PATH_SEPARATOR));
+        Scope<ObjectInfo> scope = new Scope<>(className, context.getPrefix(PATH_SEPARATOR));
 
         String kind = head.classkey().getText();
         Def def = support.def(name, kind);
@@ -86,15 +88,17 @@ class CPPParseTreeListener extends CPP14BaseListener {
         def.format(kind, kind, DefData.SEPARATOR_SPACE);
         support.emit(def);
 
+        String path = scope.getPath();
+
         BaseclauseContext base = head.baseclause();
+        support.infos.setData(path, scope);
+
         if (base != null) {
-            emitBaseClasses(base.basespecifierlist());
+            processBaseClasses(base.basespecifierlist(), path, scope);
         }
 
         context.enterScope(scope);
 
-        String path = context.getPath(PATH_SEPARATOR);
-        support.infos.setData(path, scope);
         currentClass = path;
 
         // we should handle members here instead of enterMemberdeclaration()
@@ -170,11 +174,14 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 typePathBuilder.append(pathElement.getText());
             }
             // TODO namespace?
-            if (typeNode != null) {
-                Ref typeRef = support.ref(typeNode.getSymbol());
-                typeRef.defKey = new DefKey(null, typePathBuilder.toString());
-                support.emit(typeRef);
-            }
+            String typeName = null;
+            typeName = typePathBuilder.toString();
+            Ref typeRef = support.ref(typeNode.getSymbol());
+            typeRef.defKey = new DefKey(null, typeName);
+            support.emit(typeRef);
+
+            currentClass = typeName;
+            context.enterScope(new Scope<>(typeName, context.currentScope().getPrefix()));
 
             ParserRuleContext fnIdentCtx = ident.qualifiedid().unqualifiedid();
             Ref methodRef = support.ref(fnIdentCtx);
@@ -182,7 +189,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
             methodRef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
             support.emit(methodRef);
 
-            context.enterScope(new Scope<>(fnPath, context.currentScope().getPrefix()));
+            Scope<ObjectInfo> scope = new Scope<>(fnPath, context.currentScope().getPrefix());
+            inheritScope(scope, typeName);
+            context.enterScope(scope);
 
         }
 
@@ -190,15 +199,22 @@ class CPPParseTreeListener extends CPP14BaseListener {
         for (FunctionParameter param : params.params) {
             param.def.defKey = new DefKey(null, context.currentScope().getPathTo(param.def.name, PATH_SEPARATOR));
             support.emit(param.def);
-            context.currentScope().put(param.name, new Variable(param.type));
+            context.currentScope().put(param.name, new ObjectInfo(param.type));
         }
-        support.infos.setProperty(path, DefKind.FUNCTION, fnPath, returnType);
+        support.infos.setProperty(path, DefKind.FUNCTION, fnPath, new ObjectInfo(returnType));
 
     }
 
     @Override
     public void exitFunctiondefinition(FunctiondefinitionContext ctx) {
+        IdexpressionContext ident = getIdentifier(ctx.declarator());
+        if (ident.unqualifiedid() == null) {
+            // exit from foo::bar definition
+            currentClass = null;
+            context.exitScope();
+        }
         context.exitScope();
+
     }
 
     @Override
@@ -226,7 +242,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
 
         String varName = idexpr.getText();
-        LookupResult<Variable> lookup = context.lookup(varName);
+        LookupResult<ObjectInfo> lookup = context.lookup(varName);
         String type;
         if (lookup == null) {
             // TODO: namespaces
@@ -237,21 +253,12 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 typeRef.defKey = new DefKey(null, type);
                 support.emit(typeRef);
             } else {
-                // shorthand member notation
-                varName = context.currentScope().getPathTo(varName, PATH_SEPARATOR);
-                if (support.infos.get(varName) == null) {
-                    type = UNKNOWN;
-                } else {
-                    type = varName;
-                    Ref typeRef = support.ref(ident);
-                    typeRef.defKey = new DefKey(null, type);
-                    support.emit(typeRef);
-                }
+                type = UNKNOWN;
             }
         } else {
             type = lookup.getValue().getType();
             Ref identRef = support.ref(idexpr);
-            identRef.defKey = new DefKey(null, lookup.getScope().getPathTo(varName, PATH_SEPARATOR));
+            identRef.defKey = new DefKey(null, getPath(lookup, varName));
             support.emit(identRef);
         }
         typeStack.peek().push(type);
@@ -273,7 +280,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
             typeStack.peek().push(UNKNOWN);
             return;
         }
-        TypeInfo<Scope, String> props = support.infos.get(parent);
+        TypeInfo<Scope, ObjectInfo> props = support.infos.get(parent);
         if (props == null) {
             if (isFnCall) {
                 fnCallStack.push(ident);
@@ -290,12 +297,14 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
 
         String varOrPropName = ident.getText();
-        String type = props.getProperty(DefKind.VARIABLE, varOrPropName);
-        if (type == null) {
+        ObjectInfo info = props.getProperty(DefKind.VARIABLE, varOrPropName);
+        String type;
+        if (info == null) {
             type = UNKNOWN;
         } else {
+            type = info.getType();
             Ref propRef = support.ref(ident);
-            propRef.defKey = new DefKey(null, props.getData().getPathTo(varOrPropName, PATH_SEPARATOR));
+            propRef.defKey = new DefKey(null, getPath(info, props.getData(), varOrPropName));
             support.emit(propRef);
         }
         typeStack.peek().push(type);
@@ -338,7 +347,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 typeStack.peek().push(UNKNOWN);
                 return;
             }
-            TypeInfo<Scope, String> props = support.infos.get(parent);
+            TypeInfo<Scope, ObjectInfo> props = support.infos.get(parent);
             if (props == null) {
                 typeStack.peek().push(UNKNOWN);
                 return;
@@ -349,7 +358,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         // bar() or Bar() - function or ctor
         ParserRuleContext fnCallNameCtx = fnCallStack.isEmpty() ? null : fnCallStack.peek();
 
-        TypeInfo<Scope, String> props;
+        TypeInfo<Scope, ObjectInfo> props;
 
         String className;
         boolean isCtor = false;
@@ -380,17 +389,16 @@ class CPPParseTreeListener extends CPP14BaseListener {
     public void enterMeminitializerid(MeminitializeridContext ctx) {
         String ident = ctx.getText();
         // TODO: namespaces?
-        TypeInfo<Scope, String> info = support.infos.get(ident);
+        TypeInfo<Scope, ObjectInfo> info = support.infos.get(ident);
         if (info != null) {
             Ref typeRef = support.ref(ctx);
             typeRef.defKey = new DefKey(null, info.getData().getPath());
             support.emit(typeRef);
         } else {
-            // TODO: inheritance
-            LookupResult result = context.lookup(ident);
+            LookupResult<ObjectInfo> result = context.lookup(ident);
             if (result != null) {
                 Ref memberRef = support.ref(ctx);
-                memberRef.defKey = new DefKey(null, result.getScope().getPathTo(ident, PATH_SEPARATOR));
+                memberRef.defKey = new DefKey(null, getPath(result, ident));
                 support.emit(memberRef);
             }
         }
@@ -417,16 +425,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     @Override
-    public void enterHandler(HandlerContext ctx) {
-        context.enterScope(context.currentScope().next(PATH_SEPARATOR));
-    }
-
-    @Override
-    public void exitHandler(HandlerContext ctx) {
-        context.exitScope();
-    }
-
-    @Override
     public void enterUnaryexpression(UnaryexpressionContext ctx) {
         // unary expression may contain a chain like foo.bar->baz().qux...
         // preparing new stack for it
@@ -443,16 +441,55 @@ class CPPParseTreeListener extends CPP14BaseListener {
     /**
      * Emits base classes in "class foo: bar"
      */
-    private void emitBaseClasses(BasespecifierlistContext classes) {
+    private void processBaseClasses(BasespecifierlistContext classes, String path, Scope<ObjectInfo> scope) {
         if (classes == null) {
             return;
         }
         // TODO : namespaces?
-        Token name = classes.basespecifier().basetypespecifier().classordecltype().classname().Identifier().getSymbol();
-        Ref typeRef = support.ref(name);
-        typeRef.defKey = new DefKey(null, name.getText());
+        Token baseName = classes.basespecifier().basetypespecifier().classordecltype().classname().Identifier().getSymbol();
+        String name = baseName.getText();
+        Ref typeRef = support.ref(baseName);
+        typeRef.defKey = new DefKey(null, name);
         support.emit(typeRef);
-        emitBaseClasses(classes.basespecifierlist());
+
+        TypeInfo<Scope, ObjectInfo> typeInfo = support.infos.get(path);
+        typeInfo.setProperty(BASE_CLASS, name, null);
+        inheritScope(scope, name);
+        processBaseClasses(classes.basespecifierlist(), path, scope);
+    }
+
+    /**
+     * Copies properties from parent type to given scope.
+     * class A : B => class A should have all B's properties
+     */
+    private void inheritScope(Scope<ObjectInfo> scope, String parentType) {
+        TypeInfo<Scope, ObjectInfo> baseInfo = support.infos.get(parentType);
+        if (baseInfo != null) {
+            Collection<String> baseClasses = baseInfo.getProperties(BASE_CLASS);
+            for (String baseClass : baseClasses) {
+                inheritScope(scope, baseClass);
+            }
+            // copying base properties to current scope
+            for (String category : baseInfo.getCategories()) {
+                for (String property : baseInfo.getProperties(category)) {
+                    ObjectInfo info = baseInfo.getProperty(category, property);
+                    if (info == null) {
+                        support.infos.setProperty(scope.getPath(), category, property, null);
+                        continue;
+                    }
+                    // already inherited, should not override
+                    if (info.getPrefix() != null) {
+                        continue;
+                    }
+                    // inherited objects have different path
+                    ObjectInfo inherited = new ObjectInfo(info.getType(), baseInfo.getData().getPath() + PATH_SEPARATOR);
+                    support.infos.setProperty(scope.getPath(), category, property, inherited);
+                    if (category == DefKind.VARIABLE) {
+                        scope.put(property, inherited);
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -580,7 +617,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
         varDef.format(StringUtils.EMPTY, typeName == null ? StringUtils.EMPTY : typeName, DefData.SEPARATOR_SPACE);
         varDef.defData.setKind(DefKind.VARIABLE);
-        context.currentScope().put(varDef.name, new Variable(typeName));
+        context.currentScope().put(varDef.name, new ObjectInfo(typeName));
         support.emit(varDef);
     }
 
@@ -758,9 +795,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
             memberDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
             memberDef.defData.setKind(DefKind.MEMBER);
             support.emit(memberDef);
-            Variable variable = new Variable(type);
-            context.currentScope().put(name, variable);
-            support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VARIABLE, name, type);
+            ObjectInfo objectInfo = new ObjectInfo(type);
+            context.currentScope().put(name, objectInfo);
+            support.infos.setProperty(context.getPath(PATH_SEPARATOR), DefKind.VARIABLE, name, new ObjectInfo(type));
         } else {
             // int foo();
             if (type == null) {
@@ -785,7 +822,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
             fnDef.defData.setKind(DefKind.FUNCTION);
             support.emit(fnDef);
 
-            support.infos.setProperty(path, DefKind.FUNCTION, fnPath, type);
+            support.infos.setProperty(path, DefKind.FUNCTION, fnPath, new ObjectInfo(type));
         }
     }
 
@@ -817,7 +854,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
     /**
      * Emits function ref
      */
-    private void processFnCallRef(TypeInfo<Scope, String> props,
+    private void processFnCallRef(TypeInfo<Scope, ObjectInfo> props,
                                   String signature,
                                   boolean isCtor,
                                   String className) {
@@ -840,34 +877,34 @@ class CPPParseTreeListener extends CPP14BaseListener {
         // looking for matching function
         String fnPath = methodName + '(' + signature + ')';
 
-        String type = null;
+        ObjectInfo info = null;
 
         if (className != null) {
             // lookup in current class
-            TypeInfo<Scope, String> currentProps = support.infos.get(className);
-            type = currentProps.getProperty(DefKind.FUNCTION, fnPath);
-            if (type != null) {
+            TypeInfo<Scope, ObjectInfo> currentProps = support.infos.get(className);
+            info = currentProps.getProperty(DefKind.FUNCTION, fnPath);
+            if (info != null) {
                 props = currentProps;
             }
         }
 
-        if (type == null) {
+        if (info == null) {
             if (isCtor) {
-                type = className;
+                info = new ObjectInfo(className);
             } else {
-                type = props.getProperty(DefKind.FUNCTION, fnPath);
+                info = props.getProperty(DefKind.FUNCTION, fnPath);
             }
         }
 
-        if (type != null) {
+        if (info != null) {
             Ref methodRef = support.ref(fnIdent);
             Scope scope = props.getData();
             if (scope == null) {
                 scope = context.getRoot();
             }
-            methodRef.defKey = new DefKey(null, scope.getPathTo(fnPath, PATH_SEPARATOR));
+            methodRef.defKey = new DefKey(null, getPath(info, scope, fnPath));
             support.emit(methodRef);
-            typeStack.peek().push(type);
+            typeStack.peek().push(info.getType());
         } else {
             typeStack.peek().push(UNKNOWN);
         }
@@ -898,6 +935,28 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 collectNestedComponents(child, ret);
             }
         }
+    }
+
+    /**
+     * Makes path to object taking into account that it might be defined in a base class
+     */
+    private String getPath(LookupResult<ObjectInfo> result, String id) {
+        return getPath(result.getValue(), result.getScope(), id);
+    }
+
+
+    /**
+     * Makes path to object taking into account that it might be defined in a base class
+     */
+    private String getPath(ObjectInfo info, Scope scope, String id) {
+        String prefix = info.getPrefix();
+        if (prefix == null) {
+            return scope.getPathTo(id, PATH_SEPARATOR);
+        }
+        if (prefix.isEmpty()) {
+            return id;
+        }
+        return prefix + id;
     }
 
     private static class FunctionParameters {

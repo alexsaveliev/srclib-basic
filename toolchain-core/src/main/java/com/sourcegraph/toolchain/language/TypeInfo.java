@@ -48,10 +48,17 @@ public class TypeInfo<K, V> {
     }
 
     /**
+     * @return all categories, e..g "functions", "variables", ...
+     */
+    public Collection<String> getCategories() {
+        return props.keySet();
+    }
+
+    /**
      * @param category property's category
      * @return all property names in the given category, e.g. all object "functions" or "variables"
      */
-    public Collection<String> getPropertyNames(String category) {
+    public Collection<String> getProperties(String category) {
         Map<String, V> categoryProps = props.get(category);
         if (categoryProps == null) {
             return Collections.emptyList();

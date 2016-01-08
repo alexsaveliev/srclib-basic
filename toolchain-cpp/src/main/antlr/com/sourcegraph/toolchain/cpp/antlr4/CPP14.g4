@@ -50,17 +50,16 @@ grammar CPP14;
 @header {
     package com.sourcegraph.toolchain.cpp.antlr4;
 
-    import com.sourcegraph.toolchain.language.LanguageBase;
-    import java.io.File;
+    import com.sourcegraph.toolchain.cpp.LanguageImpl;
     import java.util.regex.*;
 }
 
 @lexer::members {
 
 	private static final Pattern INCLUDE = Pattern.compile("^#include\\s+\"([^\"]+?)\"");
-	private LanguageBase support;
+	private LanguageImpl support;
 
-	public void setSupport(LanguageBase support) {
+	public void setSupport(LanguageImpl support) {
 		this.support = support;
 	}
 
@@ -80,8 +79,7 @@ grammar CPP14;
 		}
 		Matcher m = INCLUDE.matcher(directive);
 		if (m.matches()) {
-			File current = new File(support.getCurrentFile()).getParentFile();
-			support.process(new File(current, m.group(1)));
+			support.include(m.group(1));
 		}
 	}
 }

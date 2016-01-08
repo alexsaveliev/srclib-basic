@@ -1,15 +1,17 @@
 package com.sourcegraph.toolchain.cpp;
 
 import com.sourcegraph.toolchain.core.objects.DefKey;
-import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.cpp.antlr4.CPP14Lexer;
 import com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser;
+import com.sourcegraph.toolchain.language.*;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class LanguageImpl extends LanguageBase {
 
@@ -57,5 +59,20 @@ public class LanguageImpl extends LanguageBase {
     @Override
     public CharStream getCharStream(File sourceFile) throws IOException {
         return super.getCharStream(sourceFile);
+    }
+
+    /**
+     * Handles "#include "foo" directives, tries to resolve file in the current set
+     * @param path path to file to be included
+     */
+    @SuppressWarnings("unused")
+    public void include(String path) {
+        Path p = Paths.get(path);
+        for (File candidate : files) {
+            if (candidate.toPath().endsWith(p)) {
+                process(candidate);
+                break;
+            }
+        }
     }
 }

@@ -77,7 +77,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
     public void enterClassspecifier(ClassspecifierContext ctx) {
 
         ClassheadContext head = ctx.classhead();
-        ParserRuleContext name = head.classheadname().classname();
+        ClassheadnameContext classheadnameCtx = head.classheadname();
+        if (classheadnameCtx == null) {
+            // TODO typedef struct {} foo;
+            context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+            return;
+        }
+        ParserRuleContext name = classheadnameCtx.classname();
         String className = name.getText();
 
         Scope<ObjectInfo> scope = new Scope<>(className, context.getPrefix(PATH_SEPARATOR));
@@ -466,7 +472,12 @@ class CPPParseTreeListener extends CPP14BaseListener {
             return;
         }
         // TODO : namespaces?
-        Token baseName = classes.basespecifier().basetypespecifier().classordecltype().classname().Identifier().getSymbol();
+        ClassnameContext classnameCtx = classes.basespecifier().basetypespecifier().classordecltype().classname();
+        TerminalNode identifier = classnameCtx.Identifier();
+        if (identifier == null) {
+            return;
+        }
+        Token baseName = identifier.getSymbol();
         String name = baseName.getText();
         Ref typeRef = support.ref(baseName);
         typeRef.defKey = new DefKey(null, name);
@@ -584,7 +595,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
     private String processDeclarationType(TypenameContext typeNameSpec) {
         ClassnameContext classnameSpec = typeNameSpec.classname();
         if (classnameSpec != null) {
-            return processTypeRef(classnameSpec.Identifier());
+            TerminalNode identifier = classnameSpec.Identifier();
+            if (identifier != null) {
+                return processTypeRef(identifier);
+            }
+            // template
+            // TODO
+            return classnameSpec.getText();
         }
         EnumnameContext enumnameSpec = typeNameSpec.enumname();
         if (enumnameSpec != null) {
@@ -745,6 +762,10 @@ class CPPParseTreeListener extends CPP14BaseListener {
      */
     private void processFunctionParameters(ParameterdeclarationContext param,
                                            FunctionParameters params) {
+        DeclaratorContext declarator = param.declarator();
+        if (declarator == null) {
+            return;
+        }
         ParserRuleContext paramNameCtx = getIdentifier(param.declarator());
         TypespecifierContext paramTypeCtx = getDeclTypeSpecifier(param.declspecifierseq());
         // TODOL: namespaces

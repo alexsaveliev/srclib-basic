@@ -469,6 +469,19 @@ class CPPParseTreeListener extends CPP14BaseListener {
         fnCallStack.empty();
     }
 
+    @Override
+    public void enterElaboratedtypespecifier(ElaboratedtypespecifierContext ctx) {
+        // TODO: namespaces
+        TerminalNode ident = ctx.Identifier();
+        if (ident == null) {
+            return;
+        }
+        Ref typeRef = support.ref(ident.getSymbol());
+        typeRef.defKey = new DefKey(null, ident.getText());
+        support.emit(typeRef);
+
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */

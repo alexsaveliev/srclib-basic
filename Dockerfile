@@ -8,16 +8,13 @@ ENV GOPATH /usr/local
 # Allow determining whether we're running in Docker
 ENV IN_DOCKER_CONTAINER true
 
-# Add this toolchain
-ADD .bin /srclib/srclib-basic/
-WORKDIR /srclib/srclib-basic
-ENV PATH /srclib/srclib-basic/:$PATH
+ENV SRCLIBPATH /srclib
+ADD Srclibtoolchain /srclib/srclib-basic/
+ADD .bin /srclib/srclib-basic/.bin
 
 # Add srclib (unprivileged) user
 RUN adduser -D -s /bin/bash srclib
-RUN mkdir /src
-RUN chown -R srclib /src /srclib
+RUN chown -R srclib /srclib
 
 USER srclib
-WORKDIR /src
-ENTRYPOINT ["srclib-basic"]
+ENTRYPOINT ["/srclib/srclib-basic/.bin/srclib-basic"]

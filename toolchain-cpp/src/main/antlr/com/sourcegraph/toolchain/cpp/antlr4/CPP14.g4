@@ -80,8 +80,42 @@ grammar CPP14;
 		Matcher m = INCLUDE.matcher(directive);
 		if (m.matches()) {
 			support.include(m.group(1));
+			return;
+		}
+		if (directive.startsWith("#define")) {
+			handleMultilineDefine(directive);
 		}
 	}
+
+    private void handleMultilineDefine(String define) {
+        if (!define.endsWith("\\")) {
+            return;
+        }
+        int state = 1;
+        int c = _input.LA(1);
+        while (c != EOF) {
+            switch (state) {
+                case 0:
+                    if (c == '\\') {
+                        state = 1;
+                    } else if (c == '\r' || c == '\n') {
+                        _input.consume();
+                        return;
+                    }
+                    _input.consume();
+                    c = _input.LA(1);
+                    break;
+                case 1:
+                    if (c != '\r' && c != '\n') {
+                        state = 0;
+                    }
+                    _input.consume();
+                    c = _input.LA(1);
+                    break;
+            }
+        }
+    }
+
 }
 
 /*Basic concepts*/

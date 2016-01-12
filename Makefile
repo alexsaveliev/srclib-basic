@@ -4,7 +4,7 @@ else
 	GRADLEW = ./gradlew
 endif
 
-.PHONY: default install test test-gen clean dist
+.PHONY: default install test test-gen clean dist docker-image release
 
 default: install
 
@@ -23,3 +23,9 @@ clean:
 
 
 dist: install
+
+docker-image: install
+	docker build -t srclib/srclib-basic .
+
+release: docker-image
+	docker push srclib/srclib-basic

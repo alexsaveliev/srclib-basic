@@ -5,9 +5,6 @@ RUN echo "http://dl-4.alpinelinux.org/alpine/edge/testing" >> /etc/apk/repositor
 RUN apk add --update bash openjdk8 && rm -rf /var/cache/apk/*
 ENV GOPATH /usr/local
 
-# Allow determining whether we're running in Docker
-ENV IN_DOCKER_CONTAINER true
-
 # Add this toolchain
 ADD .bin /srclib/srclib-basic/
 WORKDIR /srclib/srclib-basic

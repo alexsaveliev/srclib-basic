@@ -195,6 +195,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
         if (functionName == null) {
             // TODO: operators
             functionName = "**" + ++idCounter;
+        } else {
+            if (ident != null && ident.getText().indexOf('~') >= 0) {
+                // destructor
+                functionName = '~' + functionName;
+            }
         }
         String functionPath = functionName + '(' + params.getSignature() + ')';
 
@@ -1062,7 +1067,8 @@ class CPPParseTreeListener extends CPP14BaseListener {
             ParseTree child = ctx.getChild(i);
             if (child instanceof TerminalNode) {
                 TerminalNode terminalNode = (TerminalNode) child;
-                if (terminalNode.getSymbol().getType() == Identifier) {
+                int type = terminalNode.getSymbol().getType();
+                if (type == Identifier) {
                     ret.add(terminalNode);
                 }
             } else {

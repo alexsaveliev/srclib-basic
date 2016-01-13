@@ -236,7 +236,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
      * @return source unit
      * @throws IOException
      */
-    private SourceUnit getSourceUnit(File rootDir, String repoUri) throws IOException {
+    protected SourceUnit getSourceUnit(File rootDir, String repoUri) throws IOException {
         SourceUnit unit = new SourceUnit();
         unit.Name = getName();
         unit.Dir = PathUtil.relativizeCwd(rootDir.toPath());

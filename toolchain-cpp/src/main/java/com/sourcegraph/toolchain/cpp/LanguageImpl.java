@@ -37,9 +37,12 @@ public class LanguageImpl extends LanguageBase {
 
     @Override
     protected FileCollector getFileCollector(File rootDir, String repoUri) {
-        return new ExtensionBasedFileCollector().extension(
-                ".C", ".cc", ".cpp", ".CPP", ".c++", ".cp", ".cxx",
-                ".h", ".H", ".hh", ".hpp", ".HPP", ".h++", ".hp", ".hxx");
+        // If found .m or .mm file - it's Objective-C
+        return new ExtensionBasedFileCollector().
+                extension(
+                        ".C", ".cc", ".cpp", ".CPP", ".c++", ".cp", ".cxx",
+                        ".h", ".H", ".hh", ".hpp", ".HPP", ".h++", ".hp", ".hxx").
+                blockerExtension(".m", ".mm");
     }
 
     @Override
@@ -63,6 +66,7 @@ public class LanguageImpl extends LanguageBase {
 
     /**
      * Handles "#include "foo" directives, tries to resolve file in the current set
+     *
      * @param path path to file to be included
      */
     @SuppressWarnings("unused")

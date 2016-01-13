@@ -497,6 +497,31 @@ class CPPParseTreeListener extends CPP14BaseListener {
         fnCallStack.empty();
     }
 
+    @Override
+    public void enterAndexpression(AndexpressionContext ctx) {
+        // it might be statement like "Select &sel = get_instance()"
+        AndexpressionContext left = ctx.andexpression();
+        if (left == null) {
+            return;
+        }
+        NSPath path = new NSPath(left);
+        String typeName = namespaceContext.resolve(path);
+        if (support.infos.get(typeName) == null) {
+            return;
+        }
+
+        ParserRuleContext right = ctx.equalityexpression();
+
+        Def varDef = support.def(right, DefKind.VARIABLE);
+        varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
+        varDef.format(StringUtils.EMPTY,
+                left.getText(),
+                DefData.SEPARATOR_SPACE);
+        varDef.defData.setKind(DefKind.VARIABLE);
+        context.currentScope().put(varDef.name, new ObjectInfo(typeName));
+        support.emit(varDef);
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */
@@ -1250,7 +1275,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     /**
-     * @param info type info
+     * @param info      type info
      * @param signature function signature
      * @return function lookup result
      */
@@ -1272,7 +1297,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     /**
      * Function parameters
-     *
      */
     private static class FunctionParameters {
 

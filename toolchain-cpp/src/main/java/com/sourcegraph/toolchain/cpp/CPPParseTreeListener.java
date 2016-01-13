@@ -676,8 +676,15 @@ class CPPParseTreeListener extends CPP14BaseListener {
             // TODO not supported yet
             return null;
         }
+
         NSPath nsPath = new NSPath(ctx);
-        return namespaceContext.resolve(nsPath);
+        String ret = namespaceContext.resolve(nsPath);
+
+        Ref typeRef = support.ref(nsPath.localCtx.getSymbol());
+        typeRef.defKey = new DefKey(null, ret);
+        support.emit(typeRef);
+
+        return ret;
     }
 
     /**

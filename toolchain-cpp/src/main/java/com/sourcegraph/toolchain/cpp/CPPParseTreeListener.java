@@ -512,6 +512,10 @@ class CPPParseTreeListener extends CPP14BaseListener {
         if (support.infos.get(typeName) == null) {
             return;
         }
+        // ref to "foo" in "foo &bar"
+        Ref typeRef = support.ref(left);
+        typeRef.defKey = new DefKey(null, typeName);
+        support.emit(typeRef);
 
         ParserRuleContext right = ctx.equalityexpression();
 

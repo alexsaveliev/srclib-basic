@@ -202,6 +202,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         ObjectInfo info = support.infos.getProperty(className, DefKind.FUNCTION, functionPath);
         if (info != null) {
             // ref
+            // TODO: overloading
             Ref methodRef = support.ref(nsPath.localCtx.getSymbol());
             String refPath;
             if (info.getPrefix() != null) {
@@ -416,13 +417,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         if (fnCallNameCtx != null) {
             isCtor = true;
-            className = fnCallNameCtx.getText();
+            NSPath nsPath = new NSPath(fnCallNameCtx);
+            className = namespaceContext.resolve(nsPath);
             props = support.infos.get(className);
-            if (props == null) {
-                // maybe inner class?
-                className = context.currentScope().getPathTo(className, PATH_SEPARATOR);
-                props = support.infos.get(className);
-            }
         } else {
             props = null;
             className = null;
@@ -1001,34 +998,49 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         ObjectInfo info = null;
 
+        Collection<String> candidates = new LinkedList<>();
+
+        String prefix;
+        FunctionLookupResult result = null;
+
         if (className != null) {
             // lookup in current class
             TypeInfo<Scope, ObjectInfo> currentProps = support.infos.get(className);
-            info = currentProps.getProperty(DefKind.FUNCTION, fnPath);
-            if (info != null) {
-                props = currentProps;
-            }
+            result = lookupFunction(currentProps, fnPath);
         }
 
-        if (info == null) {
-            if (isCtor) {
-                info = new ObjectInfo(className);
-            } else {
-                info = props.getProperty(DefKind.FUNCTION, fnPath);
-            }
+        if (result == null || result.isEmpty()) {
+            className = StringUtils.EMPTY;
+            result = lookupFunction(support.infos.getRoot(), fnPath);
         }
 
-        if (info != null) {
+        if (result.exact != null) {
             Ref methodRef = support.ref(fnIdent);
-            Scope scope = props.getData();
-            if (scope == null) {
-                scope = context.getRoot();
-            }
-            methodRef.defKey = new DefKey(null, getPath(info, scope, fnPath));
+            methodRef.defKey = new DefKey(null, getPath(className, result.exact.signature));
             support.emit(methodRef);
-            typeStack.peek().push(info.getType());
+            typeStack.peek().push(result.exact.type);
         } else {
-            typeStack.peek().push(UNKNOWN);
+            String type = null;
+            boolean typeSet = false;
+            for (Function candidate : result.candidates) {
+                Ref methodRef = support.ref(fnIdent);
+                methodRef.defKey = new DefKey(null, getPath(className, candidate.signature));
+                support.emit(methodRef);
+                // pushing type to stack only if it matches for all candidates
+                if (!typeSet) {
+                    type = candidate.type;
+                    typeSet = true;
+                } else {
+                    if (type != null && !type.equals(candidate.type)) {
+                        type = null;
+                    }
+                }
+            }
+            if (type == null) {
+                typeStack.peek().push(UNKNOWN);
+            } else {
+                typeStack.peek().push(type);
+            }
         }
     }
 
@@ -1174,11 +1186,45 @@ class CPPParseTreeListener extends CPP14BaseListener {
         if (ctx == null) {
             return type;
         }
-        if (ctx.ptrdeclarator() != null) {
+        if (hasPtr(ctx.ptrdeclarator())) {
             type += '*';
         }
         return type;
     }
+
+    /**
+     * @param ctx AST node
+     * @return true if there is ptr operator inside
+     */
+    private boolean hasPtr(PtrdeclaratorContext ctx) {
+        if (ctx == null) {
+            return false;
+        }
+        if (ctx.ptroperator() != null) {
+            return true;
+        }
+        NoptrdeclaratorContext noptr = ctx.noptrdeclarator();
+        if (noptr != null) {
+            return hasPtr(noptr);
+        }
+        return hasPtr(ctx.ptrdeclarator());
+    }
+
+    /**
+     * @param ctx AST node
+     * @return true if there is ptr operator inside
+     */
+    private boolean hasPtr(NoptrdeclaratorContext ctx) {
+        if (ctx == null) {
+            return false;
+        }
+        PtrdeclaratorContext ptr = ctx.ptrdeclarator();
+        if (ptr != null) {
+            return hasPtr(ptr);
+        }
+        return hasPtr(ctx.noptrdeclarator());
+    }
+
 
     /**
      * Recursively collects declaration specifiers (const, char, *, ...)
@@ -1197,9 +1243,41 @@ class CPPParseTreeListener extends CPP14BaseListener {
         collectSpecifiers(ctx.declspecifierseq(), specifiers);
     }
 
+    /**
+     * @param info type info
+     * @param signature function signature
+     * @return function lookup result
+     */
+    private FunctionLookupResult lookupFunction(TypeInfo<Scope, ObjectInfo> info, String signature) {
+        int pos = signature.indexOf('(');
+        String prefix = signature.substring(0, pos);
+        FunctionLookupResult ret = new FunctionLookupResult();
+        for (String candidate : info.getProperties(DefKind.FUNCTION)) {
+            if (candidate.equals(signature)) {
+                ret.exact = new Function(candidate, info.getProperty(DefKind.FUNCTION, candidate).getType());
+                return ret;
+            }
+            if (candidate.startsWith(prefix)) {
+                ret.candidates.add(new Function(candidate, info.getProperty(DefKind.FUNCTION, candidate).getType()));
+            }
+        }
+        return ret;
+    }
+
+    /**
+     * Function parameters
+     *
+     */
     private static class FunctionParameters {
+
+        /**
+         * List of function parameters
+         */
         Collection<FunctionParameter> params = new LinkedList<>();
 
+        /**
+         * @return display representation (int foo, char *bar, ...)
+         */
         String getRepresentation() {
             StringBuilder ret = new StringBuilder();
             boolean first = true;
@@ -1214,6 +1292,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
             return ret.toString();
         }
 
+        /**
+         * @return signature _,_,_ where each parameter is marked by underscore
+         */
         String getSignature() {
             StringBuilder ret = new StringBuilder();
             boolean first = true;
@@ -1230,12 +1311,30 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     }
 
+    /**
+     * Single function parameter
+     */
     private static class FunctionParameter {
 
+        /**
+         * Parameter's name
+         */
         String name;
+        /**
+         * Parameter's type (noptr)
+         */
         String type;
+        /**
+         * Parameter's display representation
+         */
         String repr;
+        /**
+         * Parameter's signature (_)
+         */
         String signature;
+        /**
+         * Parameter def's object
+         */
         Def def;
 
         FunctionParameter(String name, String type, String repr, String signature, Def def) {
@@ -1326,6 +1425,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
     }
 
+    /**
+     * Tracks namespaces
+     */
     private class NamespaceContext {
 
         private LinkedList<String> namespaces = new LinkedList<>();
@@ -1336,6 +1438,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
             enter(StringUtils.EMPTY);
         }
 
+        /**
+         * Entering namespace
+         *
+         * @param name
+         */
         void enter(String name) {
             String id;
             if (current.isEmpty()) {
@@ -1350,15 +1457,27 @@ class CPPParseTreeListener extends CPP14BaseListener {
             current = id;
         }
 
+        /**
+         * Exiting namespace
+         */
         void exit() {
             namespaces.pop();
             current = namespaces.peek();
         }
 
+        /**
+         * @param path path to object
+         * @return resolved path to object
+         */
         String resolve(NSPath path) {
             return resolve(path.path, path.absolute);
         }
 
+        /**
+         * @param path     path to object
+         * @param absolute if path is absolute
+         * @return resolved path to object
+         */
         String resolve(String path, boolean absolute) {
             if (absolute) {
                 // ::foo::bar::baz
@@ -1376,9 +1495,45 @@ class CPPParseTreeListener extends CPP14BaseListener {
             return current + path;
 
         }
+    }
 
-        String fqn(String id) {
-            return current + id;
+    /**
+     * Function information
+     */
+    private static class Function {
+
+        /**
+         * Signature (so far it looks like foo(_,_,_) (underscore for each parameter)
+         */
+        String signature;
+        /**
+         * Return type
+         */
+        String type;
+
+        Function(String signature, String type) {
+            this.signature = signature;
+            this.type = type;
+        }
+    }
+
+    /**
+     * Function lookup result. May contain exact match and zero or more matching candidates
+     */
+    private static class FunctionLookupResult {
+
+        /**
+         * Exact match
+         */
+        private Function exact;
+
+        /**
+         * Candidates
+         */
+        private Collection<Function> candidates = new LinkedList<>();
+
+        boolean isEmpty() {
+            return exact == null && candidates.isEmpty();
         }
     }
 

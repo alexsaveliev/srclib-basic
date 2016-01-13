@@ -174,6 +174,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
                         className = classes.isEmpty() ? StringUtils.EMPTY : classes.peek();
                     } else {
                         className = namespaceContext.resolve(parent);
+                        Ref parentTypeRef = support.ref(parent.localCtx.getSymbol());
+                        parentTypeRef.defKey = new DefKey(null, className);
+                        support.emit(parentTypeRef);
                     }
                 }
             } else {

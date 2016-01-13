@@ -18,7 +18,7 @@ import static com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser.*;
 
 class CPPParseTreeListener extends CPP14BaseListener {
 
-    private static final char PATH_SEPARATOR = '.';
+    private static final char PATH_SEPARATOR = '/';
 
     private static final String UNKNOWN = "?";
 
@@ -100,6 +100,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         Def def = support.def(nsPath.localCtx.getSymbol(), kind);
         def.defKey = new DefKey(null, className);
         def.format(kind, kind, DefData.SEPARATOR_SPACE);
+        def.defData.setName(formatClassName(className));
         support.emit(def);
 
         BaseclauseContext base = head.baseclause();
@@ -135,15 +136,19 @@ class CPPParseTreeListener extends CPP14BaseListener {
     @Override
     public void enterSimpledeclaration(SimpledeclarationContext ctx) {
         processVarsAndFunctions(ctx.initdeclaratorlist(),
-                processDeclarationType(ctx));
+                processDeclarationType(ctx),
+                getDisplayType(ctx.declspecifierseq(), null));
 
     }
 
     @Override
     public void enterFunctiondefinition(FunctiondefinitionContext ctx) {
-        TypespecifierContext typeCtx = getDeclTypeSpecifier(ctx.declspecifierseq());
 
-        IdexpressionContext ident = getIdentifier(ctx.declarator());
+        DeclspecifierseqContext declspecifierseqCtx = ctx.declspecifierseq();
+        DeclaratorContext declaratorCtx = ctx.declarator();
+        TypespecifierContext typeCtx = getDeclTypeSpecifier(declspecifierseqCtx);
+
+        IdexpressionContext ident = getIdentifier(declaratorCtx);
 
         NSPath nsPath = new NSPath(ident);
 
@@ -179,7 +184,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
 
         FunctionParameters params = new FunctionParameters();
-        ParametersandqualifiersContext paramsCtx = getParametersAndQualifiers(ctx.declarator());
+        ParametersandqualifiersContext paramsCtx = getParametersAndQualifiers(declaratorCtx);
         if (paramsCtx != null) {
             processFunctionParameters(
                     paramsCtx.parameterdeclarationclause().parameterdeclarationlist(),
@@ -202,7 +207,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
             if (info.getPrefix() != null) {
                 refPath = info.getPrefix() + functionPath;
             } else {
-                refPath = className + PATH_SEPARATOR + functionPath;
+                refPath = getPath(className, functionPath);
             }
             methodRef.defKey = new DefKey(null, refPath);
             support.emit(methodRef);
@@ -210,10 +215,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
             // def
             if (nsPath.localCtx != null) {
                 Def methodDef = support.def(nsPath.localCtx.getSymbol(), DefKind.FUNCTION);
-                methodDef.defKey = new DefKey(null, className + PATH_SEPARATOR + functionPath);
+                methodDef.defKey = new DefKey(null, getPath(className, functionPath));
                 StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
-                repr.append(' ').append(returnType);
+                repr.append(' ').append(getDisplayType(declspecifierseqCtx, declaratorCtx));
                 methodDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
+                methodDef.defData.setName(formatName(functionName));
                 methodDef.defData.setKind(DefKind.FUNCTION);
                 support.emit(methodDef);
 
@@ -221,8 +227,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
             }
         }
 
-        Scope<ObjectInfo> functionScope = new Scope<>(functionPath,
-                StringUtils.isEmpty(className) ? StringUtils.EMPTY : className + PATH_SEPARATOR);
+        Scope<ObjectInfo> functionScope = new Scope<>(functionPath, getPath(className, StringUtils.EMPTY));
         context.enterScope(functionScope);
         classes.push(className);
 
@@ -285,7 +290,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 Ref memberRef = support.ref(nsPath.localCtx.getSymbol());
                 String memberPrefix = oInfo.getPrefix();
                 if (memberPrefix == null) {
-                    memberPrefix = className + PATH_SEPARATOR;
+                    memberPrefix = getPath(className, StringUtils.EMPTY);
                 }
                 memberRef.defKey = new DefKey(null, memberPrefix + nsPath.local);
                 support.emit(memberRef);
@@ -439,7 +444,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         if (info != null) {
             // base initializer
             MeminitializerContext meminitializerCtx = (MeminitializerContext) ctx.getParent();
-            String ctorPath = ident + PATH_SEPARATOR + nsPath.local +
+            String ctorPath = getPath(ident, nsPath.local) +
                     '(' + signature(meminitializerCtx.expressionlist()) + ')';
             Ref ctorRef = support.ref(nsPath.localCtx.getSymbol());
             ctorRef.defKey = new DefKey(null, ctorPath);
@@ -540,7 +545,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
                     // inherited objects have different path
                     Scope baseScope = baseInfo.getData();
                     if (baseScope != null) {
-                        ObjectInfo inherited = new ObjectInfo(info.getType(), baseScope.getPath() + PATH_SEPARATOR);
+                        ObjectInfo inherited = new ObjectInfo(info.getType(), getPath(baseScope.getPath(), StringUtils.EMPTY));
                         support.infos.setProperty(scope.getPath(), category, property, inherited);
                         if (category == DefKind.VARIABLE) {
                             scope.put(property, inherited);
@@ -643,19 +648,29 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     /**
      * Handles variables and functions in "foo bar,baz" or "foo bar();" statements
+     *
+     * @param variables   AST node
+     * @param typeName    noptr type name
+     * @param displayType display type representation, noptr
      */
-    private void processVarsAndFunctions(InitdeclaratorlistContext variables, String typeName) {
+    private void processVarsAndFunctions(InitdeclaratorlistContext variables,
+                                         String typeName,
+                                         String displayType) {
         if (variables == null) {
             return;
         }
-        processVarOrFunction(variables.initdeclarator(), typeName);
-        processVarsAndFunctions(variables.initdeclaratorlist(), typeName);
+        processVarOrFunction(variables.initdeclarator(), typeName, displayType);
+        processVarsAndFunctions(variables.initdeclaratorlist(), typeName, displayType);
     }
 
     /**
      * Handles single variable or function in "foo bar,baz" or "foo bar();" statements
+     *
+     * @param var         AST node
+     * @param typeName    noptr type name
+     * @param displayType display type representation, noptr
      */
-    private void processVarOrFunction(InitdeclaratorContext var, String typeName) {
+    private void processVarOrFunction(InitdeclaratorContext var, String typeName, String displayType) {
         DeclaratorContext decl = var.declarator();
         IdexpressionContext ident = getIdentifier(decl);
         if (ident == null) {
@@ -664,23 +679,34 @@ class CPPParseTreeListener extends CPP14BaseListener {
         ParametersandqualifiersContext paramsAndQualifiers = getParametersAndQualifiers(decl);
         if (paramsAndQualifiers == null) {
             // variable
-            processVar(typeName, ident);
+            processVar(decl, ident, typeName, displayType);
         } else {
-            processFunctionOrMethod(ident, paramsAndQualifiers, typeName);
+            processFunctionOrMethod(decl, ident, paramsAndQualifiers, typeName, displayType);
         }
     }
 
     /**
      * Handles single variable from declaration
+     *
+     * @param decl        AST node
+     * @param ident       AST node
+     * @param typeName    noptr type ("foo" for "static foo *bar")
+     * @param displayType display type representation, noptr ("static foo" for "static foo *bar")
      */
-    private void processVar(String typeName, IdexpressionContext ident) {
+    private void processVar(DeclaratorContext decl,
+                            IdexpressionContext ident,
+                            String typeName,
+                            String displayType) {
         String varName = ident.getText();
         LookupResult<ObjectInfo> info = context.lookup(varName);
         if (info == null) {
             Def varDef = support.def(ident, DefKind.VARIABLE);
             varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
-            varDef.format(StringUtils.EMPTY, typeName == null ? StringUtils.EMPTY : typeName, DefData.SEPARATOR_SPACE);
+            varDef.format(StringUtils.EMPTY,
+                    getPtrType(displayType, decl),
+                    DefData.SEPARATOR_SPACE);
             varDef.defData.setKind(DefKind.VARIABLE);
+            varDef.defData.setName(formatName(varDef.name));
             context.currentScope().put(varDef.name, new ObjectInfo(typeName));
             support.emit(varDef);
         } else {
@@ -798,15 +824,18 @@ class CPPParseTreeListener extends CPP14BaseListener {
         if (declarator == null) {
             return;
         }
-        ParserRuleContext paramNameCtx = getIdentifier(param.declarator());
-        TypespecifierContext paramTypeCtx = getDeclTypeSpecifier(param.declspecifierseq());
+        DeclspecifierseqContext declspecifierseqCtx = param.declspecifierseq();
+        DeclaratorContext declaratorCtx = param.declarator();
+        ParserRuleContext paramNameCtx = getIdentifier(declaratorCtx);
+        TypespecifierContext paramTypeCtx = getDeclTypeSpecifier(declspecifierseqCtx);
         String paramType = processTypeSpecifier(paramTypeCtx);
+        String displayType = getDisplayType(declspecifierseqCtx, declaratorCtx);
         Def paramDef = support.def(paramNameCtx, DefKind.ARGUMENT);
-        paramDef.format(StringUtils.EMPTY, paramType, DefData.SEPARATOR_SPACE);
+        paramDef.format(StringUtils.EMPTY, displayType, DefData.SEPARATOR_SPACE);
         paramDef.defData.setKind(DefKind.ARGUMENT);
         FunctionParameter fp = new FunctionParameter(paramDef.name,
                 paramType,
-                paramType + ' ' + paramDef.name,
+                displayType + ' ' + paramDef.name,
                 "_",
                 paramDef);
         params.params.add(fp);
@@ -822,35 +851,46 @@ class CPPParseTreeListener extends CPP14BaseListener {
         // head
         MemberdeclarationContext member = ctx.memberdeclaration();
         if (member != null) {
-            TypespecifierContext typeCtx = getDeclTypeSpecifier(member.declspecifierseq());
+            DeclspecifierseqContext declspecifierseqCtx = member.declspecifierseq();
+            TypespecifierContext typeCtx = getDeclTypeSpecifier(declspecifierseqCtx);
             String type = null;
             if (typeCtx != null) {
                 type = processTypeSpecifier(typeCtx);
             }
-            processMembers(member.memberdeclaratorlist(), type);
+            processMembers(member.memberdeclaratorlist(), type, getDisplayType(declspecifierseqCtx, null));
         }
         // tail
         processMembers(ctx.memberspecification());
     }
 
     /**
-     * Handles class members
+     * Handles class members (foo bar, *baz...)
+     *
+     * @param members     AST node
+     * @param type        detected type (noptr, "foo" for "const foo *bar")
+     * @param displayType display type ("const foo" for "const foo *bar")
      */
-    private void processMembers(MemberdeclaratorlistContext members, String type) {
+    private void processMembers(MemberdeclaratorlistContext members,
+                                String type,
+                                String displayType) {
         if (members == null) {
             return;
         }
         MemberdeclaratorContext member = members.memberdeclarator();
         if (member != null) {
-            processMember(member, type);
+            processMember(member, type, displayType);
         }
-        processMembers(members.memberdeclaratorlist(), type);
+        processMembers(members.memberdeclaratorlist(), type, displayType);
     }
 
     /**
      * Handles single class member
+     *
+     * @param member      AST node
+     * @param type        detected type (noptr, "foo" for "const foo *bar")
+     * @param displayType display type ("const foo" for "const foo *bar")
      */
-    private void processMember(MemberdeclaratorContext member, String type) {
+    private void processMember(MemberdeclaratorContext member, String type, String displayType) {
 
         IdexpressionContext ident = null;
         Token identToken = null;
@@ -876,8 +916,8 @@ class CPPParseTreeListener extends CPP14BaseListener {
             }
             name = ident.getText();
             paramsAndQualifiers = getParametersAndQualifiers(decl);
+            displayType = getPtrType(displayType, decl);
         }
-
 
         if (paramsAndQualifiers == null) {
             // int foo;
@@ -888,8 +928,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 memberDef = support.def(identToken, DefKind.MEMBER);
             }
             memberDef.defKey = new DefKey(null, context.currentScope().getPathTo(name, PATH_SEPARATOR));
-            memberDef.format(StringUtils.EMPTY, type, DefData.SEPARATOR_SPACE);
+            memberDef.format(StringUtils.EMPTY, displayType, DefData.SEPARATOR_SPACE);
             memberDef.defData.setKind(DefKind.MEMBER);
+            memberDef.defData.setName(formatName(name));
             support.emit(memberDef);
             ObjectInfo objectInfo = new ObjectInfo(type);
             context.currentScope().put(name, objectInfo);
@@ -903,7 +944,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 type = classes.isEmpty() ? null : classes.peek();
             }
 
-            processFunctionOrMethod(ident, paramsAndQualifiers, type);
+            processFunctionOrMethod(decl, ident, paramsAndQualifiers, type, displayType);
         }
     }
 
@@ -1046,11 +1087,25 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     /**
+     * @param prefix optional prefix
+     * @param id     identifier
+     * @return prefix followed by separator followed by id if prefix is not empty, id otherwise
+     */
+    private String getPath(String prefix, String id) {
+        if (StringUtils.isEmpty(prefix)) {
+            return id;
+        }
+        return prefix + PATH_SEPARATOR + id;
+    }
+
+    /**
      * Handles function or method definition
      */
-    private void processFunctionOrMethod(IdexpressionContext ident,
+    private void processFunctionOrMethod(DeclaratorContext decl,
+                                         IdexpressionContext ident,
                                          ParametersandqualifiersContext paramsAndQualifiers,
-                                         String typeName) {
+                                         String typeName,
+                                         String displayType) {
         FunctionParameters params = new FunctionParameters();
         processFunctionParameters(
                 paramsAndQualifiers.parameterdeclarationclause().parameterdeclarationlist(),
@@ -1067,15 +1122,79 @@ class CPPParseTreeListener extends CPP14BaseListener {
         fnDef.defKey = new DefKey(null, context.currentScope().getPathTo(fnPath, PATH_SEPARATOR));
 
         StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
-        repr.append(' ').append(typeName);
+        repr.append(' ').append(getPtrType(displayType, decl));
         fnDef.format(StringUtils.EMPTY, repr.toString(), DefData.SEPARATOR_EMPTY);
         fnDef.defData.setKind(DefKind.FUNCTION);
+        fnDef.defData.setName(formatName(fnDef.name));
         support.emit(fnDef);
 
         support.infos.setProperty(context.currentScope().getPath(),
                 DefKind.FUNCTION,
                 fnPath,
                 new ObjectInfo(typeName));
+    }
+
+    /**
+     * @param name method/member name
+     * @return current class (if any) followed by method/member name in the form form foo::bar::baz::qux()
+     */
+    private String formatName(String name) {
+        String prefix = classes.isEmpty() ? StringUtils.EMPTY : formatClassName(classes.peek()) + "::";
+        return prefix + name;
+    }
+
+    /**
+     * @param name class or type name
+     * @return name in the form foo::bar::baz
+     */
+    private String formatClassName(String name) {
+        return name.replace(String.valueOf(PATH_SEPARATOR), "::");
+    }
+
+    /**
+     * @param ctx           parameter type AST
+     * @param declaratorCtx declarator AST (may contain *)
+     * @return display type (e.g. const char *)
+     */
+    private String getDisplayType(DeclspecifierseqContext ctx,
+                                  DeclaratorContext declaratorCtx) {
+        Collection<String> specifiers = new LinkedList<>();
+        collectSpecifiers(ctx, specifiers);
+        String ret = StringUtils.join(specifiers, ' ');
+        return getPtrType(ret, declaratorCtx);
+    }
+
+
+    /**
+     * @param type display type, noptr ("static foo" for "static foo *bar")
+     * @param ctx  declarator AST node
+     * @return display type followed by ptr operator if needed "static foo *" for "static foo *bar"
+     */
+    private String getPtrType(String type, DeclaratorContext ctx) {
+        if (ctx == null) {
+            return type;
+        }
+        if (ctx.ptrdeclarator() != null) {
+            type += '*';
+        }
+        return type;
+    }
+
+    /**
+     * Recursively collects declaration specifiers (const, char, *, ...)
+     *
+     * @param ctx        AST node
+     * @param specifiers target collection
+     */
+    private void collectSpecifiers(DeclspecifierseqContext ctx, Collection<String> specifiers) {
+        if (ctx == null) {
+            return;
+        }
+        DeclspecifierContext declSpec = ctx.declspecifier();
+        if (declSpec != null) {
+            specifiers.add(declSpec.getText());
+        }
+        collectSpecifiers(ctx.declspecifierseq(), specifiers);
     }
 
     private static class FunctionParameters {
@@ -1126,6 +1245,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
             this.signature = signature;
             this.def = def;
         }
+
     }
 
     /**

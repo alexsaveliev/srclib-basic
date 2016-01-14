@@ -1030,6 +1030,11 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     /**
      * Emits function ref
+     *
+     * @param props     properties that expected to contain function
+     * @param signature function signature ("(_,_,...)")
+     * @param isCtor    we expect constuctor call
+     * @param className class name to look for function in, over
      */
     private void processFnCallRef(TypeInfo<Scope, ObjectInfo> props,
                                   String signature,
@@ -1054,27 +1059,36 @@ class CPPParseTreeListener extends CPP14BaseListener {
         // looking for matching function
         String fnPath = methodName + '(' + signature + ')';
 
-        ObjectInfo info = null;
-
-        Collection<String> candidates = new LinkedList<>();
-
-        String prefix;
-        FunctionLookupResult result = null;
+        FunctionLookupResult result;
 
         if (className != null) {
-            // lookup in current class
+
+            // foo() case
+            // first lookup in the current class ..
             TypeInfo<Scope, ObjectInfo> currentProps = support.infos.get(className);
             result = lookupFunction(currentProps, fnPath);
-        }
 
-        if (result == null || result.isEmpty()) {
-            className = StringUtils.EMPTY;
-            result = lookupFunction(support.infos.getRoot(), fnPath);
+            // .. then in global functions
+            if (result.isEmpty()) {
+                className = StringUtils.EMPTY;
+                result = lookupFunction(support.infos.getRoot(), fnPath);
+            }
+        } else {
+            // foo.bar() case, we know the caller object and should not look in global functions
+            className = props.getData().getPath();
+            result = lookupFunction(props, fnPath);
         }
 
         if (result.exact != null) {
             Ref methodRef = support.ref(fnIdent);
-            methodRef.defKey = new DefKey(null, getPath(className, result.exact.signature));
+
+            String path;
+            if (result.exact.prefix == null) {
+                path = getPath(className, result.exact.signature);
+            } else {
+                path = result.exact.prefix + result.exact.signature;
+            }
+            methodRef.defKey = new DefKey(null, path);
             support.emit(methodRef);
             typeStack.peek().push(result.exact.type);
         } else {
@@ -1082,7 +1096,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
             boolean typeSet = false;
             for (Function candidate : result.candidates) {
                 Ref methodRef = support.ref(fnIdent);
-                methodRef.defKey = new DefKey(null, getPath(className, candidate.signature));
+                String path;
+                if (candidate.prefix == null) {
+                    path = getPath(className, candidate.signature);
+                } else {
+                    path = candidate.prefix + candidate.signature;
+                }
+                methodRef.defKey = new DefKey(null, path);
                 support.emit(methodRef);
                 // pushing type to stack only if it matches for all candidates
                 if (!typeSet) {
@@ -1313,11 +1333,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
         FunctionLookupResult ret = new FunctionLookupResult();
         for (String candidate : info.getProperties(DefKind.FUNCTION)) {
             if (candidate.equals(signature)) {
-                ret.exact = new Function(candidate, info.getProperty(DefKind.FUNCTION, candidate).getType());
+                ObjectInfo obj = info.getProperty(DefKind.FUNCTION, candidate);
+                ret.exact = new Function(candidate, obj.getType(), obj.getPrefix());
                 return ret;
             }
             if (candidate.startsWith(prefix)) {
-                ret.candidates.add(new Function(candidate, info.getProperty(DefKind.FUNCTION, candidate).getType()));
+                ObjectInfo obj = info.getProperty(DefKind.FUNCTION, candidate);
+                ret.candidates.add(new Function(candidate, obj.getType(), obj.getPrefix()));
             }
         }
         return ret;
@@ -1501,6 +1523,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         /**
          * Entering namespace
+         *
          * @param name namespace name
          */
         void enter(String name) {
@@ -1593,6 +1616,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         /**
          * Registers new namespace in temporary context
+         *
          * @param name namespace name
          */
         void use(String name) {
@@ -1610,14 +1634,22 @@ class CPPParseTreeListener extends CPP14BaseListener {
          * Signature (so far it looks like foo(_,_,_) (underscore for each parameter)
          */
         String signature;
+
         /**
          * Return type
          */
         String type;
 
-        Function(String signature, String type) {
+        /**
+         * Function's def path prefix, for example if A extends B (which defines f()) and there is a call A::f() then
+         * prefix is "B."
+         */
+        String prefix;
+
+        Function(String signature, String type, String prefix) {
             this.signature = signature;
             this.type = type;
+            this.prefix = prefix;
         }
     }
 

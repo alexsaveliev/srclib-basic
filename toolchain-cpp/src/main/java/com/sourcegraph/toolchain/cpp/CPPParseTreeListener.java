@@ -73,6 +73,8 @@ class CPPParseTreeListener extends CPP14BaseListener {
         Scope<ObjectInfo> uniq = context.currentScope().uniq(PATH_SEPARATOR);
         context.enterScope(uniq);
         namespaceContext.enter(uniq.getName());
+        // cut trailing PATH_SEPARATOR
+        namespaceContext.use(namespaceContext.current.substring(0, namespaceContext.current.length() - 1));
     }
 
     @Override

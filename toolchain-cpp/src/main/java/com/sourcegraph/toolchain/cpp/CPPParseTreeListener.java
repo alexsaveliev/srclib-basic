@@ -146,7 +146,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         DeclspecifierseqContext declspecifierseqCtx = ctx.declspecifierseq();
         DeclaratorContext declaratorCtx = ctx.declarator();
-        TypespecifierContext typeCtx = getDeclTypeSpecifier(declspecifierseqCtx);
+        TypeContextHolder typeContextHolder = getDeclTypeSpecifier(declspecifierseqCtx);
 
         IdexpressionContext ident = getIdentifier(declaratorCtx);
 
@@ -155,8 +155,8 @@ class CPPParseTreeListener extends CPP14BaseListener {
         String className;
 
         String returnType;
-        if (typeCtx != null) {
-            returnType = processTypeSpecifier(typeCtx);
+        if (typeContextHolder != null && typeContextHolder.typeSpecifier != null) {
+            returnType = processTypeSpecifier(typeContextHolder.typeSpecifier);
             if (returnType != null) {
                 String localClass;
                 int pos = returnType.lastIndexOf(PATH_SEPARATOR);
@@ -608,11 +608,12 @@ class CPPParseTreeListener extends CPP14BaseListener {
      * Handles type part of simple declaration
      */
     private String processDeclarationType(SimpledeclarationContext ctx) {
-        TypespecifierContext typeSpec = getDeclTypeSpecifier(ctx.declspecifierseq());
-        if (typeSpec == null) {
+
+        TypeContextHolder typeContextHolder = getDeclTypeSpecifier(ctx.declspecifierseq());
+        if (typeContextHolder == null || typeContextHolder.typeSpecifier == null) {
             return null;
         }
-        return processTypeSpecifier(typeSpec);
+        return processTypeSpecifier(typeContextHolder.typeSpecifier);
     }
 
     /**
@@ -630,9 +631,9 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     /**
-     * Extracts type specifier from type specifier sequence
+     * Extracts type specifier (or enum specifier) from the declaration specifiers sequence
      */
-    private TypespecifierContext getDeclTypeSpecifier(DeclspecifierseqContext ctx) {
+    private TypeContextHolder getDeclTypeSpecifier(DeclspecifierseqContext ctx) {
         if (ctx == null) {
             return null;
         }
@@ -644,13 +645,17 @@ class CPPParseTreeListener extends CPP14BaseListener {
         if (typeSpec != null) {
             TrailingtypespecifierContext trailingtypespecifierContext = typeSpec.trailingtypespecifier();
             if (trailingtypespecifierContext == null) {
-                // TODO: add support of class {...} or enum {...}
+                EnumspecifierContext enumCtx = typeSpec.enumspecifier();
+                if (enumCtx != null) {
+                    return new TypeContextHolder(enumCtx);
+                }
+                // TODO: add support of class {...}
                 return getDeclTypeSpecifier(ctx.declspecifierseq());
             }
             if (trailingtypespecifierContext.simpletypespecifier() == null) {
                 return getDeclTypeSpecifier(ctx.declspecifierseq());
             }
-            return typeSpec;
+            return new TypeContextHolder(typeSpec);
         }
         return getDeclTypeSpecifier(ctx.declspecifierseq());
     }
@@ -679,6 +684,65 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
 
         return processDeclarationType(simpleTypeSpec, typeNameSpec);
+    }
+
+    /**
+     * Handles enum specifier
+     */
+    private String processEnumSpecifier(EnumspecifierContext ctx) {
+        EnumheadContext head = ctx.enumhead();
+
+        TerminalNode ident = head.Identifier();
+
+        String enumTypeName = null;
+
+        if (ident != null) {
+            // registering new type
+            Def enumDef = support.def(ident.getSymbol(), DefKind.ENUM);
+            enumTypeName = context.currentScope().getPathTo(enumDef.name, PATH_SEPARATOR);
+            enumDef.defKey = new DefKey(null, enumTypeName);
+            enumDef.format(DefKind.ENUM, StringUtils.EMPTY, DefData.SEPARATOR_EMPTY);
+            support.emit(enumDef);
+            support.infos.setData(enumTypeName, null);
+        }
+
+        // registering enum's enumerators as variables
+        processEnumeratorList(ctx.enumeratorlist(), enumTypeName);
+
+        return enumTypeName;
+    }
+
+    /**
+     * Handles enum's enumerators
+     * @param list AST node
+     * @param enumTypeName enum's type name (if specified)
+     */
+    private void processEnumeratorList(EnumeratorlistContext list, String enumTypeName) {
+        if (list == null) {
+            return;
+        }
+        EnumeratordefinitionContext def = list.enumeratordefinition();
+
+        Def enumeratorDef = support.def(def.enumerator(), DefKind.ENUMERATOR);
+
+        Scope<ObjectInfo> currentScope = context.currentScope();
+        enumeratorDef.defKey = new DefKey(null, currentScope.getPathTo(enumeratorDef.name, PATH_SEPARATOR));
+        if (enumTypeName != null) {
+            enumeratorDef.format(StringUtils.EMPTY, enumTypeName, DefData.SEPARATOR_SPACE);
+        } else {
+            enumeratorDef.format(StringUtils.EMPTY, StringUtils.EMPTY, DefData.SEPARATOR_EMPTY);
+        }
+        enumeratorDef.defData.setKind(DefKind.ENUMERATOR);
+        support.emit(enumeratorDef);
+
+        ObjectInfo objInfo = new ObjectInfo(enumTypeName == null ? "int" : enumTypeName);
+        support.infos.setProperty(currentScope.getPath(),
+                DefKind.VARIABLE,
+                enumeratorDef.name,
+                objInfo);
+        currentScope.put(enumeratorDef.name, objInfo);
+
+        processEnumeratorList(list.enumeratorlist(), enumTypeName);
     }
 
     /**
@@ -882,8 +946,8 @@ class CPPParseTreeListener extends CPP14BaseListener {
         DeclspecifierseqContext declspecifierseqCtx = param.declspecifierseq();
         DeclaratorContext declaratorCtx = param.declarator();
         ParserRuleContext paramNameCtx = getIdentifier(declaratorCtx);
-        TypespecifierContext paramTypeCtx = getDeclTypeSpecifier(declspecifierseqCtx);
-        String paramType = processTypeSpecifier(paramTypeCtx);
+        TypeContextHolder typeContextHolder = getDeclTypeSpecifier(declspecifierseqCtx);
+        String paramType = processTypeSpecifier(typeContextHolder == null ? null : typeContextHolder.typeSpecifier);
         String displayType = getDisplayType(declspecifierseqCtx, declaratorCtx);
         Def paramDef = support.def(paramNameCtx, DefKind.ARGUMENT);
         paramDef.format(StringUtils.EMPTY, displayType, DefData.SEPARATOR_SPACE);
@@ -907,10 +971,14 @@ class CPPParseTreeListener extends CPP14BaseListener {
         MemberdeclarationContext member = ctx.memberdeclaration();
         if (member != null) {
             DeclspecifierseqContext declspecifierseqCtx = member.declspecifierseq();
-            TypespecifierContext typeCtx = getDeclTypeSpecifier(declspecifierseqCtx);
+            TypeContextHolder typeContextHolder = getDeclTypeSpecifier(declspecifierseqCtx);
             String type = null;
-            if (typeCtx != null) {
-                type = processTypeSpecifier(typeCtx);
+            if (typeContextHolder != null) {
+                if (typeContextHolder.typeSpecifier != null) {
+                    type = processTypeSpecifier(typeContextHolder.typeSpecifier);
+                } else if (typeContextHolder.enumspecifier != null) {
+                    type = processEnumSpecifier(typeContextHolder.enumspecifier);
+                }
             }
             processMembers(member.memberdeclaratorlist(), type, getDisplayType(declspecifierseqCtx, null));
         }
@@ -1671,6 +1739,24 @@ class CPPParseTreeListener extends CPP14BaseListener {
         boolean isEmpty() {
             return exact == null && candidates.isEmpty();
         }
+    }
+
+    /**
+     * Holder for misc type specifiers (type, enum, ...)
+     */
+    private static class TypeContextHolder {
+
+        TypespecifierContext typeSpecifier;
+        EnumspecifierContext enumspecifier;
+
+        TypeContextHolder(TypespecifierContext typeSpecifier) {
+            this.typeSpecifier = typeSpecifier;
+        }
+
+        TypeContextHolder(EnumspecifierContext enumspecifier) {
+            this.enumspecifier = enumspecifier;
+        }
+
     }
 
 }

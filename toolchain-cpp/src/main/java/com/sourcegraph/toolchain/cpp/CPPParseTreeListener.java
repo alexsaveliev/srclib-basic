@@ -469,11 +469,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
     @Override
     public void enterCompoundstatement(CompoundstatementContext ctx) {
         context.enterScope(context.currentScope().next(PATH_SEPARATOR));
+        namespaceContext.enterContext();
     }
 
     @Override
     public void exitCompoundstatement(CompoundstatementContext ctx) {
         context.exitScope();
+        namespaceContext.exitContext();
     }
 
     @Override
@@ -527,6 +529,18 @@ class CPPParseTreeListener extends CPP14BaseListener {
         varDef.defData.setKind(DefKind.VARIABLE);
         context.currentScope().put(varDef.name, new ObjectInfo(typeName));
         support.emit(varDef);
+    }
+
+    @Override
+    public void enterUsingdirective(UsingdirectiveContext ctx) {
+        NamespacenameContext name = ctx.namespacename();
+        NestednamespecifierContext nested = ctx.nestednamespecifier();
+
+        String namespace = name.getText();
+        if (nested != null) {
+            namespace = nested.getText() + namespace;
+        }
+        namespaceContext.use(namespace.replace("::", String.valueOf(PATH_SEPARATOR)));
     }
 
     /**
@@ -1478,14 +1492,16 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         private String current = StringUtils.EMPTY;
 
+        private Stack<Collection<String>> temporary = new Stack<>();
+
         NamespaceContext() {
             enter(StringUtils.EMPTY);
+            enterContext();
         }
 
         /**
          * Entering namespace
-         *
-         * @param name
+         * @param name namespace name
          */
         void enter(String name) {
             String id;
@@ -1535,10 +1551,54 @@ class CPPParseTreeListener extends CPP14BaseListener {
                     return fqn;
                 }
             }
-            // TODO: using, using namespace
+
+            String fqn = resolveInUsing(path);
+            if (fqn != null) {
+                return fqn;
+            }
             return current + path;
 
         }
+
+        private String resolveInUsing(String path) {
+            if (!temporary.isEmpty()) {
+                for (String prefix : temporary.peek()) {
+                    String fqn = prefix + PATH_SEPARATOR + path;
+                    if (support.infos.get(fqn) != null) {
+                        return fqn;
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Opens new temporary context for "using namespace foo".
+         * Inherits all parent namespaces
+         */
+        void enterContext() {
+            Collection<String> ctx = new LinkedList<>();
+            if (!temporary.isEmpty()) {
+                ctx.addAll(temporary.peek());
+            }
+            temporary.push(ctx);
+        }
+
+        /**
+         * Closes current temporary context
+         */
+        void exitContext() {
+            temporary.pop();
+        }
+
+        /**
+         * Registers new namespace in temporary context
+         * @param name namespace name
+         */
+        void use(String name) {
+            temporary.peek().add(name);
+        }
+
     }
 
     /**

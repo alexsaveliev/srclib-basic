@@ -545,6 +545,33 @@ class CPPParseTreeListener extends CPP14BaseListener {
         namespaceContext.use(namespace.replace("::", String.valueOf(PATH_SEPARATOR)));
     }
 
+    @Override
+    public void enterNewexpression(NewexpressionContext ctx) {
+        NewtypeidContext newtypeidContext = ctx.newtypeid();
+
+        TypespecifierseqContext typeSpecSeq;
+        if (newtypeidContext == null) {
+            typeSpecSeq = ctx.typeid().typespecifierseq();
+        } else {
+            typeSpecSeq = newtypeidContext.typespecifierseq();
+        }
+
+        TypespecifierContext typeSpec = getTypeSpecifier(typeSpecSeq);
+        if (typeSpec != null) {
+            // ref to type
+            String typeName = processTypeSpecifier(typeSpec);
+            TypeInfo<Scope, ObjectInfo> classInfo = support.infos.get(typeName);
+            if (classInfo != null) {
+                fnCallStack.push(typeSpec);
+                NewinitializerContext initializer = ctx.newinitializer();
+                processFnCallRef(classInfo,
+                        signature(initializer == null ? null : initializer.expressionlist()),
+                        true,
+                        typeName);
+            }
+        }
+    }
+
     /**
      * Emits base classes in "class foo: bar"
      */
@@ -719,7 +746,8 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
     /**
      * Handles enum's enumerators
-     * @param list AST node
+     *
+     * @param list         AST node
      * @param enumTypeName enum's type name (if specified)
      */
     private void processEnumeratorList(EnumeratorlistContext list, String enumTypeName) {

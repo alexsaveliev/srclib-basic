@@ -1647,6 +1647,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
             if (fqn != null) {
                 return fqn;
             }
+            // child?
+            if (!classes.isEmpty()) {
+                fqn = classes.peek() + PATH_SEPARATOR + path;
+                if (support.infos.get(fqn) != null) {
+                    return fqn;
+                }
+            }
             return current + path;
 
         }

@@ -66,10 +66,16 @@ grammar CPP14;
   	@Override
   	public Token nextToken() {
   		Token token = super.nextToken();
-  		if (token.getType() == Directive) {
+  		int type = token.getType();
+  		if (type == Directive) {
   			handleDirective(token.getText());
   			return nextToken();
-  		}
+  		} else if (type == Identifier) {
+         	Token t = handleAttribute(token);
+         	if (t != null) {
+         		return t;
+         	}
+		}
   		return token;
 	}
 
@@ -115,6 +121,29 @@ grammar CPP14;
             }
         }
     }
+
+	private Token handleAttribute(Token token) {
+		if ("__attribute__".equals(token.getText())) {
+			// consume __attribute__ subtokens
+			int parenCounter = 0;
+			while (true) {
+				Token t = super.nextToken();
+				int tType = t.getType();
+				switch (t.getType()) {
+					case EOF:
+						return t;
+					case LeftParen:
+						parenCounter++;
+						break;
+					case RightParen:
+						if (--parenCounter == 0) {
+							return nextToken();
+						}
+				}
+			}
+		}
+		return null;
+	}
 
 }
 
@@ -2115,7 +2144,7 @@ literal
 	Integerliteral
 	| Characterliteral
 	| Floatingliteral
-	| Stringliteral
+	| Stringliteral+
 	| booleanliteral
 	| pointerliteral
 	| userdefinedliteral

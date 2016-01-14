@@ -241,7 +241,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
         classes.push(className);
 
         if (info != null && !StringUtils.isEmpty(className)) {
-            inheritScope(functionScope, className);
+            inheritScope(functionScope, className, new HashSet<>());
         }
 
         for (FunctionParameter param : params.params) {
@@ -563,7 +563,7 @@ class CPPParseTreeListener extends CPP14BaseListener {
 
         TypeInfo<Scope, ObjectInfo> typeInfo = support.infos.get(path);
         typeInfo.setProperty(BASE_CLASS, name, null);
-        inheritScope(scope, name);
+        inheritScope(scope, name, new HashSet<>());
         processBaseClasses(classes.basespecifierlist(), path, scope);
     }
 
@@ -571,12 +571,15 @@ class CPPParseTreeListener extends CPP14BaseListener {
      * Copies properties from parent type to given scope.
      * class A : B => class A should have all B's properties
      */
-    private void inheritScope(Scope<ObjectInfo> scope, String parentType) {
+    private void inheritScope(Scope<ObjectInfo> scope, String parentType, Set<String> visited) {
+        if (!visited.add(parentType)) {
+            return;
+        }
         TypeInfo<Scope, ObjectInfo> baseInfo = support.infos.get(parentType);
         if (baseInfo != null) {
             Collection<String> baseClasses = baseInfo.getProperties(BASE_CLASS);
             for (String baseClass : baseClasses) {
-                inheritScope(scope, baseClass);
+                inheritScope(scope, baseClass, visited);
             }
             // copying base properties to current scope
             for (String category : baseInfo.getCategories()) {
@@ -1143,7 +1146,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
             }
         } else {
             // foo.bar() case, we know the caller object and should not look in global functions
-            className = props.getData().getPath();
+            Scope scope = props.getData();
+            if (scope != null) {
+                className = scope.getPath();
+            } else {
+                // TODO: why it's possible?
+                className = StringUtils.EMPTY;
+            }
             result = lookupFunction(props, fnPath);
         }
 

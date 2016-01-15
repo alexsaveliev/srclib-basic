@@ -178,6 +178,7 @@ unqualifiedid
 	| '~' classname
 	| '~' decltypespecifier
 	| templateid
+	| Final
 ;
 
 qualifiedid

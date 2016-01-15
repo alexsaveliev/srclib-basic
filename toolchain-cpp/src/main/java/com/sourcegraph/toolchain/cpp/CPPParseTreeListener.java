@@ -5,6 +5,7 @@ import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
 import com.sourcegraph.toolchain.cpp.antlr4.CPP14BaseListener;
+import com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser;
 import com.sourcegraph.toolchain.language.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
@@ -225,6 +226,12 @@ class CPPParseTreeListener extends CPP14BaseListener {
         } else {
             // def
             if (nsPath.localCtx != null) {
+
+                // special handling of global main()
+                if (StringUtils.isEmpty(className) && "main".equals(functionName)) {
+                    functionPath = context.currentScope().uniq(PATH_SEPARATOR).getName() + PATH_SEPARATOR + functionPath;
+                }
+
                 Def methodDef = support.def(nsPath.localCtx.getSymbol(), DefKind.FUNCTION);
                 methodDef.defKey = new DefKey(null, getPath(className, functionPath));
                 StringBuilder repr = new StringBuilder().append('(').append(params.getRepresentation()).append(')');
@@ -271,7 +278,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
             return;
         }
 
-
         if (ident.This() != null) {
             // TODO (alexsaveliev) - should "this" refer to type?
             typeStack.peek().push(classes.isEmpty() ? UNKNOWN : classes.peek());
@@ -310,8 +316,16 @@ class CPPParseTreeListener extends CPP14BaseListener {
                 type = UNKNOWN;
             }
         } else {
+
+            if (nsPath.components.size() > 1) {
+                NSPath nsTypePath = nsPath.parent();
+                Ref classRef = support.ref(nsTypePath.localCtx.getSymbol());
+                classRef.defKey = new DefKey(null, namespaceContext.resolve(nsTypePath));
+                support.emit(classRef);
+            }
+
             type = lookup.getValue().getType();
-            Ref identRef = support.ref(idexpr);
+            Ref identRef = support.ref(nsPath.localCtx.getSymbol());
             identRef.defKey = new DefKey(null, getPath(lookup, nsPath.local));
             support.emit(identRef);
         }
@@ -436,9 +450,32 @@ class CPPParseTreeListener extends CPP14BaseListener {
         }
 
         if (props == null) {
-            props = support.infos.getRoot();
             isCtor = false;
-            className = classes.isEmpty() ? null : classes.peek();
+            NSPath nsPath = new NSPath(fnCallNameCtx);
+            if (nsPath.components.size() > 1) {
+                // maybe it's foo::bar()?
+                NSPath nsParent = nsPath.parent();
+                String typeName = namespaceContext.resolve(nsParent);
+                props = support.infos.get(typeName);
+                className = null;
+                if (props != null) {
+                    // emitting type ref
+                    Ref typeRef = support.ref(nsParent.localCtx.getSymbol());
+                    typeRef.defKey = new DefKey(null, typeName);
+                    support.emit(typeRef);
+                    // replacing in stack foo::bar with bar (local name)
+                    ParserRuleContext expr = fnCallStack.pop();
+                    if (expr instanceof IdexpressionContext) {
+                        fnCallStack.push(getLocalNameCtx((IdexpressionContext) expr));
+                    } else {
+                        fnCallStack.push(expr);
+                    }
+                }
+            }
+            if (props == null) {
+                props = support.infos.getRoot();
+                className = classes.isEmpty() ? null : classes.peek();
+            }
         }
         processFnCallRef(props, signature, isCtor, className);
     }
@@ -852,6 +889,27 @@ class CPPParseTreeListener extends CPP14BaseListener {
         String varName = ident.getText();
         LookupResult<ObjectInfo> info = context.lookup(varName);
         if (info == null) {
+            // maybe it's foo bar::baz = qux?
+            NSPath nsPath = new NSPath(ident);
+            if (nsPath.components.size() > 1) {
+                NSPath nsParentPath = nsPath.parent();
+                String className = namespaceContext.resolve(nsParentPath);
+                TypeInfo<Scope, ObjectInfo> typeInfo = support.infos.get(className);
+                if (typeInfo != null) {
+                    Ref typeRef = support.ref(nsParentPath.localCtx.getSymbol());
+                    typeRef.defKey = new DefKey(null, className);
+                    support.emit(typeRef);
+
+                    ObjectInfo memberInfo = typeInfo.getProperty(DefKind.VARIABLE, nsPath.local);
+                    if (memberInfo != null) {
+                        Ref memberRef = support.ref(nsPath.localCtx.getSymbol());
+                        memberRef.defKey = new DefKey(null, getPath(memberInfo, typeInfo.getData(), nsPath.local));
+                        support.emit(memberRef);
+                    }
+                    return;
+                }
+            }
+
             Def varDef = support.def(ident, DefKind.VARIABLE);
             varDef.defKey = new DefKey(null, context.currentScope().getPathTo(varDef.name, PATH_SEPARATOR));
             varDef.format(StringUtils.EMPTY,
@@ -1453,6 +1511,18 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     /**
+     * @param ctx AST node
+     * @return local (unqualified) part from foo::bar::baz (baz)
+     */
+    private UnqualifiedidContext getLocalNameCtx(IdexpressionContext ctx) {
+        UnqualifiedidContext local = ctx.unqualifiedid();
+        if (local != null) {
+            return local;
+        }
+        return ctx.qualifiedid().unqualifiedid();
+    }
+
+    /**
      * Function parameters
      */
     private static class FunctionParameters {
@@ -1598,13 +1668,13 @@ class CPPParseTreeListener extends CPP14BaseListener {
             if (!components.isEmpty()) {
                 ret.components = new LinkedList<>(components.subList(0, components.size() - 1));
                 if (!ret.components.isEmpty()) {
-                    ret.local = ret.components.peek();
+                    ret.local = ret.components.getLast();
                 }
             }
             if (!nodes.isEmpty()) {
                 ret.nodes = new LinkedList<>(nodes.subList(0, nodes.size() - 1));
                 if (!ret.nodes.isEmpty()) {
-                    ret.localCtx = ret.nodes.peek();
+                    ret.localCtx = ret.nodes.getLast();
                 }
             }
             ret.path = StringUtils.join(ret.components, PATH_SEPARATOR);

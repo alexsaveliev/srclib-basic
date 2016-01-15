@@ -5,11 +5,9 @@ import com.sourcegraph.toolchain.core.objects.DefData;
 import com.sourcegraph.toolchain.core.objects.DefKey;
 import com.sourcegraph.toolchain.core.objects.Ref;
 import com.sourcegraph.toolchain.cpp.antlr4.CPP14BaseListener;
-import com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser;
 import com.sourcegraph.toolchain.language.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.commons.lang3.StringUtils;
 
@@ -19,7 +17,7 @@ import static com.sourcegraph.toolchain.cpp.antlr4.CPP14Parser.*;
 
 class CPPParseTreeListener extends CPP14BaseListener {
 
-    private static final char PATH_SEPARATOR = '/';
+    static final char PATH_SEPARATOR = '/';
 
     private static final String UNKNOWN = "?";
 
@@ -1288,34 +1286,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     /**
-     * Extracts nested components (identifiers) (foo, bar, baz from foo::bar::baz)
-     */
-    private static List<TerminalNode> getNestedComponents(ParserRuleContext ctx) {
-        List<TerminalNode> ret = new LinkedList<>();
-        collectNestedComponents(ctx, ret);
-        return ret;
-    }
-
-    /**
-     * Extracts nested components (identiiers) (foo, bar, baz from foo::bar::baz)
-     */
-    private static void collectNestedComponents(ParseTree ctx, List<TerminalNode> ret) {
-        int count = ctx.getChildCount();
-        for (int i = 0; i < count; i++) {
-            ParseTree child = ctx.getChild(i);
-            if (child instanceof TerminalNode) {
-                TerminalNode terminalNode = (TerminalNode) child;
-                int type = terminalNode.getSymbol().getType();
-                if (type == Identifier) {
-                    ret.add(terminalNode);
-                }
-            } else {
-                collectNestedComponents(child, ret);
-            }
-        }
-    }
-
-    /**
      * Makes path to object taking into account that it might be defined in a base class
      */
     private String getPath(LookupResult<ObjectInfo> result, String id) {
@@ -1523,166 +1493,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
     }
 
     /**
-     * Function parameters
-     */
-    private static class FunctionParameters {
-
-        /**
-         * List of function parameters
-         */
-        Collection<FunctionParameter> params = new LinkedList<>();
-
-        /**
-         * @return display representation (int foo, char *bar, ...)
-         */
-        String getRepresentation() {
-            StringBuilder ret = new StringBuilder();
-            boolean first = true;
-            for (FunctionParameter param : params) {
-                if (!first) {
-                    ret.append(", ");
-                } else {
-                    first = false;
-                }
-                ret.append(param.repr);
-            }
-            return ret.toString();
-        }
-
-        /**
-         * @return signature _,_,_ where each parameter is marked by underscore
-         */
-        String getSignature() {
-            StringBuilder ret = new StringBuilder();
-            boolean first = true;
-            for (FunctionParameter param : params) {
-                if (!first) {
-                    ret.append(',');
-                } else {
-                    first = false;
-                }
-                ret.append(param.signature);
-            }
-            return ret.toString();
-        }
-
-    }
-
-    /**
-     * Single function parameter
-     */
-    private static class FunctionParameter {
-
-        /**
-         * Parameter's name
-         */
-        String name;
-        /**
-         * Parameter's type (noptr)
-         */
-        String type;
-        /**
-         * Parameter's display representation
-         */
-        String repr;
-        /**
-         * Parameter's signature (_)
-         */
-        String signature;
-        /**
-         * Parameter def's object
-         */
-        Def def;
-
-        FunctionParameter(String name, String type, String repr, String signature, Def def) {
-            this.name = name;
-            this.type = type;
-            this.repr = repr;
-            this.signature = signature;
-            this.def = def;
-        }
-
-    }
-
-    /**
-     * Namespace-aware path
-     */
-    private static class NSPath {
-
-        /**
-         * Individual path components (foo, bar, baz) for ::foo::bar::baz
-         */
-        LinkedList<String> components = new LinkedList<>();
-
-        /**
-         * Individual terminal nodes (foo, bar, baz) for ::foo::bar::baz
-         */
-        LinkedList<TerminalNode> nodes = new LinkedList<>();
-        /**
-         * Indicates if path is absolute (starts with ::)
-         */
-        boolean absolute;
-        /**
-         * Normalized path foo.bar.baz for (foo::bar::baz)
-         */
-        String path;
-
-        /**
-         * Local name (last component)
-         */
-        String local;
-
-        /**
-         * Local name (last component)
-         */
-        TerminalNode localCtx;
-
-        NSPath(ParserRuleContext ctx) {
-
-            if (ctx == null) {
-                absolute = false;
-                path = StringUtils.EMPTY;
-                return;
-            }
-
-            List<TerminalNode> nodes = getNestedComponents(ctx);
-            absolute = "::".equals(ctx.getStart().getText());
-            StringBuilder pathBuilder = new StringBuilder();
-            for (TerminalNode node : nodes) {
-                String ident = node.getText();
-                components.add(ident);
-                this.nodes.add(node);
-                if (pathBuilder.length() > 0) {
-                    pathBuilder.append(PATH_SEPARATOR);
-                }
-                pathBuilder.append(ident);
-                local = ident;
-                localCtx = node;
-            }
-            path = pathBuilder.toString();
-        }
-
-        NSPath parent() {
-            NSPath ret = new NSPath(null);
-            ret.absolute = absolute;
-            if (!components.isEmpty()) {
-                ret.components = new LinkedList<>(components.subList(0, components.size() - 1));
-                if (!ret.components.isEmpty()) {
-                    ret.local = ret.components.getLast();
-                }
-            }
-            if (!nodes.isEmpty()) {
-                ret.nodes = new LinkedList<>(nodes.subList(0, nodes.size() - 1));
-                if (!ret.nodes.isEmpty()) {
-                    ret.localCtx = ret.nodes.getLast();
-                }
-            }
-            ret.path = StringUtils.join(ret.components, PATH_SEPARATOR);
-            return ret;
-        }
-    }
-
-    /**
      * Tracks namespaces
      */
     private class NamespaceContext {
@@ -1805,72 +1615,6 @@ class CPPParseTreeListener extends CPP14BaseListener {
          */
         void use(String name) {
             temporary.peek().add(name);
-        }
-
-    }
-
-    /**
-     * Function information
-     */
-    private static class Function {
-
-        /**
-         * Signature (so far it looks like foo(_,_,_) (underscore for each parameter)
-         */
-        String signature;
-
-        /**
-         * Return type
-         */
-        String type;
-
-        /**
-         * Function's def path prefix, for example if A extends B (which defines f()) and there is a call A::f() then
-         * prefix is "B."
-         */
-        String prefix;
-
-        Function(String signature, String type, String prefix) {
-            this.signature = signature;
-            this.type = type;
-            this.prefix = prefix;
-        }
-    }
-
-    /**
-     * Function lookup result. May contain exact match and zero or more matching candidates
-     */
-    private static class FunctionLookupResult {
-
-        /**
-         * Exact match
-         */
-        private Function exact;
-
-        /**
-         * Candidates
-         */
-        private Collection<Function> candidates = new LinkedList<>();
-
-        boolean isEmpty() {
-            return exact == null && candidates.isEmpty();
-        }
-    }
-
-    /**
-     * Holder for misc type specifiers (type, enum, ...)
-     */
-    private static class TypeContextHolder {
-
-        TypespecifierContext typeSpecifier;
-        EnumspecifierContext enumspecifier;
-
-        TypeContextHolder(TypespecifierContext typeSpecifier) {
-            this.typeSpecifier = typeSpecifier;
-        }
-
-        TypeContextHolder(EnumspecifierContext enumspecifier) {
-            this.enumspecifier = enumspecifier;
         }
 
     }

@@ -1,0 +1,1652 @@
+{
+  "Defs": [
+    {
+      "Path": "*1/main()",
+      "Name": "main",
+      "Kind": "function",
+      "File": "blocks.cpp",
+      "DefStart": 4,
+      "DefEnd": 8,
+      "Data": {
+        "Type": "() int",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "main"
+      },
+      "TreePath": "*1/main()"
+    },
+    {
+      "Path": "*1/main()/1/1/1/y",
+      "Name": "y",
+      "Kind": "variable",
+      "File": "blocks.cpp",
+      "DefStart": 55,
+      "DefEnd": 56,
+      "Data": {
+        "Type": "int",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::y"
+      },
+      "TreePath": "*1/main()/1/1/1/y"
+    },
+    {
+      "Path": "*1/main()/1/1/x",
+      "Name": "x",
+      "Kind": "variable",
+      "File": "blocks.cpp",
+      "DefStart": 36,
+      "DefEnd": 37,
+      "Data": {
+        "Type": "int",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::x"
+      },
+      "TreePath": "*1/main()/1/1/x"
+    },
+    {
+      "Path": "*1/main()/1/2/x",
+      "Name": "x",
+      "Kind": "variable",
+      "File": "blocks.cpp",
+      "DefStart": 126,
+      "DefEnd": 127,
+      "Data": {
+        "Type": "int",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::x"
+      },
+      "TreePath": "*1/main()/1/2/x"
+    },
+    {
+      "Path": "*1/main()/1/3/x",
+      "Name": "x",
+      "Kind": "variable",
+      "File": "blocks.cpp",
+      "DefStart": 174,
+      "DefEnd": 175,
+      "Data": {
+        "Type": "int",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::x"
+      },
+      "TreePath": "*1/main()/1/3/x"
+    },
+    {
+      "Path": "*2/A",
+      "Name": "A",
+      "Kind": "class",
+      "File": "resolve.cpp",
+      "DefStart": 47,
+      "DefEnd": 48,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Separator": " ",
+        "Name": "*2::A"
+      },
+      "TreePath": "*2/A"
+    },
+    {
+      "Path": "*2/A/amember",
+      "Name": "amember",
+      "Kind": "member",
+      "File": "resolve.cpp",
+      "DefStart": 79,
+      "DefEnd": 86,
+      "Data": {
+        "Type": "int",
+        "Keyword": "",
+        "Kind": "member",
+        "Separator": " ",
+        "Name": "*2::A::amember"
+      },
+      "TreePath": "*2/A/amember"
+    },
+    {
+      "Path": "*2/A/amethod()",
+      "Name": "amethod",
+      "Kind": "function",
+      "File": "resolve.cpp",
+      "DefStart": 101,
+      "DefEnd": 108,
+      "Data": {
+        "Type": "() void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*2::A::amethod"
+      },
+      "TreePath": "*2/A/amethod()"
+    },
+    {
+      "Path": "*2/A/staticmember",
+      "Name": "staticmember",
+      "Kind": "member",
+      "File": "resolve.cpp",
+      "DefStart": 173,
+      "DefEnd": 185,
+      "Data": {
+        "Type": "static int",
+        "Keyword": "",
+        "Kind": "member",
+        "Separator": " ",
+        "Name": "*2::A::staticmember"
+      },
+      "TreePath": "*2/A/staticmember"
+    },
+    {
+      "Path": "*2/A/staticmethod()",
+      "Name": "staticmethod",
+      "Kind": "function",
+      "File": "resolve.cpp",
+      "DefStart": 135,
+      "DefEnd": 147,
+      "Data": {
+        "Type": "() static void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*2::A::staticmethod"
+      },
+      "TreePath": "*2/A/staticmethod()"
+    },
+    {
+      "Path": "*2/B",
+      "Name": "B",
+      "Kind": "class",
+      "File": "resolve.cpp",
+      "DefStart": 206,
+      "DefEnd": 207,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Separator": " ",
+        "Name": "*2::B"
+      },
+      "TreePath": "*2/B"
+    },
+    {
+      "Path": "*2/B/bmember",
+      "Name": "bmember",
+      "Kind": "member",
+      "File": "resolve.cpp",
+      "DefStart": 249,
+      "DefEnd": 256,
+      "Data": {
+        "Type": "int",
+        "Keyword": "",
+        "Kind": "member",
+        "Separator": " ",
+        "Name": "*2::B::bmember"
+      },
+      "TreePath": "*2/B/bmember"
+    },
+    {
+      "Path": "*2/B/bmethod()",
+      "Name": "bmethod",
+      "Kind": "function",
+      "File": "resolve.cpp",
+      "DefStart": 271,
+      "DefEnd": 278,
+      "Data": {
+        "Type": "() void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*2::B::bmethod"
+      },
+      "TreePath": "*2/B/bmethod()"
+    },
+    {
+      "Path": "*3/main()",
+      "Name": "main",
+      "Kind": "function",
+      "File": "resolve.cpp",
+      "DefStart": 698,
+      "DefEnd": 702,
+      "Data": {
+        "Type": "() int",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "main"
+      },
+      "TreePath": "*3/main()"
+    },
+    {
+      "Path": "*3/main()/1/b",
+      "Name": "b",
+      "Kind": "variable",
+      "File": "resolve.cpp",
+      "DefStart": 713,
+      "DefEnd": 714,
+      "Data": {
+        "Type": "B",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::b"
+      },
+      "TreePath": "*3/main()/1/b"
+    },
+    {
+      "Path": "*4/main()",
+      "Name": "main",
+      "Kind": "function",
+      "File": "namespace.cpp",
+      "DefStart": 572,
+      "DefEnd": 576,
+      "Data": {
+        "Type": "() int",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "main"
+      },
+      "TreePath": "*4/main()"
+    },
+    {
+      "Path": "*4/main()/1/a",
+      "Name": "a",
+      "Kind": "variable",
+      "File": "namespace.cpp",
+      "DefStart": 606,
+      "DefEnd": 607,
+      "Data": {
+        "Type": "::RootNS::L1::L2::A",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::a"
+      },
+      "TreePath": "*4/main()/1/a"
+    },
+    {
+      "Path": "*4/main()/1/b",
+      "Name": "b",
+      "Kind": "variable",
+      "File": "namespace.cpp",
+      "DefStart": 663,
+      "DefEnd": 664,
+      "Data": {
+        "Type": "RootNS::L1::L2::A",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::b"
+      },
+      "TreePath": "*4/main()/1/b"
+    },
+    {
+      "Path": "*4/main()/1/c",
+      "Name": "c",
+      "Kind": "variable",
+      "File": "namespace.cpp",
+      "DefStart": 739,
+      "DefEnd": 740,
+      "Data": {
+        "Type": "L1::L2::A",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::c"
+      },
+      "TreePath": "*4/main()/1/c"
+    },
+    {
+      "Path": "*4/main()/1/d",
+      "Name": "d",
+      "Kind": "variable",
+      "File": "namespace.cpp",
+      "DefStart": 807,
+      "DefEnd": 808,
+      "Data": {
+        "Type": "L2::A",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::d"
+      },
+      "TreePath": "*4/main()/1/d"
+    },
+    {
+      "Path": "*4/main()/1/e",
+      "Name": "e",
+      "Kind": "variable",
+      "File": "namespace.cpp",
+      "DefStart": 871,
+      "DefEnd": 872,
+      "Data": {
+        "Type": "A",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::e"
+      },
+      "TreePath": "*4/main()/1/e"
+    },
+    {
+      "Path": "*5/A",
+      "Name": "A",
+      "Kind": "class",
+      "File": "chain.cpp",
+      "DefStart": 79,
+      "DefEnd": 80,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Separator": " ",
+        "Name": "*5::A"
+      },
+      "TreePath": "*5/A"
+    },
+    {
+      "Path": "*5/A/A()",
+      "Name": "A",
+      "Kind": "function",
+      "File": "chain.cpp",
+      "DefStart": 105,
+      "DefEnd": 106,
+      "Data": {
+        "Type": "() ",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*5::A::A"
+      },
+      "TreePath": "*5/A/A()"
+    },
+    {
+      "Path": "*5/A/bar()",
+      "Name": "bar",
+      "Kind": "function",
+      "File": "chain.cpp",
+      "DefStart": 134,
+      "DefEnd": 137,
+      "Data": {
+        "Type": "() B*",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*5::A::bar"
+      },
+      "TreePath": "*5/A/bar()"
+    },
+    {
+      "Path": "*5/A/foo",
+      "Name": "foo",
+      "Kind": "member",
+      "File": "chain.cpp",
+      "DefStart": 98,
+      "DefEnd": 101,
+      "Data": {
+        "Type": "B*",
+        "Keyword": "",
+        "Kind": "member",
+        "Separator": " ",
+        "Name": "*5::A::foo"
+      },
+      "TreePath": "*5/A/foo"
+    },
+    {
+      "Path": "*5/A/~A()",
+      "Name": "A",
+      "Kind": "function",
+      "File": "chain.cpp",
+      "DefStart": 122,
+      "DefEnd": 123,
+      "Data": {
+        "Type": "() virtual",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*5::A::~A"
+      },
+      "TreePath": "*5/A/~A()"
+    },
+    {
+      "Path": "*5/B",
+      "Name": "B",
+      "Kind": "class",
+      "File": "chain.cpp",
+      "DefStart": 180,
+      "DefEnd": 181,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Separator": " ",
+        "Name": "*5::B"
+      },
+      "TreePath": "*5/B"
+    },
+    {
+      "Path": "*5/B/B()",
+      "Name": "B",
+      "Kind": "function",
+      "File": "chain.cpp",
+      "DefStart": 254,
+      "DefEnd": 255,
+      "Data": {
+        "Type": "() ",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*5::B::B"
+      },
+      "TreePath": "*5/B/B()"
+    },
+    {
+      "Path": "*5/B/bar()",
+      "Name": "bar",
+      "Kind": "function",
+      "File": "chain.cpp",
+      "DefStart": 278,
+      "DefEnd": 281,
+      "Data": {
+        "Type": "() A",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "*5::B::bar"
+      },
+      "TreePath": "*5/B/bar()"
+    },
+    {
+      "Path": "*5/B/foo",
+      "Name": "foo",
+      "Kind": "member",
+      "File": "chain.cpp",
+      "DefStart": 198,
+      "DefEnd": 201,
+      "Data": {
+        "Type": "A",
+        "Keyword": "",
+        "Kind": "member",
+        "Separator": " ",
+        "Name": "*5::B::foo"
+      },
+      "TreePath": "*5/B/foo"
+    },
+    {
+      "Path": "*5/B/q",
+      "Name": "q",
+      "Kind": "member",
+      "File": "chain.cpp",
+      "DefStart": 209,
+      "DefEnd": 210,
+      "Data": {
+        "Type": "int",
+        "Keyword": "",
+        "Kind": "member",
+        "Separator": " ",
+        "Name": "*5::B::q"
+      },
+      "TreePath": "*5/B/q"
+    },
+    {
+      "Path": "*5/C",
+      "Name": "C",
+      "Kind": "class",
+      "File": "chain.cpp",
+      "DefStart": 320,
+      "DefEnd": 321,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Separator": " ",
+        "Name": "*5::C"
+      },
+      "TreePath": "*5/C"
+    },
+    {
+      "Path": "*6/main()",
+      "Name": "main",
+      "Kind": "function",
+      "File": "chain.cpp",
+      "DefStart": 344,
+      "DefEnd": 348,
+      "Data": {
+        "Type": "() int",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "main"
+      },
+      "TreePath": "*6/main()"
+    },
+    {
+      "Path": "*6/main()/1/a",
+      "Name": "a",
+      "Kind": "variable",
+      "File": "chain.cpp",
+      "DefStart": 359,
+      "DefEnd": 360,
+      "Data": {
+        "Type": "A",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::a"
+      },
+      "TreePath": "*6/main()/1/a"
+    },
+    {
+      "Path": "*6/main()/1/c",
+      "Name": "c",
+      "Kind": "variable",
+      "File": "chain.cpp",
+      "DefStart": 524,
+      "DefEnd": 525,
+      "Data": {
+        "Type": "A",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " "
+      },
+      "TreePath": "*6/main()/1/c"
+    },
+    {
+      "Path": "*7/main()",
+      "Name": "main",
+      "Kind": "function",
+      "File": "string-concat.cpp",
+      "DefStart": 50,
+      "DefEnd": 54,
+      "Data": {
+        "Type": "() int",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "main"
+      },
+      "TreePath": "*7/main()"
+    },
+    {
+      "Path": "*7/main()/1/x",
+      "Name": "x",
+      "Kind": "variable",
+      "File": "string-concat.cpp",
+      "DefStart": 81,
+      "DefEnd": 82,
+      "Data": {
+        "Type": "const std::string",
+        "Keyword": "",
+        "Kind": "variable",
+        "Separator": " ",
+        "Name": "::x"
+      },
+      "TreePath": "*7/main()/1/x"
+    },
+    {
+      "Path": "*8/main()",
+      "Name": "main",
+      "Kind": "function",
+      "File": "multiline-define.cpp",
+      "DefStart": 140,
+      "DefEnd": 144,
+      "Data": {
+        "Type": "() int",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "main"
+      },
+      "TreePath": "*8/main()"
+    },
+    {
+      "Path": "RootNS/L1/L2/A",
+      "Name": "A",
+      "Kind": "class",
+      "File": "namespace.cpp",
+      "DefStart": 85,
+      "DefEnd": 86,
+      "Data": {
+        "Type": "class",
+        "Keyword": "class",
+        "Separator": " ",
+        "Name": "RootNS::L1::L2::A"
+      },
+      "TreePath": "RootNS/L1/L2/A"
+    },
+    {
+      "Path": "RootNS/L1/L2/A/bar()",
+      "Name": "bar",
+      "Kind": "function",
+      "File": "namespace.cpp",
+      "DefStart": 143,
+      "DefEnd": 146,
+      "Data": {
+        "Type": "() void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "RootNS::L1::L2::A::bar"
+      },
+      "TreePath": "RootNS/L1/L2/A/bar()"
+    },
+    {
+      "Path": "RootNS/L1/L2/A/baz()",
+      "Name": "baz",
+      "Kind": "function",
+      "File": "namespace.cpp",
+      "DefStart": 157,
+      "DefEnd": 160,
+      "Data": {
+        "Type": "() void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "RootNS::L1::L2::A::baz"
+      },
+      "TreePath": "RootNS/L1/L2/A/baz()"
+    },
+    {
+      "Path": "RootNS/L1/L2/A/foo()",
+      "Name": "foo",
+      "Kind": "function",
+      "File": "namespace.cpp",
+      "DefStart": 129,
+      "DefEnd": 132,
+      "Data": {
+        "Type": "() void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "RootNS::L1::L2::A::foo"
+      },
+      "TreePath": "RootNS/L1/L2/A/foo()"
+    },
+    {
+      "Path": "RootNS/L1/L2/A/m",
+      "Name": "m",
+      "Kind": "member",
+      "File": "namespace.cpp",
+      "DefStart": 118,
+      "DefEnd": 119,
+      "Data": {
+        "Type": "static int",
+        "Keyword": "",
+        "Kind": "member",
+        "Separator": " ",
+        "Name": "RootNS::L1::L2::A::m"
+      },
+      "TreePath": "RootNS/L1/L2/A/m"
+    },
+    {
+      "Path": "RootNS/L1/L2/A/qux()",
+      "Name": "qux",
+      "Kind": "function",
+      "File": "namespace.cpp",
+      "DefStart": 171,
+      "DefEnd": 174,
+      "Data": {
+        "Type": "() void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "RootNS::L1::L2::A::qux"
+      },
+      "TreePath": "RootNS/L1/L2/A/qux()"
+    },
+    {
+      "Path": "globalfn()",
+      "Name": "globalfn",
+      "Kind": "function",
+      "File": "resolve.cpp",
+      "DefStart": 22,
+      "DefEnd": 30,
+      "Data": {
+        "Type": "() void",
+        "Keyword": "",
+        "Kind": "function",
+        "Separator": "",
+        "Name": "globalfn"
+      },
+      "TreePath": "globalfn()"
+    }
+  ],
+  "Refs": [
+    {
+      "DefPath": "*1/main()/1/1/1/y",
+      "Def": true,
+      "File": "blocks.cpp",
+      "Start": 55,
+      "End": 56
+    },
+    {
+      "DefPath": "*1/main()/1/1/x",
+      "Def": true,
+      "File": "blocks.cpp",
+      "Start": 36,
+      "End": 37
+    },
+    {
+      "DefPath": "*1/main()/1/1/x",
+      "File": "blocks.cpp",
+      "Start": 85,
+      "End": 86
+    },
+    {
+      "DefPath": "*1/main()/1/2/x",
+      "Def": true,
+      "File": "blocks.cpp",
+      "Start": 126,
+      "End": 127
+    },
+    {
+      "DefPath": "*1/main()/1/3/x",
+      "Def": true,
+      "File": "blocks.cpp",
+      "Start": 174,
+      "End": 175
+    },
+    {
+      "DefPath": "*1/main()/1/3/x",
+      "File": "blocks.cpp",
+      "Start": 181,
+      "End": 182
+    },
+    {
+      "DefPath": "*1/main()/1/3/x",
+      "File": "blocks.cpp",
+      "Start": 189,
+      "End": 190
+    },
+    {
+      "DefPath": "*1/main()/1/3/x",
+      "File": "blocks.cpp",
+      "Start": 197,
+      "End": 198
+    },
+    {
+      "DefPath": "*1/main()",
+      "Def": true,
+      "File": "blocks.cpp",
+      "Start": 4,
+      "End": 8
+    },
+    {
+      "DefPath": "*2/A/amember",
+      "File": "resolve.cpp",
+      "Start": 416,
+      "End": 423
+    },
+    {
+      "DefPath": "*2/A/amember",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 79,
+      "End": 86
+    },
+    {
+      "DefPath": "*2/A/amember",
+      "File": "resolve.cpp",
+      "Start": 909,
+      "End": 916
+    },
+    {
+      "DefPath": "*2/A/amethod()",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 101,
+      "End": 108
+    },
+    {
+      "DefPath": "*2/A/amethod()",
+      "File": "resolve.cpp",
+      "Start": 544,
+      "End": 551
+    },
+    {
+      "DefPath": "*2/A/amethod()",
+      "File": "resolve.cpp",
+      "Start": 612,
+      "End": 619
+    },
+    {
+      "DefPath": "*2/A/amethod()",
+      "File": "resolve.cpp",
+      "Start": 808,
+      "End": 815
+    },
+    {
+      "DefPath": "*2/A/staticmember",
+      "File": "resolve.cpp",
+      "Start": 1112,
+      "End": 1124
+    },
+    {
+      "DefPath": "*2/A/staticmember",
+      "File": "resolve.cpp",
+      "Start": 1182,
+      "End": 1194
+    },
+    {
+      "DefPath": "*2/A/staticmember",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 173,
+      "End": 185
+    },
+    {
+      "DefPath": "*2/A/staticmember",
+      "File": "resolve.cpp",
+      "Start": 675,
+      "End": 687
+    },
+    {
+      "DefPath": "*2/A/staticmethod()",
+      "File": "resolve.cpp",
+      "Start": 1060,
+      "End": 1072
+    },
+    {
+      "DefPath": "*2/A/staticmethod()",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 135,
+      "End": 147
+    },
+    {
+      "DefPath": "*2/A/staticmethod()",
+      "File": "resolve.cpp",
+      "Start": 993,
+      "End": 1005
+    },
+    {
+      "DefPath": "*2/A",
+      "File": "resolve.cpp",
+      "Start": 1109,
+      "End": 1110
+    },
+    {
+      "DefPath": "*2/A",
+      "File": "resolve.cpp",
+      "Start": 217,
+      "End": 218
+    },
+    {
+      "DefPath": "*2/A",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 47,
+      "End": 48
+    },
+    {
+      "DefPath": "*2/A",
+      "File": "resolve.cpp",
+      "Start": 672,
+      "End": 673
+    },
+    {
+      "DefPath": "*2/A",
+      "File": "resolve.cpp",
+      "Start": 990,
+      "End": 991
+    },
+    {
+      "DefPath": "*2/B/bmember",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 249,
+      "End": 256
+    },
+    {
+      "DefPath": "*2/B/bmember",
+      "File": "resolve.cpp",
+      "Start": 362,
+      "End": 369
+    },
+    {
+      "DefPath": "*2/B/bmember",
+      "File": "resolve.cpp",
+      "Start": 860,
+      "End": 867
+    },
+    {
+      "DefPath": "*2/B/bmethod()",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 271,
+      "End": 278
+    },
+    {
+      "DefPath": "*2/B/bmethod()",
+      "File": "resolve.cpp",
+      "Start": 482,
+      "End": 489
+    },
+    {
+      "DefPath": "*2/B/bmethod()",
+      "File": "resolve.cpp",
+      "Start": 757,
+      "End": 764
+    },
+    {
+      "DefPath": "*2/B",
+      "File": "resolve.cpp",
+      "Start": 1057,
+      "End": 1058
+    },
+    {
+      "DefPath": "*2/B",
+      "File": "resolve.cpp",
+      "Start": 1179,
+      "End": 1180
+    },
+    {
+      "DefPath": "*2/B",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 206,
+      "End": 207
+    },
+    {
+      "DefPath": "*2/B",
+      "File": "resolve.cpp",
+      "Start": 711,
+      "End": 712
+    },
+    {
+      "DefPath": "*3/main()/1/b",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 713,
+      "End": 714
+    },
+    {
+      "DefPath": "*3/main()/1/b",
+      "File": "resolve.cpp",
+      "Start": 755,
+      "End": 756
+    },
+    {
+      "DefPath": "*3/main()/1/b",
+      "File": "resolve.cpp",
+      "Start": 806,
+      "End": 807
+    },
+    {
+      "DefPath": "*3/main()/1/b",
+      "File": "resolve.cpp",
+      "Start": 858,
+      "End": 859
+    },
+    {
+      "DefPath": "*3/main()/1/b",
+      "File": "resolve.cpp",
+      "Start": 907,
+      "End": 908
+    },
+    {
+      "DefPath": "*3/main()",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 698,
+      "End": 702
+    },
+    {
+      "DefPath": "*4/main()/1/a",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 606,
+      "End": 607
+    },
+    {
+      "DefPath": "*4/main()/1/a",
+      "File": "namespace.cpp",
+      "Start": 894,
+      "End": 895
+    },
+    {
+      "DefPath": "*4/main()/1/b",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 663,
+      "End": 664
+    },
+    {
+      "DefPath": "*4/main()/1/b",
+      "File": "namespace.cpp",
+      "Start": 907,
+      "End": 908
+    },
+    {
+      "DefPath": "*4/main()/1/c",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 739,
+      "End": 740
+    },
+    {
+      "DefPath": "*4/main()/1/c",
+      "File": "namespace.cpp",
+      "Start": 920,
+      "End": 921
+    },
+    {
+      "DefPath": "*4/main()/1/d",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 807,
+      "End": 808
+    },
+    {
+      "DefPath": "*4/main()/1/d",
+      "File": "namespace.cpp",
+      "Start": 933,
+      "End": 934
+    },
+    {
+      "DefPath": "*4/main()/1/e",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 871,
+      "End": 872
+    },
+    {
+      "DefPath": "*4/main()/1/e",
+      "File": "namespace.cpp",
+      "Start": 946,
+      "End": 947
+    },
+    {
+      "DefPath": "*4/main()",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 572,
+      "End": 576
+    },
+    {
+      "DefPath": "*5/A/A()",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 105,
+      "End": 106
+    },
+    {
+      "DefPath": "*5/A/bar()",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 134,
+      "End": 137
+    },
+    {
+      "DefPath": "*5/A/bar()",
+      "File": "chain.cpp",
+      "Start": 377,
+      "End": 380
+    },
+    {
+      "DefPath": "*5/A/bar()",
+      "File": "chain.cpp",
+      "Start": 418,
+      "End": 421
+    },
+    {
+      "DefPath": "*5/A/foo",
+      "File": "chain.cpp",
+      "Start": 149,
+      "End": 152
+    },
+    {
+      "DefPath": "*5/A/foo",
+      "File": "chain.cpp",
+      "Start": 368,
+      "End": 371
+    },
+    {
+      "DefPath": "*5/A/foo",
+      "File": "chain.cpp",
+      "Start": 390,
+      "End": 393
+    },
+    {
+      "DefPath": "*5/A/foo",
+      "File": "chain.cpp",
+      "Start": 407,
+      "End": 410
+    },
+    {
+      "DefPath": "*5/A/foo",
+      "File": "chain.cpp",
+      "Start": 555,
+      "End": 558
+    },
+    {
+      "DefPath": "*5/A/foo",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 98,
+      "End": 101
+    },
+    {
+      "DefPath": "*5/A/~A()",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 122,
+      "End": 123
+    },
+    {
+      "DefPath": "*5/A",
+      "File": "chain.cpp",
+      "Start": 196,
+      "End": 197
+    },
+    {
+      "DefPath": "*5/A",
+      "File": "chain.cpp",
+      "Start": 276,
+      "End": 277
+    },
+    {
+      "DefPath": "*5/A",
+      "File": "chain.cpp",
+      "Start": 331,
+      "End": 332
+    },
+    {
+      "DefPath": "*5/A",
+      "File": "chain.cpp",
+      "Start": 357,
+      "End": 358
+    },
+    {
+      "DefPath": "*5/A",
+      "File": "chain.cpp",
+      "Start": 521,
+      "End": 522
+    },
+    {
+      "DefPath": "*5/A",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 79,
+      "End": 80
+    },
+    {
+      "DefPath": "*5/B/B()",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 254,
+      "End": 255
+    },
+    {
+      "DefPath": "*5/B/B()",
+      "File": "chain.cpp",
+      "Start": 399,
+      "End": 400
+    },
+    {
+      "DefPath": "*5/B/B()",
+      "File": "chain.cpp",
+      "Start": 470,
+      "End": 471
+    },
+    {
+      "DefPath": "*5/B/bar()",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 278,
+      "End": 281
+    },
+    {
+      "DefPath": "*5/B/bar()",
+      "File": "chain.cpp",
+      "Start": 384,
+      "End": 387
+    },
+    {
+      "DefPath": "*5/B/bar()",
+      "File": "chain.cpp",
+      "Start": 412,
+      "End": 415
+    },
+    {
+      "DefPath": "*5/B/foo",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 198,
+      "End": 201
+    },
+    {
+      "DefPath": "*5/B/foo",
+      "File": "chain.cpp",
+      "Start": 260,
+      "End": 263
+    },
+    {
+      "DefPath": "*5/B/foo",
+      "File": "chain.cpp",
+      "Start": 293,
+      "End": 296
+    },
+    {
+      "DefPath": "*5/B/foo",
+      "File": "chain.cpp",
+      "Start": 373,
+      "End": 376
+    },
+    {
+      "DefPath": "*5/B/foo",
+      "File": "chain.cpp",
+      "Start": 403,
+      "End": 406
+    },
+    {
+      "DefPath": "*5/B/foo",
+      "File": "chain.cpp",
+      "Start": 425,
+      "End": 428
+    },
+    {
+      "DefPath": "*5/B/q",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 209,
+      "End": 210
+    },
+    {
+      "DefPath": "*5/B/q",
+      "File": "chain.cpp",
+      "Start": 267,
+      "End": 268
+    },
+    {
+      "DefPath": "*5/B",
+      "File": "chain.cpp",
+      "Start": 131,
+      "End": 132
+    },
+    {
+      "DefPath": "*5/B",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 180,
+      "End": 181
+    },
+    {
+      "DefPath": "*5/B",
+      "File": "chain.cpp",
+      "Start": 470,
+      "End": 471
+    },
+    {
+      "DefPath": "*5/B",
+      "File": "chain.cpp",
+      "Start": 95,
+      "End": 96
+    },
+    {
+      "DefPath": "*5/C",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 320,
+      "End": 321
+    },
+    {
+      "DefPath": "*5/C",
+      "File": "chain.cpp",
+      "Start": 548,
+      "End": 549
+    },
+    {
+      "DefPath": "*6/main()/1/a",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 359,
+      "End": 360
+    },
+    {
+      "DefPath": "*6/main()/1/a",
+      "File": "chain.cpp",
+      "Start": 366,
+      "End": 367
+    },
+    {
+      "DefPath": "*6/main()/1/a",
+      "File": "chain.cpp",
+      "Start": 528,
+      "End": 529
+    },
+    {
+      "DefPath": "*6/main()/1/c",
+      "File": "chain.cpp",
+      "Start": 524,
+      "End": 525
+    },
+    {
+      "DefPath": "*6/main()/1/c",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 524,
+      "End": 525
+    },
+    {
+      "DefPath": "*6/main()/1/c",
+      "File": "chain.cpp",
+      "Start": 552,
+      "End": 553
+    },
+    {
+      "DefPath": "*6/main()",
+      "Def": true,
+      "File": "chain.cpp",
+      "Start": 344,
+      "End": 348
+    },
+    {
+      "DefPath": "*7/main()/1/x",
+      "Def": true,
+      "File": "string-concat.cpp",
+      "Start": 81,
+      "End": 82
+    },
+    {
+      "DefPath": "*7/main()",
+      "Def": true,
+      "File": "string-concat.cpp",
+      "Start": 50,
+      "End": 54
+    },
+    {
+      "DefPath": "*8/main()",
+      "Def": true,
+      "File": "multiline-define.cpp",
+      "Start": 140,
+      "End": 144
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/bar()",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 143,
+      "End": 146
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/bar()",
+      "File": "namespace.cpp",
+      "Start": 327,
+      "End": 330
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/bar()",
+      "File": "namespace.cpp",
+      "Start": 909,
+      "End": 912
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/baz()",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 157,
+      "End": 160
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/baz()",
+      "File": "namespace.cpp",
+      "Start": 529,
+      "End": 532
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/baz()",
+      "File": "namespace.cpp",
+      "Start": 922,
+      "End": 925
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/foo()",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 129,
+      "End": 132
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/foo()",
+      "File": "namespace.cpp",
+      "Start": 249,
+      "End": 252
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/foo()",
+      "File": "namespace.cpp",
+      "Start": 896,
+      "End": 899
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/foo()",
+      "File": "namespace.cpp",
+      "Start": 948,
+      "End": 951
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 118,
+      "End": 119
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 278,
+      "End": 279
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 360,
+      "End": 361
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 438,
+      "End": 439
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 542,
+      "End": 543
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 634,
+      "End": 635
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 689,
+      "End": 690
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 757,
+      "End": 758
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 821,
+      "End": 822
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/m",
+      "File": "namespace.cpp",
+      "Start": 881,
+      "End": 882
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/qux()",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 171,
+      "End": 174
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/qux()",
+      "File": "namespace.cpp",
+      "Start": 407,
+      "End": 410
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A/qux()",
+      "File": "namespace.cpp",
+      "Start": 935,
+      "End": 938
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 246,
+      "End": 247
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 275,
+      "End": 276
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 324,
+      "End": 325
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 357,
+      "End": 358
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 404,
+      "End": 405
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 435,
+      "End": 436
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 526,
+      "End": 527
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 539,
+      "End": 540
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 604,
+      "End": 605
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 631,
+      "End": 632
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 661,
+      "End": 662
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 686,
+      "End": 687
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 737,
+      "End": 738
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 754,
+      "End": 755
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 805,
+      "End": 806
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 818,
+      "End": 819
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "Def": true,
+      "File": "namespace.cpp",
+      "Start": 85,
+      "End": 86
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 869,
+      "End": 870
+    },
+    {
+      "DefPath": "RootNS/L1/L2/A",
+      "File": "namespace.cpp",
+      "Start": 878,
+      "End": 879
+    },
+    {
+      "DefPath": "globalfn()",
+      "Def": true,
+      "File": "resolve.cpp",
+      "Start": 22,
+      "End": 30
+    },
+    {
+      "DefPath": "globalfn()",
+      "File": "resolve.cpp",
+      "Start": 308,
+      "End": 316
+    },
+    {
+      "DefPath": "globalfn()",
+      "File": "resolve.cpp",
+      "Start": 945,
+      "End": 953
+    },
+    {
+      "DefPath": "std/string",
+      "File": "string-concat.cpp",
+      "Start": 74,
+      "End": 80
+    }
+  ]
+}

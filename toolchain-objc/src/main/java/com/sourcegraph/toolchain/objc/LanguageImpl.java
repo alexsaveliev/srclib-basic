@@ -1,26 +1,21 @@
 package com.sourcegraph.toolchain.objc;
 
-import com.sourcegraph.toolchain.core.GraphWriter;
 import com.sourcegraph.toolchain.core.objects.DefKey;
+import com.sourcegraph.toolchain.core.objects.SourceUnit;
 import com.sourcegraph.toolchain.language.*;
 import com.sourcegraph.toolchain.objc.antlr4.ObjCLexer;
 import com.sourcegraph.toolchain.objc.antlr4.ObjCParser;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class LanguageImpl extends LanguageBase {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(LanguageImpl.class);
-
-    GraphWriter writer;
 
     Map<String, String> globalVars = new HashMap<>();
     // class name -> (variable -> type)
@@ -29,13 +24,11 @@ public class LanguageImpl extends LanguageBase {
     Set<String> functions = new HashSet<>();
     Set<String> types = new HashSet<>();
 
-    private Set<String> visited = new HashSet<>();
-    private Set<String> files;
-
     @Override
     protected void parse(File sourceFile) throws ParseException {
         try {
-            GrammarConfiguration configuration = LanguageBase.createGrammarConfiguration(sourceFile,
+            GrammarConfiguration configuration = LanguageBase.createGrammarConfiguration(this,
+                    sourceFile,
                     ObjCLexer.class,
                     ObjCParser.class,
                     new DefaultErrorListener(sourceFile));
@@ -51,6 +44,23 @@ public class LanguageImpl extends LanguageBase {
     @Override
     protected FileCollector getFileCollector(File rootDir, String repoUri) {
         return new ExtensionBasedFileCollector().extension(".h", ".m", ".mm");
+    }
+
+    @Override
+    protected SourceUnit getSourceUnit(File rootDir, String repoUri) throws IOException {
+        SourceUnit unit = super.getSourceUnit(rootDir, repoUri);
+        boolean hasSourceCode = false;
+        // we expect at least one .m or .mm file, otherwise it's probably C++
+        for (String file : unit.Files) {
+            if (!file.endsWith(".h")) {
+                hasSourceCode = true;
+                break;
+            }
+        }
+        if (!hasSourceCode) {
+            unit.Files.clear();
+        }
+        return unit;
     }
 
     @Override

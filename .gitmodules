@@ -19,6 +19,6 @@
 [submodule "testdata/case/antlr-php-array-property"]
 	path = testdata/case/antlr-php-array-property
 	url = https://github.com/sgtest/antlr-php-array-property
-[submodule "testdata/case/antlr-js-prototype"]
-	path = testdata/case/antlr-js-prototype
-	url = https://github.com/sgtest/antlr-js-prototype
+[submodule "testdata/case/antlr-cpp"]
+	path = testdata/case/antlr-cpp
+	url = https://github.com/sgtest/antlr-cpp

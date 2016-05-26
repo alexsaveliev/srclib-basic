@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  */
 public abstract class LanguageBase implements com.sourcegraph.toolchain.language.Language {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(LanguageBase.class);
+    protected static final Logger LOGGER = LoggerFactory.getLogger(LanguageBase.class);
 
     /**
      * Contains processing path to current file (for example B was scheduled for processing from C scheduled from A)
@@ -41,12 +41,12 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
     /**
      * List of files that were already visited during current session
      */
-    private Set<File> visited = new HashSet<>();
+    protected Set<File> visited = new HashSet<>();
 
     /**
      * List of files to process converted to set for fast lookup purposes
      */
-    private  Set<File> files;
+    protected Set<File> files;
 
     @Override
     public void setSourceUnit(SourceUnit unit) {
@@ -236,7 +236,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
      * @return source unit
      * @throws IOException
      */
-    private SourceUnit getSourceUnit(File rootDir, String repoUri) throws IOException {
+    protected SourceUnit getSourceUnit(File rootDir, String repoUri) throws IOException {
         SourceUnit unit = new SourceUnit();
         unit.Name = getName();
         unit.Dir = PathUtil.relativizeCwd(rootDir.toPath());
@@ -247,6 +247,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
 
     /**
      * Helper method to construct ANTLR lexer and parser.
+     * @param support language support object, used to instantiate streams
      * @param sourceFile source of characters to feed to lexer
      * @param lexerClass lexer's implementation class
      * @param parserClass parser's implementation class
@@ -259,7 +260,8 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
      * @throws IllegalAccessException
      * @throws InvocationTargetException
      */
-    protected static GrammarConfiguration createGrammarConfiguration(File sourceFile,
+    protected static GrammarConfiguration createGrammarConfiguration(LanguageBase support,
+                                                                     File sourceFile,
                                                                      Class<? extends Lexer> lexerClass,
                                                                      Class<? extends Parser> parserClass,
                                                                      ANTLRErrorListener errorListener)
@@ -267,7 +269,7 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
             NoSuchMethodException,
             InstantiationException, IllegalAccessException, InvocationTargetException {
 
-        CharStream stream = new ANTLRFileStream(sourceFile.getPath());
+        CharStream stream = support.getCharStream(sourceFile);
         Constructor<? extends Lexer> lexerConstructor = lexerClass.getConstructor(CharStream.class);
 
         Lexer lexer = lexerConstructor.newInstance(stream);
@@ -284,6 +286,15 @@ public abstract class LanguageBase implements com.sourcegraph.toolchain.language
         configuration.lexer = lexer;
         configuration.parser = parser;
         return configuration;
+    }
+
+    /**
+     * @param sourceFile input file
+     * @return character stream to read data from
+     * @throws IOException
+     */
+    protected CharStream getCharStream(File sourceFile) throws IOException {
+        return new ANTLRFileStream(sourceFile.getPath());
     }
 
     /**

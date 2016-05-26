@@ -24,6 +24,7 @@ import java.util.HashSet;
 public class ExtensionBasedFileCollector implements FileCollector {
 
     private Collection<String> extensions = new HashSet<>();
+    private Collection<String> blockerExtensions = new HashSet<>();
     private Collection<String> includes = new HashSet<>();
     private Collection<String> excludes = new HashSet<>();
 
@@ -34,6 +35,17 @@ public class ExtensionBasedFileCollector implements FileCollector {
      */
     public ExtensionBasedFileCollector extension(String... extension) {
         Collections.addAll(extensions, extension);
+        return this;
+    }
+
+    /**
+     * Registers one or more extension as the blocker one(s). If collector encounters file with a given extension
+     * it stops processing and returns no files. For example, .m is a blocker for C++ code (Objective-C)
+     * @param extension extension to register as the blocking(s)
+     * @return this
+     */
+    public ExtensionBasedFileCollector blockerExtension(String... extension) {
+        Collections.addAll(blockerExtensions, extension);
         return this;
     }
 
@@ -69,6 +81,12 @@ public class ExtensionBasedFileCollector implements FileCollector {
                     if (fileName.endsWith(extension)) {
                         files.add(file.toFile());
                         break;
+                    }
+                }
+                for (String extension : blockerExtensions) {
+                    if (fileName.endsWith(extension)) {
+                        files.clear();
+                        return FileVisitResult.TERMINATE;
                     }
                 }
                 return FileVisitResult.CONTINUE;

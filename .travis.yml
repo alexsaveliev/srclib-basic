@@ -3,16 +3,15 @@ jdk:
   - oraclejdk8
 
 install:
-  # Install Srclib
-  - sudo wget -NO /tmp/src.zip 'https://api.equinox.io/1/Applications/ap_BQxVz1iWMxmjQnbVGd85V58qz6/Updates/Asset/src-0.0.22.zip?os=linux&arch=amd64&channel=stable'
-  - sudo unzip /tmp/src*.zip -d /usr/local/bin
-  - sudo mv /usr/local/bin/src-* /usr/local/bin/src
-  - sudo chmod +x /usr/local/bin/src
-
+# installing srclib
+  - mkdir $HOME/gocode
+  - export GOPATH=$HOME/gocode
+  - go get -u -v sourcegraph.com/sourcegraph/srclib/cmd/srclib
+  - export PATH=$PATH:$HOME/gocode/bin
   # Build this toolchain
   - make
-  - src toolchain add sourcegraph.com/sourcegraph/srclib-basic
+  - mkdir -p $HOME/.srclib/sourcegraph.com/sourcegraph
+  - ln -s $TRAVIS_BUILD_DIR $HOME/.srclib/sourcegraph.com/sourcegraph/srclib-basic
 
 script:
-  - make install
-  - src test -m program
+  - srclib test

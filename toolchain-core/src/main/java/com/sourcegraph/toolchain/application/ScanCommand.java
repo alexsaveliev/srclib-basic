@@ -55,7 +55,6 @@ class ScanCommand {
 
         for (SourceUnit unit : units) {
             unit.Dir = PathUtil.relativizeCwd(unit.Dir);
-            unit.Repo = repoUri;
             List<String> files = new ArrayList<>();
             for (String file : unit.Files) {
                 Path p = Paths.get(file).toAbsolutePath();

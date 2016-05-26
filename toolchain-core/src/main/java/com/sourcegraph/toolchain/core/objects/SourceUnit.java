@@ -21,11 +21,6 @@ public class SourceUnit {
     public String Type;
 
     /**
-     * Repo URI
-     */
-    public String Repo;
-
-    /**
      * List of files that produce source units
      */
     public Collection<String> Files = new LinkedList<>();
@@ -36,20 +31,9 @@ public class SourceUnit {
     public String Dir;
 
     /**
-     * Source unit dependencies
-     */
-    public List<RawDependency> Dependencies = new LinkedList<>();
-
-    // TODO(rameshvarun): Globs entry
-    /**
      * Source unit raw data
      */
     public Map<String, Object> Data = new HashMap<>();
-
-    /**
-     * Source unit ops data
-     */
-    public Map<String, String> Ops = new HashMap<>();
 
     public SourceUnit() {
 
